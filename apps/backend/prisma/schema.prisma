@@ -1,0 +1,321 @@
+// ============================================================
+// APTISO - Prisma schema (Sprint 1)
+// Reference entity model: Documents/entity-diagram.md
+// Naming: models PascalCase, columns snake_case (@map)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum OrganizationRole {
+  ORG_OWNER
+  ORG_ADMIN
+  ORG_MEMBER
+}
+
+enum ProjectRole {
+  PROJECT_OWNER
+  CONSULTANT
+  TEAM_MEMBER
+  VIEWER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  CERTIFIED
+  ON_HOLD
+}
+
+enum ProjectPhaseStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+}
+
+enum PasswordResetStatus {
+  PENDING
+  USED
+  EXPIRED
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  USER_LOGIN
+  USER_LOGOUT
+  TOKEN_REFRESHED
+  EMAIL_VERIFIED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PASSWORD_CHANGED
+  PROFILE_UPDATED
+  ORGANIZATION_CREATED
+  PROJECT_CREATED
+  MEMBER_INVITED
+  INVITATION_ACCEPTED
+  MEMBER_ADDED
+  MEMBER_REMOVED
+}
+
+// ============================================================
+// USERS & INTERNAL AUTH TABLES
+// ============================================================
+
+model User {
+  id               String   @id @default(uuid()) @db.Uuid
+  email            String   @unique @db.VarChar(150)
+  first_name       String   @db.VarChar(100)
+  last_name        String   @db.VarChar(100)
+  password_hash    String
+  is_active        Boolean  @default(false)
+  is_email_verified Boolean @default(false)
+  last_login       DateTime? @db.Timestamp(6)
+  created_at       DateTime @default(now()) @db.Timestamp(6)
+  updated_at       DateTime @updatedAt @db.Timestamp(6)
+
+  // Relations
+  organization_memberships OrganizationMember[]
+  project_memberships      ProjectMember[]
+  organizations_created    Organization[]    @relation("OrganizationsCreated")
+  projects_created         ComplianceProject[] @relation("ProjectsCreated")
+  invitations_sent         Invitation[]      @relation("InvitationsSent")
+  invitations_accepted     Invitation[]      @relation("InvitationsAccepted")
+  sessions                 Session[]
+  email_verifications      EmailVerification[]
+  password_resets          PasswordReset[]
+  audit_logs               AuditLog[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Session {
+  id                String   @id @default(uuid()) @db.Uuid
+  user_id           String   @db.Uuid
+  refresh_token_hash String  @unique
+  device_name       String?  @db.VarChar(100)
+  device_type       String?  @db.VarChar(50)
+  ip_address        String?  @db.VarChar(45)
+  user_agent        String?
+  is_active         Boolean  @default(true)
+  last_activity     DateTime @default(now()) @db.Timestamp(6)
+  expires_at        DateTime @db.Timestamp(6)
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([refresh_token_hash])
+  @@index([expires_at])
+  @@map("sessions")
+}
+
+model EmailVerification {
+  id                        String             @id @default(uuid()) @db.Uuid
+  user_id                   String             @db.Uuid
+  hashed_verification_token String             @unique
+  status                    VerificationStatus @default(PENDING)
+  expires_at                DateTime           @db.Timestamp(6)
+  created_at                DateTime           @default(now()) @db.Timestamp(6)
+  updated_at                DateTime           @updatedAt @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([hashed_verification_token])
+  @@map("email_verifications")
+}
+
+model PasswordReset {
+  id         String              @id @default(uuid()) @db.Uuid
+  user_id    String              @db.Uuid
+  reset_code String              @db.VarChar(5)
+  status     PasswordResetStatus @default(PENDING)
+  expires_at DateTime            @db.Timestamp(6)
+  attempts   Int                 @default(0)
+  created_at DateTime            @default(now()) @db.Timestamp(6)
+  updated_at DateTime            @updatedAt @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, reset_code])
+  @@index([user_id, status])
+  @@map("password_resets")
+}
+
+// ============================================================
+// ORGANIZATIONS (multi-tenant)
+// ============================================================
+
+model Organization {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(150)
+  description String?  @db.Text
+  industry    String?  @db.VarChar(100)
+  created_by  String   @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+
+  creator     User               @relation("OrganizationsCreated", fields: [created_by], references: [id])
+  members     OrganizationMember[]
+  projects    ComplianceProject[]
+  invitations Invitation[]
+
+  @@index([name])
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id              String           @id @default(uuid()) @db.Uuid
+  organization_id String           @db.Uuid
+  user_id         String           @db.Uuid
+  role            OrganizationRole @default(ORG_MEMBER)
+  created_at      DateTime         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime         @updatedAt @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([organization_id, user_id])
+  @@index([user_id])
+  @@map("organization_members")
+}
+
+// ============================================================
+// COMPLIANCE PROJECTS (ISO 27001)
+// ============================================================
+
+model ComplianceProject {
+  id              String        @id @default(uuid()) @db.Uuid
+  organization_id String        @db.Uuid
+  name            String        @db.VarChar(150)
+  description     String?       @db.Text
+  status          ProjectStatus @default(PLANNING)
+  start_date      DateTime?     @db.Timestamp(6)
+  target_date     DateTime?     @db.Timestamp(6)
+  created_by      String        @db.Uuid
+  created_at      DateTime      @default(now()) @db.Timestamp(6)
+  updated_at      DateTime      @updatedAt @db.Timestamp(6)
+
+  organization Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  creator      User               @relation("ProjectsCreated", fields: [created_by], references: [id])
+  members      ProjectMember[]
+  phases       ProjectPhase[]
+  invitations  Invitation[]
+
+  @@index([organization_id])
+  @@index([status])
+  @@map("compliance_projects")
+}
+
+model ProjectMember {
+  id         String      @id @default(uuid()) @db.Uuid
+  project_id String      @db.Uuid
+  user_id    String      @db.Uuid
+  role       ProjectRole @default(TEAM_MEMBER)
+  joined_at  DateTime    @default(now()) @db.Timestamp(6)
+  created_at DateTime    @default(now()) @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, user_id])
+  @@index([user_id])
+  @@map("project_members")
+}
+
+model ProjectPhase {
+  id           String            @id @default(uuid()) @db.Uuid
+  project_id   String            @db.Uuid
+  name         String            @db.VarChar(150)
+  description  String?           @db.Text
+  order        Int
+  status       ProjectPhaseStatus @default(NOT_STARTED)
+  started_at   DateTime?         @db.Timestamp(6)
+  completed_at DateTime?         @db.Timestamp(6)
+  created_at   DateTime          @default(now()) @db.Timestamp(6)
+  updated_at   DateTime          @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, order])
+  @@index([project_id])
+  @@map("project_phases")
+}
+
+// ============================================================
+// INVITATIONS (APT-012 / APT-018)
+// ============================================================
+
+model Invitation {
+  id              String           @id @default(uuid()) @db.Uuid
+  organization_id String           @db.Uuid
+  project_id      String?          @db.Uuid
+  invited_by      String           @db.Uuid
+  invited_email   String           @db.VarChar(150)
+  role            ProjectRole      @default(TEAM_MEMBER)
+  message         String?          @db.Text
+  invite_code     String           @unique @db.VarChar(64)
+  hashed_token    String           @unique
+  status          InvitationStatus @default(PENDING)
+  accepted_by     String?          @db.Uuid
+  accepted_at     DateTime?        @db.Timestamp(6)
+  expires_at      DateTime         @db.Timestamp(6)
+  created_at      DateTime         @default(now()) @db.Timestamp(6)
+  updated_at      DateTime         @updatedAt @db.Timestamp(6)
+
+  organization Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  project      ComplianceProject? @relation(fields: [project_id], references: [id], onDelete: SetNull)
+  inviter      User               @relation("InvitationsSent", fields: [invited_by], references: [id], onDelete: Cascade)
+  acceptor     User?              @relation("InvitationsAccepted", fields: [accepted_by], references: [id], onDelete: SetNull)
+
+  @@index([invited_email])
+  @@index([status])
+  @@index([expires_at])
+  @@map("invitations")
+}
+
+// ============================================================
+// AUDIT TRAIL (ActivityLog from entity-diagram)
+// ============================================================
+
+model AuditLog {
+  id          String      @id @default(uuid()) @db.Uuid
+  user_id     String?     @db.Uuid
+  action      AuditAction
+  entity_type String      @db.VarChar(50)
+  entity_id   String?     @db.Uuid
+  details     Json?
+  ip_address  String?     @db.VarChar(45)
+  user_agent  String?
+  created_at  DateTime    @default(now()) @db.Timestamp(6)
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("audit_logs")
+}

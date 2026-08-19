@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aptiso-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aptiso
+      POSTGRES_PASSWORD: aptiso
+      POSTGRES_DB: aptiso
+    ports:
+      - "5432:5432"
+    volumes:
+      - aptiso-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aptiso -d aptiso"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: aptiso-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI (http://localhost:8025)
+    volumes:
+      - aptiso-mailhog-data:/maildir
+
+  redis:
+    image: redis:7-alpine
+    container_name: aptiso-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - aptiso-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # MinIO - object storage, needed from Sprint 3 (document storage / evidence).
+  # Start on demand with:  docker compose --profile minio up -d
+  minio:
+    image: minio/minio:latest
+    container_name: aptiso-minio
+    restart: unless-stopped
+    profiles: ["minio"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: aptiso
+      MINIO_ROOT_PASSWORD: aptiso-minio-secret
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console (http://localhost:9001)
+    volumes:
+      - aptiso-minio-data:/data
+
+volumes:
+  aptiso-postgres-data:
+  aptiso-mailhog-data:
+  aptiso-redis-data:
+  aptiso-minio-data:

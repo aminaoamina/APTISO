@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Env files
+.env
+.env.local
+.env.*.local
+
+# Prisma
+apps/backend/prisma/migrations/dev/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Docs
+Documents/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+

@@ -1,0 +1,28 @@
+{
+  "name": "aptiso",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-powered ISO 27001 compliance management platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n fe,be -c blue,green \"npm run dev -w @aptiso/frontend\" \"npm run start:dev -w @aptiso/backend\"",
+    "build": "npm run build -w @aptiso/shared-types && npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\"",
+    "db:generate": "npm run db:generate -w @aptiso/backend",
+    "db:migrate": "npm run db:migrate -w @aptiso/backend",
+    "db:studio": "npm run db:studio -w @aptiso/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "prettier": "^3.4.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@11.6.2"
+}
