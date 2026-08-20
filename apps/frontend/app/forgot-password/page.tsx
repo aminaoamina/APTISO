@@ -94,9 +94,13 @@ export default function ForgotPasswordPage() {
   const onSubmitEmail = async (data: EmailFormData) => {
     setIsLoading(true);
     try {
-      await authApi.requestPasswordReset(data.email);
+      const response = await authApi.requestPasswordReset(data.email);
 
-      // Backend returns the same message whether or not the account exists
+      if (!response.user_exists) {
+        toast.error(response.message);
+        return;
+      }
+
       setEmail(data.email);
       setCurrentStep(2);
       toast.success('Reset code sent! Please check your email.');

@@ -8,6 +8,10 @@ build/
 out/
 coverage/
 
+# Uploaded files (avatars)
+apps/backend/uploads/avatars/*
+!apps/backend/uploads/avatars/.gitkeep
+
 # Env files
 .env
 .env.local
@@ -15,6 +19,9 @@ coverage/
 
 # Prisma
 apps/backend/prisma/migrations/dev/
+apps/backend/prisma/seed.js
+apps/backend/prisma/seed.js.map
+apps/backend/prisma/seed.d.ts
 
 # Logs
 logs/
@@ -23,6 +30,7 @@ npm-debug.log*
 
 # Docs
 Documents/
+docs/
 
 # OS / editor
 .DS_Store

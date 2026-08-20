@@ -13,14 +13,7 @@ export interface RegisterResponse {
 }
 
 export interface LoginResponse {
-  user: {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    is_active: boolean;
-    is_email_verified: boolean;
-  };
+  user: PublicUser;
   sessionId: string;
   tokens: AuthTokens;
 }
@@ -30,6 +23,11 @@ export interface PublicUser {
   email: string;
   first_name: string;
   last_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  job_title: string | null;
+  timezone: string | null;
   is_active: boolean;
   is_email_verified: boolean;
+  created_at: string;
 }

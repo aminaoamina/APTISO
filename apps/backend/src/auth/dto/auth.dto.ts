@@ -1,12 +1,39 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsEmail,
   IsNotEmpty,
   IsOptional,
+  IsIn,
+  IsUUID,
   IsString,
+  ValidateNested,
   MinLength,
   MaxLength,
 } from 'class-validator';
+
+export class DeleteOrganizationChoiceDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  organization_id: string;
+
+  @ApiProperty({ enum: ['TRANSFER', 'DELETE'] })
+  @IsIn(['TRANSFER', 'DELETE'])
+  action: 'TRANSFER' | 'DELETE';
+
+  @ApiProperty({ required: false, format: 'uuid' })
+  @IsOptional()
+  @IsUUID()
+  transfer_to_user_id?: string;
+}
+
+export class DeleteAccountDto {
+  @ApiProperty({ type: [DeleteOrganizationChoiceDto] })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => DeleteOrganizationChoiceDto)
+  organizations?: DeleteOrganizationChoiceDto[];
+}
 
 export class RegisterDto {
   @ApiProperty({ example: 'John' })
@@ -30,14 +57,6 @@ export class RegisterDto {
   @IsString()
   @MinLength(8, { message: 'Password must be at least 8 characters' })
   password: string;
-
-  @ApiProperty({
-    required: false,
-    description: 'Invitation token to auto-join an organization (APT-012)',
-  })
-  @IsOptional()
-  @IsString()
-  invitation_token?: string;
 }
 
 export class LoginDto {
@@ -123,6 +142,23 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsEmail({}, { message: 'Invalid email format' })
   email?: string;
+
+  @ApiProperty({ example: 'Compliance Manager', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(150, { message: 'Job title must be 150 characters or less' })
+  job_title?: string;
+
+  @ApiProperty({ example: 'UTC', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50, { message: 'Timezone must be 50 characters or less' })
+  timezone?: string;
+
+  @ApiProperty({ example: 'ISO 27001 compliance specialist', required: false })
+  @IsOptional()
+  @IsString()
+  bio?: string;
 }
 
 export class ChangePasswordDto {

@@ -2,7 +2,7 @@
   "name": "aptiso",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-powered ISO 27001 compliance management platform",
+  "description": "AI-powered ISO compliance management platform",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -15,7 +15,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\"",
     "db:generate": "npm run db:generate -w @aptiso/backend",
     "db:migrate": "npm run db:migrate -w @aptiso/backend",
-    "db:studio": "npm run db:studio -w @aptiso/backend"
+    "db:studio": "npm run db:studio -w @aptiso/backend",
+    "db:seed": "npm run db:seed -w @aptiso/backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

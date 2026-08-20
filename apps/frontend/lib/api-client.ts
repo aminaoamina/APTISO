@@ -2,6 +2,17 @@ import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
+const noRefreshRoutes = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/logout',
+  '/auth/password-reset-request',
+  '/auth/verify-reset-code',
+  '/auth/reset-password',
+  '/auth/resend-reset-code',
+  '/auth/resend-verification-code',
+];
+
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
 }
@@ -102,7 +113,10 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.status === 401) {
-      if (originalRequest.url?.includes('/auth/refresh')) {
+      if (
+        originalRequest.url?.includes('/auth/refresh') ||
+        noRefreshRoutes.some((route) => originalRequest.url?.includes(route))
+      ) {
         return Promise.reject(error);
       }
 

@@ -11,6 +11,8 @@ import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { randomBytes, randomInt } from 'crypto';
 import { addHours, addMinutes } from 'date-fns';
+import { extname } from 'path';
+import { unlink } from 'fs/promises';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { SecurityUtil } from '../common/utils/security.util';
@@ -19,6 +21,7 @@ import { SessionService } from '../common/services/session.service';
 import {
   RegisterDto,
   LoginDto,
+  DeleteAccountDto,
   UpdateProfileDto,
   ChangePasswordDto,
 } from './dto/auth.dto';
@@ -32,7 +35,6 @@ import {
 import {
   VerificationStatus,
   PasswordResetStatus,
-  InvitationStatus,
   AuditAction,
 } from '@prisma/client';
 
@@ -73,90 +75,17 @@ export class AuthService {
 
       const hashedPassword = await argon2.hash(registerDto.password);
 
-      // Optional invitation token (APT-012). If present and valid, the user is
-      // auto-activated and linked to the organization/project.
-      let invitation: any = null;
-      if (registerDto.invitation_token) {
-        const hashedToken = SecurityUtil.hashToken(
-          registerDto.invitation_token,
-        );
-
-        invitation = await this.prisma.invitation.findFirst({
-          where: {
-            hashed_token: hashedToken,
-            status: InvitationStatus.PENDING,
-            invited_email: sanitizedEmail,
-            expires_at: {
-              gte: new Date(),
-            },
-          },
-        });
-
-        if (!invitation) {
-          throw new BadRequestException('Invalid or expired invitation token');
-        }
-      }
-
       const user = await this.prisma.user.create({
         data: {
           email: sanitizedEmail,
           first_name: sanitizedFirstName,
           last_name: sanitizedLastName,
           password_hash: hashedPassword,
-          is_active: !!invitation,
-          is_email_verified: !!invitation,
+          is_active: false,
+          is_email_verified: false,
         },
       });
 
-      if (invitation) {
-        await this.prisma.$transaction([
-          this.prisma.organizationMember.create({
-            data: {
-              organization_id: invitation.organization_id,
-              user_id: user.id,
-              role: 'ORG_MEMBER',
-            },
-          }),
-          ...(invitation.project_id
-            ? [
-                this.prisma.projectMember.create({
-                  data: {
-                    project_id: invitation.project_id,
-                    user_id: user.id,
-                    role: invitation.role,
-                  },
-                }),
-              ]
-            : []),
-          this.prisma.invitation.update({
-            where: { id: invitation.id },
-            data: {
-              status: InvitationStatus.ACCEPTED,
-              accepted_by: user.id,
-              accepted_at: new Date(),
-            },
-          }),
-        ]);
-
-        await this.auditLogService.log({
-          userId: user.id,
-          action: AuditAction.USER_REGISTERED,
-          entityType: 'user',
-          entityId: user.id,
-          details: { withInvitation: true, organizationId: invitation.organization_id },
-          ipAddress,
-          userAgent,
-        });
-
-        this.logger.log(`User registered with invitation: ${user.email}`);
-
-        return {
-          message:
-            'Registration successful! You have been added to the organization. You can now log in.',
-        };
-      }
-
-      // Standard registration: require email verification
       const verificationToken = this.generateVerificationToken();
       const hashedToken = SecurityUtil.hashToken(verificationToken);
       const expiresAt = addMinutes(new Date(), 15);
@@ -286,8 +215,13 @@ export class AuthService {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        avatar_url: user.avatar_url,
+        bio: user.bio,
+        job_title: user.job_title,
+        timezone: user.timezone,
         is_active: user.is_active,
         is_email_verified: user.is_email_verified,
+        created_at: user.created_at.toISOString(),
       },
       sessionId: session.id,
       tokens,
@@ -343,8 +277,13 @@ export class AuthService {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        avatar_url: user.avatar_url ?? null,
+        bio: user.bio ?? null,
+        job_title: user.job_title ?? null,
+        timezone: user.timezone ?? null,
         is_active: user.is_active,
         is_email_verified: user.is_email_verified,
+        created_at: user.created_at.toISOString(),
       },
     };
   }
@@ -570,7 +509,7 @@ export class AuthService {
 
   async requestPasswordReset(
     email: string,
-  ): Promise<{ message: string }> {
+  ): Promise<{ message: string; user_exists: boolean }> {
     try {
       const user = await this.prisma.user.findUnique({
         where: { email },
@@ -578,8 +517,8 @@ export class AuthService {
 
       if (!user) {
         return {
-          message:
-            'If an account with that email exists, you will receive a password reset link.',
+          message: 'No account was found with that email address.',
+          user_exists: false,
         };
       }
 
@@ -613,6 +552,7 @@ export class AuthService {
       return {
         message:
           'If an account with that email exists, you will receive a password reset link.',
+        user_exists: true,
       };
     } catch (error) {
       this.logger.error('Password reset request failed:', error);
@@ -833,6 +773,22 @@ export class AuthService {
         }
       }
 
+      if (updateProfileDto.job_title !== undefined) {
+        updateData.job_title = updateProfileDto.job_title
+          ? SecurityUtil.sanitizeString(updateProfileDto.job_title)
+          : null;
+      }
+
+      if (updateProfileDto.timezone !== undefined) {
+        updateData.timezone = updateProfileDto.timezone || 'UTC';
+      }
+
+      if (updateProfileDto.bio !== undefined) {
+        updateData.bio = updateProfileDto.bio
+          ? SecurityUtil.sanitizeString(updateProfileDto.bio)
+          : null;
+      }
+
       const updatedUser = await this.prisma.user.update({
         where: { id: userId },
         data: updateData,
@@ -841,6 +797,11 @@ export class AuthService {
           first_name: true,
           last_name: true,
           email: true,
+          avatar_url: true,
+          bio: true,
+          job_title: true,
+          timezone: true,
+          is_active: true,
           is_email_verified: true,
           created_at: true,
         },
@@ -881,6 +842,104 @@ export class AuthService {
       );
       throw error;
     }
+  }
+
+  async uploadAvatar(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<{ message: string; avatar_url: string }> {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedMimes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Only JPEG, PNG, WebP, and GIF images are allowed',
+      );
+    }
+
+    const maxSize = 2 * 1024 * 1024; // 2 MB
+    if (file.size > maxSize) {
+      throw new BadRequestException('File size must be under 2 MB');
+    }
+
+    // Delete old avatar file if it exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar_url: true },
+    });
+
+    if (existingUser?.avatar_url) {
+      const oldPath = existingUser.avatar_url.replace('/uploads/', 'uploads/');
+      try {
+        await unlink(oldPath);
+      } catch {
+        // Old file may not exist — ignore
+      }
+    }
+
+    // Generate unique filename
+    const fileExt = extname(file.originalname).toLowerCase();
+    const filename = `${userId}-${Date.now()}${fileExt}`;
+    const avatarUrl = `/uploads/avatars/${filename}`;
+
+    // Write file to disk
+    const { writeFile } = await import('fs/promises');
+    const { join } = await import('path');
+    const filePath = join(process.cwd(), 'uploads', 'avatars', filename);
+    await writeFile(filePath, file.buffer);
+
+    // Update user avatar_url in database
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar_url: avatarUrl },
+    });
+
+    await this.auditLogService.log({
+      userId,
+      action: AuditAction.PROFILE_UPDATED,
+      entityType: 'user',
+      entityId: userId,
+      details: { field: 'avatar_url' },
+    });
+
+    return { message: 'Avatar uploaded successfully', avatar_url: avatarUrl };
+  }
+
+  async removeAvatar(userId: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatar_url: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (user.avatar_url) {
+      const avatarPath = user.avatar_url.replace('/uploads/', 'uploads/');
+      try {
+        await unlink(avatarPath);
+      } catch {
+        // The database reference is still cleared if the file is missing.
+      }
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatar_url: null },
+    });
+
+    await this.auditLogService.log({
+      userId,
+      action: AuditAction.PROFILE_UPDATED,
+      entityType: 'user',
+      entityId: userId,
+      details: { field: 'avatar_url', action: 'removed' },
+    });
+
+    return { message: 'Avatar removed successfully' };
   }
 
   async changePassword(
@@ -966,6 +1025,151 @@ export class AuthService {
       message: `Logged out from ${count} device(s)`,
       count,
     };
+  }
+
+  async deleteAccount(
+    userId: string,
+    dto: DeleteAccountDto,
+  ): Promise<{ message: string }> {
+    const ownedOrganizations = await this.prisma.organization.findMany({
+      where: { created_by: userId },
+      include: {
+        members: true,
+        projects: {
+          select: {
+            id: true,
+            created_by: true,
+            members: { select: { user_id: true, privilege: true } },
+          },
+        },
+      },
+    });
+
+    const choices = dto.organizations ?? [];
+    const choiceByOrganization = new Map(
+      choices.map((choice) => [choice.organization_id, choice]),
+    );
+
+    for (const organization of ownedOrganizations) {
+      const choice = choiceByOrganization.get(organization.id);
+      if (!choice) {
+        throw new BadRequestException(
+          `Choose whether to transfer or delete organization ${organization.name}`,
+        );
+      }
+
+      if (choice.action === 'TRANSFER') {
+        if (!choice.transfer_to_user_id || choice.transfer_to_user_id === userId) {
+          throw new BadRequestException(
+            `Choose another member to receive ownership of ${organization.name}`,
+          );
+        }
+
+        const recipient = organization.members.find(
+          (member) => member.user_id === choice.transfer_to_user_id,
+        );
+        if (!recipient) {
+          throw new BadRequestException(
+            `Ownership recipient must be a member of ${organization.name}`,
+          );
+        }
+      }
+    }
+
+    const ownedOrganizationIds = new Set(ownedOrganizations.map((org) => org.id));
+    if (choices.some((choice) => !ownedOrganizationIds.has(choice.organization_id))) {
+      throw new BadRequestException('Account deletion contains an invalid organization');
+    }
+
+    await this.prisma.$transaction(async (transaction) => {
+      for (const organization of ownedOrganizations) {
+        const choice = choiceByOrganization.get(organization.id)!;
+
+        if (choice.action === 'DELETE') {
+          await transaction.organization.delete({ where: { id: organization.id } });
+          continue;
+        }
+
+        const recipientId = choice.transfer_to_user_id!;
+        await transaction.organization.update({
+          where: { id: organization.id },
+          data: { created_by: recipientId },
+        });
+        await transaction.organizationMember.update({
+          where: {
+            organization_id_user_id: {
+              organization_id: organization.id,
+              user_id: userId,
+            },
+          },
+          data: { role: 'ORG_MEMBER' },
+        });
+        await transaction.organizationMember.update({
+          where: {
+            organization_id_user_id: {
+              organization_id: organization.id,
+              user_id: recipientId,
+            },
+          },
+          data: { role: 'ORG_OWNER' },
+        });
+
+        for (const project of organization.projects) {
+          if (project.created_by === userId) {
+            await transaction.complianceProject.update({
+              where: { id: project.id },
+              data: { created_by: recipientId },
+            });
+          }
+
+          const recipientProjectMember = project.members.find(
+            (member) => member.user_id === recipientId,
+          );
+          if (recipientProjectMember) {
+            if (recipientProjectMember.privilege !== 'PROJECT_LEAD') {
+              await transaction.projectMember.update({
+                where: {
+                  project_id_user_id: {
+                    project_id: project.id,
+                    user_id: recipientId,
+                  },
+                },
+                data: { privilege: 'PROJECT_LEAD' },
+              });
+            }
+          } else {
+            await transaction.projectMember.create({
+              data: {
+                project_id: project.id,
+                user_id: recipientId,
+                privilege: 'PROJECT_LEAD',
+              },
+            });
+          }
+        }
+      }
+
+      await transaction.auditLog.create({
+        data: {
+          user_id: userId,
+          action: AuditAction.USER_DELETED,
+          entity_type: 'user',
+          entity_id: userId,
+          details: {
+            deletedOrganizationIds: ownedOrganizations
+              .filter((organization) => choiceByOrganization.get(organization.id)?.action === 'DELETE')
+              .map((organization) => organization.id),
+            transferredOrganizationIds: ownedOrganizations
+              .filter((organization) => choiceByOrganization.get(organization.id)?.action === 'TRANSFER')
+              .map((organization) => organization.id),
+          },
+        },
+      });
+
+      await transaction.user.delete({ where: { id: userId } });
+    });
+
+    return { message: 'Account deleted successfully' };
   }
 
   private async generateTokens(

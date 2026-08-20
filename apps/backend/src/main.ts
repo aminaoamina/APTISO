@@ -3,6 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import express from 'express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -31,6 +33,9 @@ async function bootstrap() {
   );
 
   app.use(cookieParser());
+
+  // Serve uploaded files (avatars) statically
+  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
 
   // CORS - credentials enabled for HttpOnly cookies
   app.enableCors({

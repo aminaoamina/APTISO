@@ -14,7 +14,6 @@ interface AuthState {
     last_name: string;
     email: string;
     password: string;
-    invitation_token?: string;
   }) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   setUser: (user: User) => void;

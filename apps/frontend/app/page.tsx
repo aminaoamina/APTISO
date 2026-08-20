@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { LogOut, Loader2 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { AnimatedBackground } from '@/components/animated-background';
@@ -12,15 +13,18 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/auth-store';
 
 export default function HomePage() {
+  const router = useRouter();
   const { user, isAuthenticated, isLoading, loadUser, logout } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      loadUser().catch(() => {
-        // Not authenticated - stays on landing view
+    loadUser()
+      .then(() => {
+        router.replace('/dashboard');
+      })
+      .catch(() => {
+        // No live session - stay on the landing view.
       });
-    }
-  }, [isAuthenticated, loadUser]);
+  }, [loadUser, router]);
 
   const handleLogout = async () => {
     await logout();

@@ -23,11 +23,9 @@ aptiso/
 │   ├── backend/          NestJS 11 + Prisma + JWT auth
 │   └── ai-service/       FastAPI + LangChain (AI service)
 ├── packages/
-│   ├── shared-types/     Shared TS enums & types (roles, statuses)
-│   └── ui/               Shared shadcn/ui components
+│   └── shared-types/     Shared TS enums & types (roles, statuses)
 ├── docker/
 │   └── postgres/         Postgres + pgvector config
-├── Documents/            Architecture docs and stack decisions
 ├── docker-compose.yml    Infrastructure services
 ├── package.json          Workspace root (scripts, workspaces config)
 └── .env.example          Environment variable template
