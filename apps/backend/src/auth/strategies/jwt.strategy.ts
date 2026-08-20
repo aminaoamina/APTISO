@@ -40,7 +40,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
+      avatar_url: user.avatar_url,
+      bio: user.bio,
+      job_title: user.job_title,
+      timezone: user.timezone,
       is_email_verified: user.is_email_verified,
+      is_active: user.is_active,
+      created_at: user.created_at.toISOString(),
     };
   }
 }

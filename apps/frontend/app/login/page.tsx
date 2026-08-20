@@ -38,11 +38,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
-      if (searchParams.get('invitation') === 'accepted') {
-        setSuccessMessage('Account created and invitation accepted! You can now log in.');
-      } else {
-        setSuccessMessage('Account created! Please check your email to verify your address before logging in.');
-      }
+      setSuccessMessage('Account created! Please check your email to verify your address before logging in.');
     } else if (searchParams.get('verified') === 'true') {
       setSuccessMessage('Email verified successfully! You can now log in.');
     }
@@ -72,7 +68,7 @@ function LoginForm() {
       // Small delay to ensure store is updated before redirect
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      router.push('/');
+      router.push('/dashboard');
     } catch (err) {
       const errorMessage = getErrorMessage(
         err,
@@ -135,32 +131,43 @@ function LoginForm() {
             )}
 
             {isUnverifiedError && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={handleResendVerification}
-                  disabled={isResending || isLoading}
-                >
-                  {isResending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Resending...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="h-4 w-4 mr-2" />
-                      Resend verification email
-                    </>
-                  )}
-                </Button>
-                {resendMessage && (
-                  <p className="mt-2 text-center text-sm text-muted-foreground">
-                    {resendMessage}
-                  </p>
-                )}
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 animate-in fade-in slide-in-from-top-2 duration-300 dark:border-amber-800 dark:bg-amber-950">
+                <div className="flex items-start gap-3">
+                  <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      Your email hasn&apos;t been verified yet.
+                    </p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      Check your inbox for the verification link, or resend it now.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900"
+                      onClick={handleResendVerification}
+                      disabled={isResending || isLoading}
+                    >
+                      {isResending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Resend verification email
+                        </>
+                      )}
+                    </Button>
+                    {resendMessage && (
+                      <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                        {resendMessage}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

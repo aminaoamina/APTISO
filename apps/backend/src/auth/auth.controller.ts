@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Post,
   Get,
   Put,
@@ -9,14 +10,19 @@ import {
   Query,
   Ip,
   Headers,
+  UploadedFile,
+  UseInterceptors,
   UnauthorizedException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response, Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
@@ -29,13 +35,14 @@ import {
   ResendVerificationDto,
   UpdateProfileDto,
   ChangePasswordDto,
+  DeleteAccountDto,
 } from './dto/auth.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 const ACCESS_TOKEN_COOKIE = 'accessToken';
 const REFRESH_TOKEN_COOKIE = 'refreshToken';
-const REFRESH_PATH = 'api/v1/auth/refresh';
+const AUTH_COOKIE_PATH = '/api/v1/auth';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -195,6 +202,36 @@ export class AuthController {
     return this.authService.updateProfile(user.id, updateProfileDto);
   }
 
+  @Post('avatar')
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: { type: 'string', format: 'binary' },
+      },
+    },
+  })
+  @ApiOperation({ summary: 'Upload profile avatar' })
+  @ApiResponse({ status: 200, description: 'Avatar uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid file type or size' })
+  async uploadAvatar(
+    @CurrentUser('id') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.authService.uploadAvatar(userId, file);
+  }
+
+  @Delete('avatar')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove profile avatar' })
+  @ApiResponse({ status: 200, description: 'Avatar removed successfully' })
+  async removeAvatar(@CurrentUser('id') userId: string) {
+    return this.authService.removeAvatar(userId);
+  }
+
   @Post('change-password')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
@@ -252,6 +289,20 @@ export class AuthController {
     return result;
   }
 
+  @Delete('account')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Permanently delete account' })
+  @ApiResponse({ status: 200, description: 'Account deleted successfully' })
+  async deleteAccount(
+    @CurrentUser('id') userId: string,
+    @Body() dto: DeleteAccountDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.deleteAccount(userId, dto);
+    this.clearAuthCookies(res);
+    return result;
+  }
+
   private setAuthCookies(
     res: Response,
     accessToken: string,
@@ -268,13 +319,13 @@ export class AuthController {
       path: '/',
     });
 
-    // Refresh token cookie - longer-lived (7 days), scoped to refresh route
+    // The refresh token must also reach logout so the server can revoke it.
     res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: `/${REFRESH_PATH}`,
+      path: AUTH_COOKIE_PATH,
     });
   }
 
@@ -291,7 +342,7 @@ export class AuthController {
       httpOnly: true,
       secure: isProduction,
       sameSite: isProduction ? 'strict' : 'lax',
-      path: `/${REFRESH_PATH}`,
+      path: AUTH_COOKIE_PATH,
     });
   }
 }

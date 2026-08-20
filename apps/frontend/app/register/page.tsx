@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Eye,
@@ -28,9 +28,7 @@ import { getErrorMessage } from '@/lib/utils';
 
 function RegisterContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { register } = useAuthStore();
-  const invitationToken = searchParams.get('invitation_token');
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -147,30 +145,15 @@ function RegisterContent() {
     setIsLoading(true);
 
     try {
-      const payload: {
-        first_name: string;
-        last_name: string;
-        email: string;
-        password: string;
-        invitation_token?: string;
-      } = {
+      const payload = {
         first_name: formData.first_name.trim(),
         last_name: formData.last_name.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       };
 
-      if (invitationToken) {
-        payload.invitation_token = invitationToken;
-      }
-
       await register(payload);
-
-      if (invitationToken) {
-        router.push('/login?registered=true&invitation=accepted');
-      } else {
-        router.push('/login?registered=true');
-      }
+      router.push('/login?registered=true');
     } catch (err) {
       const errorMessage = getErrorMessage(err, 'Registration failed. Please try again.');
       setError(errorMessage);
@@ -283,15 +266,6 @@ function RegisterContent() {
 
               <form onSubmit={handleSubmit}>
                 <CardContent className="space-y-6 px-8">
-                  {invitationToken && (
-                    <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-900/20 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <Mail className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-blue-600 dark:text-blue-400">
-                        You&apos;re joining via an invitation. Your account will be linked automatically.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-
                   {error && (
                     <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2 duration-300">
                       <AlertDescription className="font-medium">{error}</AlertDescription>

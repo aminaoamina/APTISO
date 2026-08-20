@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -32,6 +33,7 @@
     "date-fns": "^4.1.0",
     "handlebars": "^4.7.8",
     "helmet": "^8.1.0",
+    "multer": "^2.2.0",
     "nodemailer": "^7.0.10",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -45,6 +47,7 @@
     "@nestjs/schematics": "^11.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
+    "@types/multer": "^2.2.0",
     "@types/node": "^22.19.0",
     "@types/nodemailer": "^7.0.3",
     "@types/passport-jwt": "^4.0.1",

@@ -24,10 +24,9 @@ enum OrganizationRole {
 }
 
 enum ProjectRole {
-  PROJECT_OWNER
-  CONSULTANT
-  TEAM_MEMBER
-  VIEWER
+  PROJECT_LEAD
+  PROJECT_AUDITOR
+  PROJECT_MEMBER
 }
 
 enum InvitationStatus {
@@ -35,6 +34,22 @@ enum InvitationStatus {
   ACCEPTED
   REVOKED
   EXPIRED
+}
+
+enum IsoRole {
+  TOP_MANAGEMENT
+  INFORMATION_SECURITY_MANAGER
+  ASSET_OWNER
+  DEPARTMENT_HEAD
+  IT_ADMINISTRATOR
+  INTERNAL_AUDITOR
+  EMPLOYEE
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 enum ProjectStatus {
@@ -64,6 +79,7 @@ enum PasswordResetStatus {
 
 enum AuditAction {
   USER_REGISTERED
+  USER_DELETED
   USER_LOGIN
   USER_LOGOUT
   TOKEN_REFRESHED
@@ -73,11 +89,21 @@ enum AuditAction {
   PASSWORD_CHANGED
   PROFILE_UPDATED
   ORGANIZATION_CREATED
+  ORGANIZATION_UPDATED
+  ORGANIZATION_DELETED
   PROJECT_CREATED
+  PROJECT_UPDATED
+  PROJECT_DELETED
   MEMBER_INVITED
   INVITATION_ACCEPTED
+  INVITATION_REVOKED
   MEMBER_ADDED
   MEMBER_REMOVED
+  MEMBER_ROLE_CHANGED
+  PROJECT_MEMBER_ADDED
+  PROJECT_MEMBER_REMOVED
+  PROJECT_MEMBER_ROLE_CHANGED
+  PHASE_UPDATED
 }
 
 // ============================================================
@@ -90,6 +116,10 @@ model User {
   first_name       String   @db.VarChar(100)
   last_name        String   @db.VarChar(100)
   password_hash    String
+  avatar_url       String?  @db.VarChar(500)
+  bio              String?  @db.Text
+  job_title        String?  @db.VarChar(150)
+  timezone         String?  @db.VarChar(50) @default("UTC")
   is_active        Boolean  @default(false)
   is_email_verified Boolean @default(false)
   last_login       DateTime? @db.Timestamp(6)
@@ -103,6 +133,8 @@ model User {
   projects_created         ComplianceProject[] @relation("ProjectsCreated")
   invitations_sent         Invitation[]      @relation("InvitationsSent")
   invitations_accepted     Invitation[]      @relation("InvitationsAccepted")
+  member_add_requests_sent     MemberAddRequest[] @relation("MemberAddRequestsSent")
+  member_add_requests_reviewed MemberAddRequest[] @relation("MemberAddRequestsReviewed")
   sessions                 Session[]
   email_verifications      EmailVerification[]
   password_resets          PasswordReset[]
@@ -182,6 +214,7 @@ model Organization {
   members     OrganizationMember[]
   projects    ComplianceProject[]
   invitations Invitation[]
+  member_add_requests MemberAddRequest[]
 
   @@index([name])
   @@map("organizations")
@@ -224,6 +257,7 @@ model ComplianceProject {
   members      ProjectMember[]
   phases       ProjectPhase[]
   invitations  Invitation[]
+  member_add_requests MemberAddRequest[]
 
   @@index([organization_id])
   @@index([status])
@@ -231,19 +265,58 @@ model ComplianceProject {
 }
 
 model ProjectMember {
-  id         String      @id @default(uuid()) @db.Uuid
-  project_id String      @db.Uuid
-  user_id    String      @db.Uuid
-  role       ProjectRole @default(TEAM_MEMBER)
-  joined_at  DateTime    @default(now()) @db.Timestamp(6)
-  created_at DateTime    @default(now()) @db.Timestamp(6)
+  id            String      @id @default(uuid()) @db.Uuid
+  project_id    String      @db.Uuid
+  user_id       String      @db.Uuid
+  privilege     ProjectRole @default(PROJECT_MEMBER) @map("role")
+  custom_role   String?     @db.VarChar(150)
+  joined_at     DateTime    @default(now()) @db.Timestamp(6)
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
 
-  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  user    User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project  ComplianceProject     @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user     User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  iso_roles ProjectMemberIsoRole[]
 
   @@unique([project_id, user_id])
   @@index([user_id])
   @@map("project_members")
+}
+
+model ProjectMemberIsoRole {
+  id                String   @id @default(uuid()) @db.Uuid
+  project_member_id String   @db.Uuid
+  iso_role          IsoRole
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+
+  project_member ProjectMember @relation(fields: [project_member_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_member_id, iso_role])
+  @@map("project_member_iso_roles")
+}
+
+model MemberAddRequest {
+  id              String        @id @default(uuid()) @db.Uuid
+  organization_id String        @db.Uuid
+  project_id      String        @db.Uuid
+  requested_by    String        @db.Uuid
+  invited_email   String        @db.VarChar(150)
+  privilege       ProjectRole   @default(PROJECT_MEMBER)
+  message         String?       @db.Text
+  status          RequestStatus @default(PENDING)
+  reviewed_by     String?       @db.Uuid
+  reviewed_at     DateTime?     @db.Timestamp(6)
+  created_at      DateTime      @default(now()) @db.Timestamp(6)
+  updated_at      DateTime      @updatedAt @db.Timestamp(6)
+
+  organization Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  project      ComplianceProject  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  requester    User               @relation("MemberAddRequestsSent", fields: [requested_by], references: [id], onDelete: Cascade)
+  reviewer     User?              @relation("MemberAddRequestsReviewed", fields: [reviewed_by], references: [id], onDelete: SetNull)
+
+  @@index([organization_id])
+  @@index([project_id])
+  @@index([status])
+  @@map("member_add_requests")
 }
 
 model ProjectPhase {
@@ -275,7 +348,7 @@ model Invitation {
   project_id      String?          @db.Uuid
   invited_by      String           @db.Uuid
   invited_email   String           @db.VarChar(150)
-  role            ProjectRole      @default(TEAM_MEMBER)
+  role            ProjectRole      @default(PROJECT_MEMBER)
   message         String?          @db.Text
   invite_code     String           @unique @db.VarChar(64)
   hashed_token    String           @unique
