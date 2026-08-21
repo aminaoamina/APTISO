@@ -7,7 +7,6 @@ import {
   Building2,
   Users,
   FolderKanban,
-  Mail,
   Pencil,
   Trash2,
   Plus,
@@ -20,6 +19,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/utils';
 
@@ -42,13 +49,14 @@ export default function OrgDetailPage() {
   const { currentOrg, members, isLoading, selectOrg, deleteOrg } = useOrgStore();
   const user = useAuthStore((s) => s.user);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showOwnershipDialog, setShowOwnershipDialog] = useState(false);
+  const [transferToUserId, setTransferToUserId] = useState('');
+  const [leaveAfterTransfer, setLeaveAfterTransfer] = useState(true);
 
-  const isOwnerOrAdmin =
-    currentOrg?.members?.some(
-      (m) =>
-        m.user_id === user?.id &&
-        (m.role === 'ORG_OWNER' || m.role === 'ORG_ADMIN'),
-    ) ?? false;
+  const currentRole = currentOrg?.members?.find((m) => m.user_id === user?.id)?.role;
+  const isOwnerOrAdmin = currentRole === 'ORG_OWNER' || currentRole === 'ORG_ADMIN';
+  const isOwner = currentRole === 'ORG_OWNER';
 
   useEffect(() => {
     if (orgId) {
@@ -58,19 +66,46 @@ export default function OrgDetailPage() {
 
   const handleDelete = async () => {
     if (!currentOrg) return;
-    if (!window.confirm('Are you sure you want to delete this organization? This action cannot be undone.')) {
-      return;
-    }
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteDialog(false);
+    setTransferToUserId('');
+    setLeaveAfterTransfer(true);
+    setShowOwnershipDialog(true);
+  };
+
+  const finishOrganizationAction = async (data: {
+    action: 'DELETE' | 'TRANSFER';
+    transfer_to_user_id?: string;
+    leave_organization: boolean;
+  }) => {
     setIsDeleting(true);
     try {
-      await deleteOrg(currentOrg.id);
-      toast.success('Organization deleted');
+      await deleteOrg(currentOrg!.id, data);
+      setShowOwnershipDialog(false);
+      toast.success(data.action === 'TRANSFER'
+        ? (data.leave_organization ? 'Ownership transferred and you left the organization' : 'Ownership transferred')
+        : 'Organization deleted');
       router.push('/dashboard/organizations');
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to delete organization'));
+      toast.error(getErrorMessage(err, data.action === 'TRANSFER' ? 'Failed to transfer ownership' : 'Failed to delete organization'));
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const handleTransfer = async () => {
+    if (!transferToUserId) {
+      toast.error('Choose a member to receive ownership');
+      return;
+    }
+    await finishOrganizationAction({
+      action: 'TRANSFER',
+      transfer_to_user_id: transferToUserId,
+      leave_organization: leaveAfterTransfer,
+    });
   };
 
   if (isLoading || !currentOrg) {
@@ -105,24 +140,92 @@ export default function OrgDetailPage() {
                 Edit
               </Link>
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4 mr-1" />
-              )}
-              Delete
-            </Button>
+            {isOwner && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-1" />
+                )}
+                Delete
+              </Button>
+            )}
           </div>
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete organization?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Do you want to continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showOwnershipDialog} onOpenChange={setShowOwnershipDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>What should happen to ownership?</DialogTitle>
+            <DialogDescription>
+              Transfer ownership to a member, or permanently delete {currentOrg.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium" htmlFor="ownership-recipient">New owner</label>
+              <select
+                id="ownership-recipient"
+                className="mt-2 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+                value={transferToUserId}
+                onChange={(event) => setTransferToUserId(event.target.value)}
+                disabled={isDeleting}
+              >
+                <option value="">Select a member</option>
+                {members.filter((member) => member.user_id !== user?.id).map((member) => (
+                  <option key={member.user_id} value={member.user_id}>
+                    {member.user.first_name} {member.user.last_name} ({member.user.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Do you want to leave the organization?</p>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" checked={leaveAfterTransfer} onChange={() => setLeaveAfterTransfer(true)} />
+                Yes, leave the organization
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="radio" checked={!leaveAfterTransfer} onChange={() => setLeaveAfterTransfer(false)} />
+                No, keep me as a member
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOwnershipDialog(false)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="destructive" onClick={() => finishOrganizationAction({ action: 'DELETE', leave_organization: false })} disabled={isDeleting}>
+              Delete organization
+            </Button>
+            <Button onClick={handleTransfer} disabled={isDeleting || !transferToUserId}>
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Transfer ownership
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1">
@@ -144,18 +247,6 @@ export default function OrgDetailPage() {
           <CardContent>
             <div className="text-2xl font-bold">
               {currentOrg._count?.projects ?? 0}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-1">
-              <Mail className="h-4 w-4" /> Pending Invitations
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {currentOrg._count?.invitations ?? 0}
             </div>
           </CardContent>
         </Card>
@@ -214,20 +305,17 @@ export default function OrgDetailPage() {
             <ArrowRight className="h-4 w-4 ml-auto" />
           </Link>
         </Button>
-        <Button variant="outline" className="justify-start" asChild>
-          <Link href={`/dashboard/organizations/${orgId}/invitations`}>
-            <Mail className="h-4 w-4 mr-2" />
-            Manage Invitations
-            <ArrowRight className="h-4 w-4 ml-auto" />
-          </Link>
-        </Button>
-        <Button variant="outline" className="justify-start" asChild>
-          <Link href={`/dashboard/organizations/${orgId}/projects?create=true`}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Project
-            <ArrowRight className="h-4 w-4 ml-auto" />
-          </Link>
-        </Button>
+        {isOwnerOrAdmin && (
+          <>
+            <Button variant="outline" className="justify-start" asChild>
+              <Link href={`/dashboard/organizations/${orgId}/projects?create=true`}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Project
+                <ArrowRight className="h-4 w-4 ml-auto" />
+              </Link>
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

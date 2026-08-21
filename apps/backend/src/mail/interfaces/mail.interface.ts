@@ -30,12 +30,16 @@ export interface IMailService {
     fullName: string,
     resetCode: string,
   ): Promise<void>;
-  sendInvitationEmail(
+  sendOwnershipTransferEmail(
+    email: string,
+    recipientName: string,
+    organizationName: string,
+    transferredByName: string,
+  ): Promise<void>;
+  sendOrganizationJoinRequestEmail(
     email: string,
     invitedByName: string,
     organizationName: string,
-    role: string,
-    inviteToken: string,
   ): Promise<void>;
 }
 

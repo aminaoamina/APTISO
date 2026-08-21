@@ -39,17 +39,6 @@ export interface OrganizationMember {
   user: { id: string; email: string; first_name: string; last_name: string; is_active?: boolean };
 }
 
-export interface Invitation {
-  id: string;
-  organization_id: string;
-  invited_email: string;
-  role: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
-  expires_at: string;
-  created_at: string;
-  inviter: { id: string; email: string; first_name: string; last_name: string };
-}
-
 export interface ComplianceProject {
   id: string;
   organization_id: string;
@@ -88,12 +77,26 @@ export interface ProjectPhase {
   completed_at: string | null;
 }
 
-export interface InvitationValidation {
-  valid: boolean;
-  email: string;
+export interface OrganizationNotification {
+  id: string;
+  type: 'ORGANIZATION_JOIN_REQUEST';
+  created_at: string;
+  organization: { id: string; name: string } | null;
+  join_request: {
+    id: string;
+    role: string;
+    status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+    created_at: string;
+  } | null;
+}
+
+export interface OrganizationJoinRequest {
+  id: string;
+  invited_email: string;
+  requested_user_id: string | null;
+  role: 'ORG_OWNER' | 'ORG_ADMIN' | 'ORG_MEMBER';
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
   organization: { id: string; name: string };
-  role: string;
-  user_exists: boolean;
 }
 
 // ============================================================
@@ -121,12 +124,16 @@ export const organizationsApi = {
     return response.data;
   },
 
-  delete: async (orgId: string): Promise<{ message: string }> => {
-    const response = await apiClient.delete(`/organizations/${orgId}`);
+  delete: async (orgId: string, data: {
+    action: 'DELETE' | 'TRANSFER';
+    transfer_to_user_id?: string;
+    leave_organization: boolean;
+  }): Promise<{ message: string }> => {
+    const response = await apiClient.delete(`/organizations/${orgId}`, { data });
     return response.data;
   },
 
-  addMember: async (orgId: string, data: { email: string; role: string }): Promise<OrganizationMember> => {
+  addMember: async (orgId: string, data: { email: string; role: string }): Promise<OrganizationJoinRequest> => {
     const response = await apiClient.post(`/organizations/${orgId}/members`, data);
     return response.data;
   },
@@ -136,39 +143,23 @@ export const organizationsApi = {
     return response.data;
   },
 
+  leave: async (orgId: string): Promise<{ message: string }> => {
+    const response = await apiClient.delete(`/organizations/${orgId}/members/me`);
+    return response.data;
+  },
+
   updateMemberRole: async (orgId: string, memberId: string, role: string): Promise<OrganizationMember> => {
     const response = await apiClient.put(`/organizations/${orgId}/members/${memberId}/role`, { role });
     return response.data;
   },
-};
 
-// ============================================================
-// Invitations API
-// ============================================================
-
-export const invitationsApi = {
-  send: async (orgId: string, data: { email: string; role: string }): Promise<{ invitation: Invitation; invitation_link: string }> => {
-    const response = await apiClient.post(`/organizations/${orgId}/invitations`, data);
+  notifications: async (): Promise<OrganizationNotification[]> => {
+    const response = await apiClient.get('/organizations/notifications');
     return response.data;
   },
 
-  list: async (orgId: string): Promise<Invitation[]> => {
-    const response = await apiClient.get(`/organizations/${orgId}/invitations`);
-    return response.data;
-  },
-
-  revoke: async (orgId: string, invitationId: string): Promise<{ message: string }> => {
-    const response = await apiClient.delete(`/organizations/${orgId}/invitations/${invitationId}`);
-    return response.data;
-  },
-
-  validate: async (token: string): Promise<InvitationValidation> => {
-    const response = await apiClient.get(`/invitations/validate/${token}`);
-    return response.data;
-  },
-
-  accept: async (token: string): Promise<{ message: string }> => {
-    const response = await apiClient.post('/invitations/accept', { token });
+  respondToJoinRequest: async (requestId: string, accept: boolean): Promise<{ message: string }> => {
+    const response = await apiClient.post(`/organizations/join-requests/${requestId}/respond`, { accept });
     return response.data;
   },
 };
@@ -254,6 +245,7 @@ export const authApi = {
     last_name: string;
     email: string;
     password: string;
+    invitation_token?: string;
   }): Promise<{ message: string }> => {
     const response = await apiClient.post('/auth/register', data);
     return response.data;

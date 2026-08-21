@@ -1,16 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth-store';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard';
 import { AmbientBackground } from '@/components/ambient-background';
+import { useOrgStore } from '@/store/org-store';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { loadUser } = useAuthStore();
+  const { selectOrg, clearCurrentOrg } = useOrgStore();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -20,6 +23,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace('/login');
       });
   }, [loadUser, router]);
+
+  useEffect(() => {
+    const match = pathname.match(/^\/dashboard\/organizations\/([^/]+)(?:\/|$)/);
+    if (match) {
+      selectOrg(match[1]);
+    } else {
+      clearCurrentOrg();
+    }
+  }, [pathname, selectOrg, clearCurrentOrg]);
 
   if (checking) {
     return (

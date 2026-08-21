@@ -108,6 +108,32 @@ export default function DashboardPage() {
     );
   }
 
+  if (organizations.length === 0) {
+    return (
+      <div className="flex min-h-[calc(100vh-180px)] items-center justify-center">
+        <div className="glass fade-up w-full max-w-xl p-10 text-center">
+          <Building2
+            className="mx-auto mb-5 h-16 w-16"
+            style={{ color: 'var(--brand-orange)', opacity: 0.55 }}
+          />
+          <h1 className="font-display mb-2 text-2xl font-semibold">
+            Create your first organization
+          </h1>
+          <p className="mx-auto mb-6 max-w-md text-sm text-dim">
+            Organizations are your secure workspaces. Create one or accept an invitation before starting a project.
+          </p>
+          <button
+            className="btn-accent"
+            onClick={() => router.push('/dashboard/organizations?create=true')}
+          >
+            <Plus className="h-4 w-4" />
+            Create organization
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       {/* Welcome header */}
@@ -332,32 +358,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Empty state for no organizations */}
-      {organizations.length === 0 && (
-        <div className="fade-up mt-8" style={{ animationDelay: '0.6s' }}>
-          <div
-            className="glass text-center"
-            style={{ border: '2px dashed rgba(var(--glass-border), 0.15)', padding: '48px 24px' }}
-          >
-            <Building2
-              className="h-16 w-16 mx-auto mb-4"
-              style={{ color: 'var(--brand-orange)', opacity: 0.4 }}
-            />
-            <h3 className="font-display text-xl font-semibold mb-2">Welcome to APTISO</h3>
-            <p className="max-w-md mx-auto mb-6 text-[14px]" style={{ color: 'var(--muted-foreground)' }}>
-              Create your first organization to start managing ISO 27001 compliance.
-              You can invite team members and create compliance projects.
-            </p>
-            <button
-              className="btn-accent"
-              onClick={() => router.push('/dashboard/organizations?create=true')}
-            >
-              <Plus className="h-4 w-4" />
-              Create Organization
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

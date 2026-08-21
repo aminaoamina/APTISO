@@ -38,7 +38,11 @@ function LoginForm() {
 
   useEffect(() => {
     if (searchParams.get('registered') === 'true') {
-      setSuccessMessage('Account created! Please check your email to verify your address before logging in.');
+      if (searchParams.get('invitation') === 'accepted') {
+        setSuccessMessage('Account created and invitation accepted. You can now log in.');
+      } else {
+        setSuccessMessage('Account created! Please check your email to verify your address before logging in.');
+      }
     } else if (searchParams.get('verified') === 'true') {
       setSuccessMessage('Email verified successfully! You can now log in.');
     }
