@@ -14,6 +14,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Form,
   FormControl,
   FormField,
@@ -23,6 +31,7 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/utils';
+import { playPopupSound } from '@/lib/notification-sounds';
 
 const inviteSchema = z.object({
   email: z.string().email('Valid email is required'),
@@ -46,9 +55,11 @@ const roleLabels: Record<string, string> = {
 export default function MembersPage() {
   const params = useParams();
   const orgId = params.orgId as string;
-  const { currentOrg, members, isLoading, selectOrg, addMember, removeMember, updateMemberRole } = useOrgStore();
+  const { currentOrg, members, isLoading, selectOrg, addMember, removeMember, updateMemberRole, leaveOrg } = useOrgStore();
   const user = useAuthStore((s) => s.user);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   const isOwnerOrAdmin =
@@ -57,6 +68,9 @@ export default function MembersPage() {
         m.user_id === user?.id &&
         (m.role === 'ORG_OWNER' || m.role === 'ORG_ADMIN'),
     ) ?? false;
+  const isCurrentUserOwner = currentOrg?.members?.some(
+    (member) => member.user_id === user?.id && member.role === 'ORG_OWNER',
+  ) ?? false;
 
   const form = useForm<InviteForm>({
     resolver: zodResolver(inviteSchema),
@@ -69,11 +83,15 @@ export default function MembersPage() {
 
   const handleInvite = async (data: InviteForm) => {
     try {
-      await addMember(data.email, data.role);
-      toast.success('Member added successfully');
+      const request = await addMember(data.email, data.role);
+      playPopupSound();
+      toast.success(request.requested_user_id
+        ? 'Invitation sent. They can accept it from their notifications.'
+        : 'Invitation sent. They will receive an email to create an APTISO account.');
       setShowInviteDialog(false);
       form.reset();
     } catch (err) {
+      playPopupSound();
       toast.error(getErrorMessage(err, 'Failed to add member'));
     }
   };
@@ -99,6 +117,18 @@ export default function MembersPage() {
     }
   };
 
+  const handleLeave = async () => {
+    setIsLeaving(true);
+    try {
+      await leaveOrg();
+      toast.success('You left the organization');
+      window.location.href = '/dashboard/organizations';
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to leave the organization'));
+      setIsLeaving(false);
+    }
+  };
+
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 
@@ -119,12 +149,19 @@ export default function MembersPage() {
             Manage members of {currentOrg.name}
           </p>
         </div>
-        {isOwnerOrAdmin && (
-          <Button onClick={() => setShowInviteDialog(true)}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Invite Member
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {!isCurrentUserOwner && (
+            <Button variant="outline" onClick={() => setShowLeaveDialog(true)}>
+              Leave organization
+            </Button>
+          )}
+          {isOwnerOrAdmin && (
+            <Button onClick={() => setShowInviteDialog(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add Member
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
@@ -304,6 +341,24 @@ export default function MembersPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={showLeaveDialog} onOpenChange={setShowLeaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave organization?</DialogTitle>
+            <DialogDescription>
+              You will lose access to {currentOrg.name} and its projects. You can be invited again later.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLeaveDialog(false)} disabled={isLeaving}>Cancel</Button>
+            <Button variant="destructive" onClick={handleLeave} disabled={isLeaving}>
+              {isLeaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Leave organization
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

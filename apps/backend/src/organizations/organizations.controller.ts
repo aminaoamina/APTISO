@@ -19,6 +19,7 @@ import {
 import { OrganizationsService } from './organizations.service';
 import {
   CreateOrganizationDto,
+  OrganizationDeletionDto,
   UpdateOrganizationDto,
 } from './dto/organization.dto';
 import { InviteMemberDto, UpdateMemberRoleDto } from './dto/member.dto';
@@ -50,6 +51,12 @@ export class OrganizationsController {
   @ApiResponse({ status: 200, description: 'List of organizations' })
   async findAll(@CurrentUser('id') userId: string) {
     return this.organizationsService.findAllForUser(userId);
+  }
+
+  @Get('notifications')
+  @ApiOperation({ summary: 'List my organization notifications' })
+  async listNotifications(@CurrentUser('id') userId: string) {
+    return this.organizationsService.listNotifications(userId);
   }
 
   @Get(':id')
@@ -88,11 +95,12 @@ export class OrganizationsController {
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('organizationRole') userRole: OrganizationRole,
+    @Body() dto: OrganizationDeletionDto,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
     return this.organizationsService.remove(
-      id, userId, userRole, ipAddress, userAgent,
+      id, userId, userRole, dto, ipAddress, userAgent,
     );
   }
 
@@ -111,6 +119,28 @@ export class OrganizationsController {
     return this.organizationsService.addMember(
       id, dto.email, dto.role, userId, userRole, ipAddress, userAgent,
     );
+  }
+
+  @Post('join-requests/:requestId/respond')
+  @ApiOperation({ summary: 'Accept or reject an organization join request' })
+  async respondToJoinRequest(
+    @Param('requestId') requestId: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: { accept: boolean },
+  ) {
+    return this.organizationsService.respondToJoinRequest(requestId, userId, body.accept);
+  }
+
+  @Delete(':id/members/me')
+  @ApiOperation({ summary: 'Leave organization' })
+  @UseGuards(OrganizationRoleGuard)
+  async leave(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.organizationsService.leave(id, userId, ipAddress, userAgent);
   }
 
   @Delete(':id/members/:memberId')

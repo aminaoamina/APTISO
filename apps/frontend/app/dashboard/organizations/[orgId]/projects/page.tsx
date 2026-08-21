@@ -14,6 +14,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useOrgStore } from '@/store/org-store';
+import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,8 +69,11 @@ export default function ProjectsPage() {
   const router = useRouter();
   const orgId = params.orgId as string;
   const { currentOrg, selectOrg } = useOrgStore();
+  const user = useAuthStore((state) => state.user);
   const { projects, isLoading, loadProjects, createProject } = useProjectStore();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const currentRole = currentOrg?.members?.find((member) => member.user_id === user?.id)?.role;
+  const canCreateProject = currentRole === 'ORG_OWNER' || currentRole === 'ORG_ADMIN';
 
   const form = useForm<CreateProjectForm>({
     resolver: zodResolver(createProjectSchema),
@@ -122,10 +126,12 @@ export default function ProjectsPage() {
             Compliance projects for {currentOrg?.name}
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Project
-        </Button>
+        {canCreateProject && (
+          <Button onClick={() => setShowCreateDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Project
+          </Button>
+        )}
       </div>
 
       {projects.length === 0 ? (
@@ -135,10 +141,12 @@ export default function ProjectsPage() {
           <p className="text-muted-foreground text-sm mt-1 mb-4 max-w-sm">
             Create your first compliance project to get started.
           </p>
-          <Button onClick={() => setShowCreateDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Project
-          </Button>
+          {canCreateProject && (
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Project
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -75,35 +75,51 @@ export class MailService implements IMailService {
     this.logger.log(`Password reset code sent to ${email}`);
   }
 
-  async sendInvitationEmail(
+  async sendOwnershipTransferEmail(
     email: string,
-    invitedByName: string,
+    recipientName: string,
     organizationName: string,
-    role: string,
-    inviteToken: string,
+    transferredByName: string,
   ): Promise<void> {
     const frontendUrl = this.configService.get(
       'FRONTEND_URL',
       'http://localhost:3000',
     );
-    const acceptLink = `${frontendUrl}/accept-invitation?token=${inviteToken}`;
 
-    const emailTemplate: EmailTemplate = {
+    await this.sendEmail({
       to: email,
-      subject: `You've Been Invited to Join ${organizationName} on APTISO`,
-      template: 'organization-invitation.hbs',
+      subject: `You are now the owner of ${organizationName} on APTISO`,
+      template: 'organization-ownership-transferred.hbs',
+      context: {
+        recipientName,
+        organizationName,
+        transferredByName,
+        organizationLink: `${frontendUrl}/dashboard/organizations`,
+      },
+    });
+    this.logger.log(`Ownership transfer email sent to ${email}`);
+  }
+
+  async sendOrganizationJoinRequestEmail(
+    email: string,
+    invitedByName: string,
+    organizationName: string,
+  ): Promise<void> {
+    const frontendUrl = this.configService.get(
+      'FRONTEND_URL',
+      'http://localhost:3000',
+    );
+    await this.sendEmail({
+      to: email,
+      subject: `You have been invited to join ${organizationName} on APTISO`,
+      template: 'organization-join-request.hbs',
       context: {
         invitedByName,
         organizationName,
-        role,
-        acceptLink,
-        frontendUrl,
-        expiryDays: 7,
+        registerLink: `${frontendUrl}/register`,
       },
-    };
-
-    await this.sendEmail(emailTemplate);
-    this.logger.log(`Invitation email sent to ${email}`);
+    });
+    this.logger.log(`Organization join request email sent to ${email}`);
   }
 
   private async sendEmail(emailTemplate: EmailTemplate): Promise<void> {

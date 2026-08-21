@@ -52,6 +52,16 @@ enum RequestStatus {
   REJECTED
 }
 
+enum OrganizationJoinRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum NotificationType {
+  ORGANIZATION_JOIN_REQUEST
+}
+
 enum ProjectStatus {
   PLANNING
   IN_PROGRESS
@@ -139,6 +149,9 @@ model User {
   email_verifications      EmailVerification[]
   password_resets          PasswordReset[]
   audit_logs               AuditLog[]
+  organization_join_requests OrganizationJoinRequest[] @relation("JoinRequestsForUser")
+  organization_join_requests_created OrganizationJoinRequest[] @relation("JoinRequestsCreated")
+  notifications            Notification[]
 
   @@index([email])
   @@map("users")
@@ -215,6 +228,8 @@ model Organization {
   projects    ComplianceProject[]
   invitations Invitation[]
   member_add_requests MemberAddRequest[]
+  organization_join_requests OrganizationJoinRequest[]
+  notifications Notification[]
 
   @@index([name])
   @@map("organizations")
@@ -317,6 +332,44 @@ model MemberAddRequest {
   @@index([project_id])
   @@index([status])
   @@map("member_add_requests")
+}
+
+model OrganizationJoinRequest {
+  id              String @id @default(uuid()) @db.Uuid
+  organization_id String @db.Uuid
+  requested_by    String @db.Uuid
+  invited_email   String @db.VarChar(150)
+  requested_user_id String? @db.Uuid
+  role            OrganizationRole @default(ORG_MEMBER)
+  status          OrganizationJoinRequestStatus @default(PENDING)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @updatedAt @db.Timestamp(6)
+
+  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  requester User @relation("JoinRequestsCreated", fields: [requested_by], references: [id], onDelete: Cascade)
+  requested_user User? @relation("JoinRequestsForUser", fields: [requested_user_id], references: [id], onDelete: SetNull)
+  notifications Notification[]
+
+  @@index([invited_email, status])
+  @@index([requested_user_id, status])
+  @@map("organization_join_requests")
+}
+
+model Notification {
+  id              String @id @default(uuid()) @db.Uuid
+  user_id         String @db.Uuid
+  organization_id String? @db.Uuid
+  join_request_id String? @db.Uuid
+  type            NotificationType
+  read_at         DateTime? @db.Timestamp(6)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  join_request OrganizationJoinRequest? @relation(fields: [join_request_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, read_at])
+  @@map("notifications")
 }
 
 model ProjectPhase {

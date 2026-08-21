@@ -3,6 +3,9 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
+  IsIn,
+  IsUUID,
+  IsBoolean,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -47,4 +50,16 @@ export class UpdateOrganizationDto {
   @IsString()
   @MaxLength(100)
   industry?: string;
+}
+
+export class OrganizationDeletionDto {
+  @IsIn(['DELETE', 'TRANSFER'])
+  action: 'DELETE' | 'TRANSFER';
+
+  @IsOptional()
+  @IsUUID()
+  transfer_to_user_id?: string;
+
+  @IsBoolean()
+  leave_organization: boolean;
 }

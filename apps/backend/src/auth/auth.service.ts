@@ -35,6 +35,8 @@ import {
 import {
   VerificationStatus,
   PasswordResetStatus,
+  OrganizationJoinRequestStatus,
+  NotificationType,
   AuditAction,
 } from '@prisma/client';
 
@@ -75,15 +77,41 @@ export class AuthService {
 
       const hashedPassword = await argon2.hash(registerDto.password);
 
-      const user = await this.prisma.user.create({
-        data: {
-          email: sanitizedEmail,
-          first_name: sanitizedFirstName,
-          last_name: sanitizedLastName,
-          password_hash: hashedPassword,
-          is_active: false,
-          is_email_verified: false,
-        },
+      const user = await this.prisma.$transaction(async (transaction) => {
+        const createdUser = await transaction.user.create({
+          data: {
+            email: sanitizedEmail,
+            first_name: sanitizedFirstName,
+            last_name: sanitizedLastName,
+            password_hash: hashedPassword,
+            is_active: false,
+            is_email_verified: false,
+          },
+        });
+
+        const pendingJoinRequests = await transaction.organizationJoinRequest.findMany({
+          where: {
+            invited_email: sanitizedEmail,
+            status: OrganizationJoinRequestStatus.PENDING,
+            requested_user_id: null,
+          },
+        });
+        for (const request of pendingJoinRequests) {
+          await transaction.organizationJoinRequest.update({
+            where: { id: request.id },
+            data: { requested_user_id: createdUser.id },
+          });
+          await transaction.notification.create({
+            data: {
+              user_id: createdUser.id,
+              organization_id: request.organization_id,
+              join_request_id: request.id,
+              type: NotificationType.ORGANIZATION_JOIN_REQUEST,
+            },
+          });
+        }
+
+        return createdUser;
       });
 
       const verificationToken = this.generateVerificationToken();

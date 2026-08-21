@@ -54,6 +54,9 @@ export default function OrganizationsPage() {
 
   useEffect(() => {
     loadOrganizations();
+    if (new URLSearchParams(window.location.search).get('create') === 'true') {
+      setShowCreateDialog(true);
+    }
   }, [loadOrganizations]);
 
   const handleCreateOrg = async (data: CreateOrgForm) => {
@@ -63,7 +66,7 @@ export default function OrganizationsPage() {
       setShowCreateDialog(false);
       form.reset();
       selectOrg(org.id);
-      router.push('/dashboard');
+      router.push(`/dashboard/organizations/${org.id}`);
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to create organization'));
     }
@@ -71,7 +74,7 @@ export default function OrganizationsPage() {
 
   const handleSelectOrg = async (orgId: string) => {
     await selectOrg(orgId);
-    router.push('/dashboard');
+    router.push(`/dashboard/organizations/${orgId}`);
   };
 
   return (
