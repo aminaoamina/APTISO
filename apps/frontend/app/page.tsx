@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogOut, Loader2 } from 'lucide-react';
@@ -15,6 +15,7 @@ import { useAuthStore } from '@/store/auth-store';
 export default function HomePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, loadUser, logout } = useAuthStore();
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   useEffect(() => {
     loadUser()
@@ -23,6 +24,9 @@ export default function HomePage() {
       })
       .catch(() => {
         // No live session - stay on the landing view.
+      })
+      .finally(() => {
+        setInitialCheckDone(true);
       });
   }, [loadUser, router]);
 
@@ -30,6 +34,20 @@ export default function HomePage() {
     await logout();
     window.location.href = '/login';
   };
+
+  if (!initialCheckDone || isAuthenticated) {
+    return (
+      <div
+        className="flex h-screen items-center justify-center"
+        style={{ background: 'var(--background)' }}
+      >
+        <Loader2
+          className="h-8 w-8 animate-spin"
+          style={{ color: 'var(--brand-orange)' }}
+        />
+      </div>
+    );
+  }
 
   return (
     <AnimatedBackground>

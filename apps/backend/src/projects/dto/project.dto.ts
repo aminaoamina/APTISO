@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsEnum,
   IsDateString,
+  IsUUID,
   MinLength,
   MaxLength,
 } from 'class-validator';
@@ -38,6 +39,11 @@ export class CreateProjectDto {
   @IsOptional()
   @IsDateString()
   target_date?: string;
+
+  @ApiProperty({ description: 'Compliance framework to base the project on' })
+  @IsUUID()
+  @IsNotEmpty()
+  framework_id: string;
 }
 
 export class UpdateProjectDto {

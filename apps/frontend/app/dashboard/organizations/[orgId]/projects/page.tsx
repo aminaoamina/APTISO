@@ -3,25 +3,36 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
-  FolderKanban,
   Plus,
-  ArrowRight,
   Users,
-  X,
+  FolderKanban,
+  ArrowRight,
   Loader2,
+  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
 import { useOrgStore } from '@/store/org-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
+import { frameworksApi } from '@/lib/api';
+import type { ComplianceFramework, ComplianceProject } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -32,14 +43,25 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/utils';
-import type { ComplianceProject } from '@/lib/api';
 
-const createProjectSchema = z.object({
-  name: z.string().min(1, 'Project name is required'),
-  description: z.string().optional(),
-  start_date: z.string().optional(),
-  target_date: z.string().optional(),
-});
+const createProjectSchema = z
+  .object({
+    name: z.string().min(1, 'Project name is required'),
+    description: z.string().optional(),
+    start_date: z.string().optional(),
+    target_date: z.string().optional(),
+    framework_id: z.string().min(1, 'Please select a compliance framework'),
+  })
+  .refine(
+    (data) => {
+      if (!data.start_date || !data.target_date) return true;
+      return new Date(data.target_date) >= new Date(data.start_date);
+    },
+    {
+      message: 'Target date must be on or after the start date.',
+      path: ['target_date'],
+    },
+  );
 
 type CreateProjectForm = z.infer<typeof createProjectSchema>;
 
@@ -72,12 +94,13 @@ export default function ProjectsPage() {
   const user = useAuthStore((state) => state.user);
   const { projects, isLoading, loadProjects, createProject } = useProjectStore();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [frameworks, setFrameworks] = useState<ComplianceFramework[]>([]);
   const currentRole = currentOrg?.members?.find((member) => member.user_id === user?.id)?.role;
   const canCreateProject = currentRole === 'ORG_OWNER' || currentRole === 'ORG_ADMIN';
 
   const form = useForm<CreateProjectForm>({
     resolver: zodResolver(createProjectSchema),
-    defaultValues: { name: '', description: '', start_date: '', target_date: '' },
+    defaultValues: { name: '', description: '', start_date: '', target_date: '', framework_id: '' },
   });
 
   useEffect(() => {
@@ -87,6 +110,13 @@ export default function ProjectsPage() {
     }
   }, [orgId, selectOrg, loadProjects]);
 
+  useEffect(() => {
+    frameworksApi
+      .list()
+      .then(setFrameworks)
+      .catch(() => toast.error('Failed to load compliance frameworks'));
+  }, []);
+
   const handleCreate = async (data: CreateProjectForm) => {
     try {
       const project = await createProject(orgId, {
@@ -94,6 +124,7 @@ export default function ProjectsPage() {
         description: data.description || undefined,
         start_date: data.start_date || undefined,
         target_date: data.target_date || undefined,
+        framework_id: data.framework_id,
       });
       toast.success('Project created');
       setShowCreateDialog(false);
@@ -195,6 +226,15 @@ export default function ProjectsPage() {
                       <span>{formatDate(project.start_date)}</span>
                     )}
                   </div>
+                  {project.framework && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/60">
+                      <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                      {project.framework.name}
+                      {project.framework.version && (
+                        <span className="text-dim">:{project.framework.version}</span>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -202,18 +242,22 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {showCreateDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setShowCreateDialog(false)} />
-          <div className="relative z-50 w-full max-w-md rounded-lg border bg-background p-6 shadow-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Create Project</h2>
-              <Button variant="ghost" size="icon-sm" onClick={() => setShowCreateDialog(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-4">
+      {/* Create project dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Project</DialogTitle>
+            <DialogDescription>
+              Start a compliance project for {currentOrg?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-5">
+              {/* Project information */}
+              <div className="space-y-4">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Project information
+                </div>
                 <FormField
                   control={form.control}
                   name="name"
@@ -234,12 +278,19 @@ export default function ProjectsPage() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input placeholder="Project description" {...field} />
+                        <Input placeholder="Brief description" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Timeline */}
+              <div className="space-y-4">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Timeline
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -268,22 +319,115 @@ export default function ProjectsPage() {
                     )}
                   />
                 </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting && (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    )}
-                    Create
-                  </Button>
+              </div>
+
+              {/* Compliance */}
+              <div className="space-y-2">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground pb-1">
+                  Compliance
                 </div>
-              </form>
-            </Form>
-          </div>
-        </div>
-      )}
+                <FormItem>
+                  <FormLabel>Compliance framework *</FormLabel>
+                  <div
+                    role="radiogroup"
+                    aria-label="Compliance framework"
+                    className="grid gap-2"
+                  >
+                    {frameworks.map((framework) => {
+                      const available = framework.status === 'AVAILABLE';
+                      const selected =
+                        form.watch('framework_id') === framework.id;
+                      return (
+                        <button
+                          key={framework.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          disabled={!available}
+                          onClick={() =>
+                            form.setValue('framework_id', framework.id, {
+                              shouldValidate: true,
+                            })
+                          }
+                          className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+                            selected
+                              ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                              : 'border-border hover:bg-accent/50'
+                          } ${!available ? 'opacity-55 cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                              selected ? 'bg-primary/15' : 'bg-muted'
+                            }`}
+                          >
+                            <ShieldCheck
+                              className={`h-[18px] w-[18px] ${
+                                selected ? 'text-primary' : 'text-muted-foreground'
+                              }`}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-sm font-semibold truncate">
+                                {framework.name}
+                                {framework.version && (
+                                  <span className="text-dim font-normal">
+                                    {' '}
+                                    :{framework.version}
+                                  </span>
+                                )}
+                              </span>
+                              {available ? (
+                                selected ? (
+                                  <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                                ) : (
+                                  <Badge variant="outline" className="shrink-0">
+                                    Available
+                                  </Badge>
+                                )
+                              ) : (
+                                <Badge variant="outline" className="shrink-0 opacity-70">
+                                  Coming soon
+                                </Badge>
+                              )}
+                            </div>
+                            {framework.description && (
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {framework.description}
+                              </p>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {form.formState.errors.framework_id && (
+                    <p className="text-sm font-medium text-destructive">
+                      {form.formState.errors.framework_id.message}
+                    </p>
+                  )}
+                </FormItem>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
+                  Create Project
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

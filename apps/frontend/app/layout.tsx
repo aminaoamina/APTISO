@@ -24,7 +24,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "APTISO - ISO 27001 Compliance Platform",
+  title: "APTISO",
   description:
     "AI-powered ISO 27001 compliance management. Plan, assess, and certify your information security management system.",
   keywords: [

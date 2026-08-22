@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +11,7 @@ import {
   X,
   Loader2,
   Check,
+  Building2,
 } from 'lucide-react';
 import { useProjectStore } from '@/store/project-store';
 import { useAuthStore } from '@/store/auth-store';
@@ -19,6 +20,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
@@ -62,11 +71,14 @@ const privilegeLabels: Record<string, string> = {
 
 export default function ProjectMembersPage() {
   const params = useParams();
+  const router = useRouter();
+  const orgId = params.orgId as string;
   const projectId = params.projectId as string;
   const { currentProject, members, isLoading, selectProject, addMember, removeMember, assignIsoRoles } =
     useProjectStore();
   const user = useAuthStore((s) => s.user);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [suggestAddToOrgEmail, setSuggestAddToOrgEmail] = useState<string | null>(null);
   const [isoRolesMemberId, setIsoRolesMemberId] = useState<string | null>(null);
   const [selectedIsoRoles, setSelectedIsoRoles] = useState<string[]>([]);
   const [isSavingRoles, setIsSavingRoles] = useState(false);
@@ -92,7 +104,18 @@ export default function ProjectMembersPage() {
       setShowAddDialog(false);
       form.reset();
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to add member'));
+      const message = getErrorMessage(err, 'Failed to add member');
+      if (
+        message.includes('must be a member of the organization') ||
+        message.includes('User not found')
+      ) {
+        // The email is not part of the organization (or not registered) —
+        // suggest adding them at organization level first.
+        setShowAddDialog(false);
+        setSuggestAddToOrgEmail(data.email);
+        return;
+      }
+      toast.error(message);
     }
   };
 
@@ -379,6 +402,39 @@ export default function ProjectMembersPage() {
           </div>
         </div>
       )}
+
+      {/* Suggest adding the person to the organization first */}
+      <Dialog
+        open={Boolean(suggestAddToOrgEmail)}
+        onOpenChange={(open) => !open && setSuggestAddToOrgEmail(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Not in your organization yet</DialogTitle>
+            <DialogDescription>
+              <span className="font-semibold text-foreground">{suggestAddToOrgEmail}</span> is not
+              a member of this organization, so they cannot be added to the project directly.
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Add them to the organization members first — then you can invite them to any project.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSuggestAddToOrgEmail(null)}>
+              Not now
+            </Button>
+            <Button
+              onClick={() => {
+                setSuggestAddToOrgEmail(null);
+                router.push(`/dashboard/organizations/${orgId}/members`);
+              }}
+            >
+              <Building2 className="h-4 w-4 mr-2" />
+              Go to organization members
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

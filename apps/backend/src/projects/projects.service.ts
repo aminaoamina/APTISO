@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,7 +16,17 @@ import {
   ProjectRole,
   OrganizationRole,
   AuditAction,
+  FrameworkStatus,
 } from '@prisma/client';
+
+const FRAMEWORK_SELECT = {
+  id: true,
+  code: true,
+  name: true,
+  description: true,
+  version: true,
+  status: true,
+} as const;
 
 const DEFAULT_PHASES = [
   { name: 'Gap Assessment', description: 'Identify gaps between current state and ISO 27001 requirements', order: 1 },
@@ -51,6 +62,16 @@ export class ProjectsService {
       throw new ForbiddenException('Only owners and admins can create projects');
     }
 
+    this.validateDateRange(dto.start_date, dto.target_date);
+
+    const framework = await this.prisma.complianceFramework.findUnique({
+      where: { id: dto.framework_id },
+    });
+
+    if (!framework || framework.status !== FrameworkStatus.AVAILABLE) {
+      throw new BadRequestException('Selected compliance framework is not available');
+    }
+
     const project = await this.prisma.complianceProject.create({
       data: {
         organization_id: orgId,
@@ -59,6 +80,7 @@ export class ProjectsService {
         status: dto.status,
         start_date: dto.start_date ? new Date(dto.start_date) : undefined,
         target_date: dto.target_date ? new Date(dto.target_date) : undefined,
+        compliance_framework_id: framework.id,
         created_by: userId,
         members: {
           create: {
@@ -73,7 +95,15 @@ export class ProjectsService {
         },
       },
       include: {
-        members: true,
+        compliance_framework: { select: FRAMEWORK_SELECT },
+        members: {
+          include: {
+            user: {
+              select: { id: true, email: true, first_name: true, last_name: true },
+            },
+            iso_roles: true,
+          },
+        },
         phases: { orderBy: { order: 'asc' } },
       },
     });
@@ -89,6 +119,20 @@ export class ProjectsService {
     });
 
     return project;
+  }
+
+  /**
+   * Ensures target date is not before start date. Date-only ISO strings are
+   * parsed as UTC midnight on both sides, so comparison stays timezone-safe.
+   */
+  private validateDateRange(
+    startDate?: string | null,
+    targetDate?: string | null,
+  ): void {
+    if (!startDate || !targetDate) return;
+    if (new Date(targetDate) < new Date(startDate)) {
+      throw new BadRequestException('Target date must be on or after the start date.');
+    }
   }
 
   async findAllForOrg(orgId: string, userId: string) {
@@ -108,6 +152,7 @@ export class ProjectsService {
     return this.prisma.complianceProject.findMany({
       where: { organization_id: orgId },
       include: {
+        compliance_framework: { select: FRAMEWORK_SELECT },
         _count: {
           select: { members: true, phases: true },
         },
@@ -123,6 +168,7 @@ export class ProjectsService {
         organization: {
           select: { id: true, name: true },
         },
+        compliance_framework: { select: FRAMEWORK_SELECT },
         members: {
           include: {
             user: {
@@ -180,6 +226,12 @@ export class ProjectsService {
       throw new NotFoundException('Project not found');
     }
 
+    const effectiveStartDate =
+      dto.start_date !== undefined ? dto.start_date : project.start_date?.toISOString();
+    const effectiveTargetDate =
+      dto.target_date !== undefined ? dto.target_date : project.target_date?.toISOString();
+    this.validateDateRange(effectiveStartDate, effectiveTargetDate);
+
     const updated = await this.prisma.complianceProject.update({
       where: { id: projectId },
       data: {
@@ -188,6 +240,9 @@ export class ProjectsService {
         ...(dto.status !== undefined && { status: dto.status }),
         ...(dto.start_date !== undefined && { start_date: new Date(dto.start_date) }),
         ...(dto.target_date !== undefined && { target_date: new Date(dto.target_date) }),
+      },
+      include: {
+        compliance_framework: { select: FRAMEWORK_SELECT },
       },
     });
 

@@ -15,8 +15,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,css,md}\"",
     "db:generate": "npm run db:generate -w @aptiso/backend",
     "db:migrate": "npm run db:migrate -w @aptiso/backend",
-    "db:studio": "npm run db:studio -w @aptiso/backend",
-    "db:seed": "npm run db:seed -w @aptiso/backend"
+    "db:studio": "npm run db:studio -w @aptiso/backend"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

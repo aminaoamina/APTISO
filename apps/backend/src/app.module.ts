@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { ProjectsModule } from './projects/projects.module';
+import { FrameworksModule } from './frameworks/frameworks.module';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { CsrfController } from './common/controllers/csrf.controller';
 import { AuditLogService } from './common/services/audit-log.service';
@@ -29,6 +30,7 @@ import { AuditLogService } from './common/services/audit-log.service';
     AuthModule,
     OrganizationsModule,
     ProjectsModule,
+    FrameworksModule,
   ],
   controllers: [
     AppController,

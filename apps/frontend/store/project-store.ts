@@ -15,11 +15,14 @@ interface ProjectState {
     description?: string;
     start_date?: string;
     target_date?: string;
+    framework_id: string;
   }) => Promise<ComplianceProject>;
   updateProject: (projectId: string, data: {
     name?: string;
     description?: string;
     status?: string;
+    start_date?: string;
+    target_date?: string;
   }) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
   updatePhase: (phaseId: string, status: string) => Promise<void>;

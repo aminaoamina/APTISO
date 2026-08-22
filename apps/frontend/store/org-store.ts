@@ -23,6 +23,7 @@ interface OrgState {
     leave_organization: boolean;
   }) => Promise<void>;
   leaveOrg: () => Promise<void>;
+  leaveOrgById: (orgId: string) => Promise<void>;
   loadMembers: () => Promise<void>;
   addMember: (email: string, role: string) => Promise<{ requested_user_id: string | null }>;
   removeMember: (memberId: string) => Promise<void>;
@@ -101,6 +102,14 @@ export const useOrgStore = create<OrgState>()(
           organizations: state.organizations.filter((organization) => organization.id !== org.id),
           currentOrg: null,
           members: [],
+        }));
+      },
+
+      leaveOrgById: async (orgId) => {
+        await organizationsApi.leave(orgId);
+        set((state) => ({
+          organizations: state.organizations.filter((organization) => organization.id !== orgId),
+          currentOrg: state.currentOrg?.id === orgId ? null : state.currentOrg,
         }));
       },
 

@@ -121,54 +121,54 @@ enum AuditAction {
 // ============================================================
 
 model User {
-  id               String   @id @default(uuid()) @db.Uuid
-  email            String   @unique @db.VarChar(150)
-  first_name       String   @db.VarChar(100)
-  last_name        String   @db.VarChar(100)
-  password_hash    String
-  avatar_url       String?  @db.VarChar(500)
-  bio              String?  @db.Text
-  job_title        String?  @db.VarChar(150)
-  timezone         String?  @db.VarChar(50) @default("UTC")
-  is_active        Boolean  @default(false)
-  is_email_verified Boolean @default(false)
-  last_login       DateTime? @db.Timestamp(6)
-  created_at       DateTime @default(now()) @db.Timestamp(6)
-  updated_at       DateTime @updatedAt @db.Timestamp(6)
+  id                String    @id @default(uuid()) @db.Uuid
+  email             String    @unique @db.VarChar(150)
+  first_name        String    @db.VarChar(100)
+  last_name         String    @db.VarChar(100)
+  password_hash     String
+  avatar_url        String?   @db.VarChar(500)
+  bio               String?   @db.Text
+  job_title         String?   @db.VarChar(150)
+  timezone          String?   @default("UTC") @db.VarChar(50)
+  is_active         Boolean   @default(false)
+  is_email_verified Boolean   @default(false)
+  last_login        DateTime? @db.Timestamp(6)
+  created_at        DateTime  @default(now()) @db.Timestamp(6)
+  updated_at        DateTime  @updatedAt @db.Timestamp(6)
 
   // Relations
-  organization_memberships OrganizationMember[]
-  project_memberships      ProjectMember[]
-  organizations_created    Organization[]    @relation("OrganizationsCreated")
-  projects_created         ComplianceProject[] @relation("ProjectsCreated")
-  invitations_sent         Invitation[]      @relation("InvitationsSent")
-  invitations_accepted     Invitation[]      @relation("InvitationsAccepted")
-  member_add_requests_sent     MemberAddRequest[] @relation("MemberAddRequestsSent")
-  member_add_requests_reviewed MemberAddRequest[] @relation("MemberAddRequestsReviewed")
-  sessions                 Session[]
-  email_verifications      EmailVerification[]
-  password_resets          PasswordReset[]
-  audit_logs               AuditLog[]
-  organization_join_requests OrganizationJoinRequest[] @relation("JoinRequestsForUser")
+  organization_memberships           OrganizationMember[]
+  project_memberships                ProjectMember[]
+  organizations_created              Organization[]            @relation("OrganizationsCreated")
+  projects_created                   ComplianceProject[]       @relation("ProjectsCreated")
+  invitations_sent                   Invitation[]              @relation("InvitationsSent")
+  invitations_accepted               Invitation[]              @relation("InvitationsAccepted")
+  member_add_requests_sent           MemberAddRequest[]        @relation("MemberAddRequestsSent")
+  member_add_requests_reviewed       MemberAddRequest[]        @relation("MemberAddRequestsReviewed")
+  sessions                           Session[]
+  email_verifications                EmailVerification[]
+  password_resets                    PasswordReset[]
+  audit_logs                         AuditLog[]
+  organization_join_requests         OrganizationJoinRequest[] @relation("JoinRequestsForUser")
   organization_join_requests_created OrganizationJoinRequest[] @relation("JoinRequestsCreated")
-  notifications            Notification[]
+  notifications                      Notification[]
 
   @@index([email])
   @@map("users")
 }
 
 model Session {
-  id                String   @id @default(uuid()) @db.Uuid
-  user_id           String   @db.Uuid
-  refresh_token_hash String  @unique
-  device_name       String?  @db.VarChar(100)
-  device_type       String?  @db.VarChar(50)
-  ip_address        String?  @db.VarChar(45)
-  user_agent        String?
-  is_active         Boolean  @default(true)
-  last_activity     DateTime @default(now()) @db.Timestamp(6)
-  expires_at        DateTime @db.Timestamp(6)
-  created_at        DateTime @default(now()) @db.Timestamp(6)
+  id                 String   @id @default(uuid()) @db.Uuid
+  user_id            String   @db.Uuid
+  refresh_token_hash String   @unique
+  device_name        String?  @db.VarChar(100)
+  device_type        String?  @db.VarChar(50)
+  ip_address         String?  @db.VarChar(45)
+  user_agent         String?
+  is_active          Boolean  @default(true)
+  last_activity      DateTime @default(now()) @db.Timestamp(6)
+  expires_at         DateTime @db.Timestamp(6)
+  created_at         DateTime @default(now()) @db.Timestamp(6)
 
   user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
@@ -223,13 +223,13 @@ model Organization {
   created_at  DateTime @default(now()) @db.Timestamp(6)
   updated_at  DateTime @updatedAt @db.Timestamp(6)
 
-  creator     User               @relation("OrganizationsCreated", fields: [created_by], references: [id])
-  members     OrganizationMember[]
-  projects    ComplianceProject[]
-  invitations Invitation[]
-  member_add_requests MemberAddRequest[]
+  creator                    User                      @relation("OrganizationsCreated", fields: [created_by], references: [id])
+  members                    OrganizationMember[]
+  projects                   ComplianceProject[]
+  invitations                Invitation[]
+  member_add_requests        MemberAddRequest[]
   organization_join_requests OrganizationJoinRequest[]
-  notifications Notification[]
+  notifications              Notification[]
 
   @@index([name])
   @@map("organizations")
@@ -255,24 +255,46 @@ model OrganizationMember {
 // COMPLIANCE PROJECTS (ISO 27001)
 // ============================================================
 
-model ComplianceProject {
-  id              String        @id @default(uuid()) @db.Uuid
-  organization_id String        @db.Uuid
-  name            String        @db.VarChar(150)
-  description     String?       @db.Text
-  status          ProjectStatus @default(PLANNING)
-  start_date      DateTime?     @db.Timestamp(6)
-  target_date     DateTime?     @db.Timestamp(6)
-  created_by      String        @db.Uuid
-  created_at      DateTime      @default(now()) @db.Timestamp(6)
-  updated_at      DateTime      @updatedAt @db.Timestamp(6)
+enum FrameworkStatus {
+  AVAILABLE
+  COMING_SOON
+}
 
-  organization Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  creator      User               @relation("ProjectsCreated", fields: [created_by], references: [id])
-  members      ProjectMember[]
-  phases       ProjectPhase[]
-  invitations  Invitation[]
-  member_add_requests MemberAddRequest[]
+model ComplianceFramework {
+  id          String          @id @default(uuid()) @db.Uuid
+  code        String          @unique @db.VarChar(50)
+  name        String          @db.VarChar(150)
+  description String?         @db.Text
+  version     String?         @db.VarChar(50)
+  status      FrameworkStatus @default(COMING_SOON)
+  created_at  DateTime        @default(now()) @db.Timestamp(6)
+  updated_at  DateTime        @updatedAt @db.Timestamp(6)
+
+  projects ComplianceProject[]
+
+  @@map("compliance_frameworks")
+}
+
+model ComplianceProject {
+  id                      String        @id @default(uuid()) @db.Uuid
+  organization_id         String        @db.Uuid
+  name                    String        @db.VarChar(150)
+  description             String?       @db.Text
+  status                  ProjectStatus @default(PLANNING)
+  start_date              DateTime?     @db.Timestamp(6)
+  target_date             DateTime?     @db.Timestamp(6)
+  compliance_framework_id String        @db.Uuid
+  created_by              String        @db.Uuid
+  created_at              DateTime      @default(now()) @db.Timestamp(6)
+  updated_at              DateTime      @updatedAt @db.Timestamp(6)
+
+  organization         Organization        @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  creator              User                @relation("ProjectsCreated", fields: [created_by], references: [id])
+  compliance_framework ComplianceFramework @relation(fields: [compliance_framework_id], references: [id])
+  members              ProjectMember[]
+  phases               ProjectPhase[]
+  invitations          Invitation[]
+  member_add_requests  MemberAddRequest[]
 
   @@index([organization_id])
   @@index([status])
@@ -280,16 +302,16 @@ model ComplianceProject {
 }
 
 model ProjectMember {
-  id            String      @id @default(uuid()) @db.Uuid
-  project_id    String      @db.Uuid
-  user_id       String      @db.Uuid
-  privilege     ProjectRole @default(PROJECT_MEMBER) @map("role")
-  custom_role   String?     @db.VarChar(150)
-  joined_at     DateTime    @default(now()) @db.Timestamp(6)
-  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  id          String      @id @default(uuid()) @db.Uuid
+  project_id  String      @db.Uuid
+  user_id     String      @db.Uuid
+  privilege   ProjectRole @default(PROJECT_MEMBER) @map("role")
+  custom_role String?     @db.VarChar(150)
+  joined_at   DateTime    @default(now()) @db.Timestamp(6)
+  created_at  DateTime    @default(now()) @db.Timestamp(6)
 
-  project  ComplianceProject     @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  user     User                  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  project   ComplianceProject      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user      User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
   iso_roles ProjectMemberIsoRole[]
 
   @@unique([project_id, user_id])
@@ -323,10 +345,10 @@ model MemberAddRequest {
   created_at      DateTime      @default(now()) @db.Timestamp(6)
   updated_at      DateTime      @updatedAt @db.Timestamp(6)
 
-  organization Organization       @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  project      ComplianceProject  @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  requester    User               @relation("MemberAddRequestsSent", fields: [requested_by], references: [id], onDelete: Cascade)
-  reviewer     User?              @relation("MemberAddRequestsReviewed", fields: [reviewed_by], references: [id], onDelete: SetNull)
+  organization Organization      @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  project      ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  requester    User              @relation("MemberAddRequestsSent", fields: [requested_by], references: [id], onDelete: Cascade)
+  reviewer     User?             @relation("MemberAddRequestsReviewed", fields: [reviewed_by], references: [id], onDelete: SetNull)
 
   @@index([organization_id])
   @@index([project_id])
@@ -335,20 +357,20 @@ model MemberAddRequest {
 }
 
 model OrganizationJoinRequest {
-  id              String @id @default(uuid()) @db.Uuid
-  organization_id String @db.Uuid
-  requested_by    String @db.Uuid
-  invited_email   String @db.VarChar(150)
-  requested_user_id String? @db.Uuid
-  role            OrganizationRole @default(ORG_MEMBER)
-  status          OrganizationJoinRequestStatus @default(PENDING)
-  created_at      DateTime @default(now()) @db.Timestamp(6)
-  updated_at      DateTime @updatedAt @db.Timestamp(6)
+  id                String                        @id @default(uuid()) @db.Uuid
+  organization_id   String                        @db.Uuid
+  requested_by      String                        @db.Uuid
+  invited_email     String                        @db.VarChar(150)
+  requested_user_id String?                       @db.Uuid
+  role              OrganizationRole              @default(ORG_MEMBER)
+  status            OrganizationJoinRequestStatus @default(PENDING)
+  created_at        DateTime                      @default(now()) @db.Timestamp(6)
+  updated_at        DateTime                      @updatedAt @db.Timestamp(6)
 
-  organization Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  requester User @relation("JoinRequestsCreated", fields: [requested_by], references: [id], onDelete: Cascade)
-  requested_user User? @relation("JoinRequestsForUser", fields: [requested_user_id], references: [id], onDelete: SetNull)
-  notifications Notification[]
+  organization   Organization   @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  requester      User           @relation("JoinRequestsCreated", fields: [requested_by], references: [id], onDelete: Cascade)
+  requested_user User?          @relation("JoinRequestsForUser", fields: [requested_user_id], references: [id], onDelete: SetNull)
+  notifications  Notification[]
 
   @@index([invited_email, status])
   @@index([requested_user_id, status])
@@ -356,16 +378,16 @@ model OrganizationJoinRequest {
 }
 
 model Notification {
-  id              String @id @default(uuid()) @db.Uuid
-  user_id         String @db.Uuid
-  organization_id String? @db.Uuid
-  join_request_id String? @db.Uuid
+  id              String           @id @default(uuid()) @db.Uuid
+  user_id         String           @db.Uuid
+  organization_id String?          @db.Uuid
+  join_request_id String?          @db.Uuid
   type            NotificationType
-  read_at         DateTime? @db.Timestamp(6)
-  created_at      DateTime @default(now()) @db.Timestamp(6)
+  read_at         DateTime?        @db.Timestamp(6)
+  created_at      DateTime         @default(now()) @db.Timestamp(6)
 
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  organization Organization? @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user         User                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   join_request OrganizationJoinRequest? @relation(fields: [join_request_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, read_at])
@@ -373,16 +395,16 @@ model Notification {
 }
 
 model ProjectPhase {
-  id           String            @id @default(uuid()) @db.Uuid
-  project_id   String            @db.Uuid
-  name         String            @db.VarChar(150)
-  description  String?           @db.Text
+  id           String             @id @default(uuid()) @db.Uuid
+  project_id   String             @db.Uuid
+  name         String             @db.VarChar(150)
+  description  String?            @db.Text
   order        Int
   status       ProjectPhaseStatus @default(NOT_STARTED)
-  started_at   DateTime?         @db.Timestamp(6)
-  completed_at DateTime?         @db.Timestamp(6)
-  created_at   DateTime          @default(now()) @db.Timestamp(6)
-  updated_at   DateTime          @updatedAt @db.Timestamp(6)
+  started_at   DateTime?          @db.Timestamp(6)
+  completed_at DateTime?          @db.Timestamp(6)
+  created_at   DateTime           @default(now()) @db.Timestamp(6)
+  updated_at   DateTime           @updatedAt @db.Timestamp(6)
 
   project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
