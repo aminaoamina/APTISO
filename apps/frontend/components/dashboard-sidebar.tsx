@@ -15,11 +15,11 @@ import {
   Home,
   ListChecks,
   Files,
-  AlertTriangle,
-  ClipboardList,
-  BarChart3,
   ListTodo,
   Settings2,
+  RefreshCcw,
+  Presentation,
+  UserCog,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useAuthStore } from '@/store/auth-store';
@@ -77,10 +77,14 @@ function NavRow({
 export function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const { organizations, currentOrg, loadOrganizations, selectOrg } = useOrgStore();
-  const { currentProject, selectProject } = useProjectStore();
-
+  const {
+    currentProject,
+    selectProject,
+    projects: orgProjects,
+    loadProjects,
+  } = useProjectStore();
   const orgMatch = pathname.match(/^\/dashboard\/organizations\/([^/]+)(?:\/|$)/);
   const projectMatch = pathname.match(
     /^\/dashboard\/organizations\/[^/]+\/projects\/([^/]+)(?:\/|$)/,
@@ -88,6 +92,10 @@ export function DashboardSidebar() {
   const orgId = orgMatch?.[1];
   const projectId = projectMatch?.[1];
   const inProjectContext = Boolean(projectId);
+  const isLead =
+    currentProject?.members?.some(
+      (m) => m.user_id === user?.id && m.privilege === 'PROJECT_LEAD',
+    ) ?? false;
 
   React.useEffect(() => {
     if (organizations.length === 0) {
@@ -100,6 +108,12 @@ export function DashboardSidebar() {
       selectProject(projectId);
     }
   }, [projectId, currentProject?.id, selectProject]);
+
+  React.useEffect(() => {
+    if (inProjectContext && orgId && orgProjects.length === 0) {
+      loadProjects(orgId);
+    }
+  }, [inProjectContext, orgId, orgProjects.length, loadProjects]);
 
   const handleLogout = async () => {
     await logout();
@@ -166,10 +180,37 @@ export function DashboardSidebar() {
             <NavSectionTitle>Project</NavSectionTitle>
             <div className="flex flex-col gap-1 px-3">
               <NavRow item={{ label: 'All projects', href: projectsHref, icon: ArrowLeft }} />
-              <div className="nav-item" aria-current="location">
-                <FolderOpen className="h-[18px] w-[18px] shrink-0 text-[var(--brand-orange)]" />
-                <span className="truncate">{currentProject?.name || 'Loading project…'}</span>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="nav-item w-full text-left" aria-current="location">
+                    <FolderOpen className="h-[18px] w-[18px] shrink-0 text-[var(--brand-orange)]" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {currentProject?.name || 'Loading project…'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-dim" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-60 max-h-72 overflow-y-auto">
+                  {orgProjects.length === 0 && (
+                    <div className="px-2 py-1.5 text-xs text-dim">No other projects</div>
+                  )}
+                  {orgProjects.map((project) => (
+                    <DropdownMenuItem
+                      key={project.id}
+                      onSelect={() =>
+                        orgId &&
+                        router.push(`/dashboard/organizations/${orgId}/projects/${project.id}`)
+                      }
+                    >
+                      <FolderOpen className="h-4 w-4 shrink-0 opacity-70" />
+                      <span className="min-w-0 flex-1 truncate">{project.name}</span>
+                      {currentProject?.id === project.id && (
+                        <Check className="h-4 w-4 shrink-0 text-[var(--brand-orange)]" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <NavSectionTitle>Overview</NavSectionTitle>
@@ -186,19 +227,22 @@ export function DashboardSidebar() {
 
             <NavSectionTitle>Compliance</NavSectionTitle>
             <div className="flex flex-col gap-1 px-3">
-              <NavRow item={{ label: 'Controls', icon: ListChecks, soon: true }} />
-              <NavRow item={{ label: 'Evidence', icon: Files, soon: true }} />
-              <NavRow item={{ label: 'Gaps', icon: AlertTriangle, soon: true }} />
+              <NavRow item={{ label: 'Implementation Steps', icon: ListChecks, soon: true }} />
+              <NavRow item={{ label: 'Audit & Evidence', icon: Files, soon: true }} />
+              <NavRow item={{ label: 'Maintenance', icon: RefreshCcw, soon: true }} />
             </div>
 
-            <NavSectionTitle>Audit</NavSectionTitle>
+            <NavSectionTitle>Collaboration</NavSectionTitle>
             <div className="flex flex-col gap-1 px-3">
-              <NavRow item={{ label: 'Audits', icon: ClipboardList, soon: true }} />
-              <NavRow item={{ label: 'Reports', icon: BarChart3, soon: true }} />
+              <NavRow item={{ label: 'Whiteboard', icon: Presentation, soon: true }} />
             </div>
 
-            <NavSectionTitle>Team</NavSectionTitle>
+            <NavSectionTitle>People & Tasks</NavSectionTitle>
             <div className="flex flex-col gap-1 px-3">
+              <NavRow item={{ label: 'My tasks', icon: ListTodo, soon: true }} />
+              {isLead && (
+                <NavRow item={{ label: 'Team Management', icon: UserCog, soon: true }} />
+              )}
               <NavRow
                 item={{
                   label: 'Project members',

@@ -39,6 +39,15 @@ export interface OrganizationMember {
   user: { id: string; email: string; first_name: string; last_name: string; is_active?: boolean };
 }
 
+export interface ComplianceFramework {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  version: string | null;
+  status: 'AVAILABLE' | 'COMING_SOON';
+}
+
 export interface ComplianceProject {
   id: string;
   organization_id: string;
@@ -47,6 +56,8 @@ export interface ComplianceProject {
   status: 'PLANNING' | 'IN_PROGRESS' | 'CERTIFIED' | 'ON_HOLD';
   start_date: string | null;
   target_date: string | null;
+  compliance_framework_id: string;
+  framework?: ComplianceFramework;
   created_by: string;
   created_at: string;
   organization?: { id: string; name: string };
@@ -168,12 +179,20 @@ export const organizationsApi = {
 // Projects API
 // ============================================================
 
+export const frameworksApi = {
+  list: async (): Promise<ComplianceFramework[]> => {
+    const response = await apiClient.get('/frameworks');
+    return response.data;
+  },
+};
+
 export const projectsApi = {
   create: async (orgId: string, data: {
     name: string;
     description?: string;
     start_date?: string;
     target_date?: string;
+    framework_id: string;
   }): Promise<ComplianceProject> => {
     const response = await apiClient.post(`/organizations/${orgId}/projects`, data);
     return response.data;
