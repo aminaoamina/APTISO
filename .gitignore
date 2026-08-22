@@ -19,9 +19,6 @@ apps/backend/uploads/avatars/*
 
 # Prisma
 apps/backend/prisma/migrations/dev/
-apps/backend/prisma/seed.js
-apps/backend/prisma/seed.js.map
-apps/backend/prisma/seed.d.ts
 
 # Logs
 logs/

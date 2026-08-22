@@ -11,42 +11,83 @@ import {
   FolderOpen,
   Users,
   LogOut,
-  ShieldCheck,
+  ArrowLeft,
+  Home,
+  ListChecks,
+  Files,
+  AlertTriangle,
+  ClipboardList,
+  BarChart3,
+  ListTodo,
+  Settings2,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useAuthStore } from '@/store/auth-store';
 import { useOrgStore } from '@/store/org-store';
+import { useProjectStore } from '@/store/project-store';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
 interface NavItem {
   label: string;
-  href: string;
+  href?: string;
   icon: React.ComponentType<{ className?: string }>;
-  requiresOrg?: boolean;
-  requiresOrgAdmin?: boolean;
+  soon?: boolean;
 }
 
-const navItems: NavItem[] = [
-  { label: 'Personal dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { label: 'Organization dashboard', href: '/dashboard/organizations/{orgId}', icon: Building2, requiresOrg: true },
-  { label: 'Projects', href: '/dashboard/organizations/{orgId}/projects', icon: FolderOpen, requiresOrg: true },
-  { label: 'Members', href: '/dashboard/organizations/{orgId}/members', icon: Users, requiresOrg: true },
-];
+function NavSectionTitle({ children }: { children: React.ReactNode }) {
+  return <div className="nav-section-title">{children}</div>;
+}
+
+function NavRow({
+  item,
+  isActive,
+}: {
+  item: NavItem;
+  isActive?: boolean;
+}) {
+  const Icon = item.icon;
+
+  if (!item.href || item.soon) {
+    return (
+      <div className="nav-item nav-item-disabled" aria-disabled="true">
+        <Icon className="h-[18px] w-[18px] shrink-0" />
+        <span>{item.label}</span>
+        {item.soon && <span className="soon-badge">Soon</span>}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={item.href}
+      className={cn('nav-item', isActive && 'active')}
+    >
+      <Icon className="h-[18px] w-[18px] shrink-0" />
+      <span>{item.label}</span>
+    </Link>
+  );
+}
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout, user } = useAuthStore();
+  const { logout } = useAuthStore();
   const { organizations, currentOrg, loadOrganizations, selectOrg } = useOrgStore();
-  const currentRole = currentOrg?.members?.find((member) => member.user_id === user?.id)?.role;
-  const isOrgAdmin = currentRole === 'ORG_OWNER' || currentRole === 'ORG_ADMIN';
+  const { currentProject, selectProject } = useProjectStore();
+
+  const orgMatch = pathname.match(/^\/dashboard\/organizations\/([^/]+)(?:\/|$)/);
+  const projectMatch = pathname.match(
+    /^\/dashboard\/organizations\/[^/]+\/projects\/([^/]+)(?:\/|$)/,
+  );
+  const orgId = orgMatch?.[1];
+  const projectId = projectMatch?.[1];
+  const inProjectContext = Boolean(projectId);
 
   React.useEffect(() => {
     if (organizations.length === 0) {
@@ -54,17 +95,18 @@ export function DashboardSidebar() {
     }
   }, [organizations.length, loadOrganizations]);
 
+  React.useEffect(() => {
+    if (projectId && currentProject?.id !== projectId) {
+      selectProject(projectId);
+    }
+  }, [projectId, currentProject?.id, selectProject]);
+
   const handleLogout = async () => {
     await logout();
     router.push('/login');
   };
 
-  const resolvedItems = navItems
-    .filter((item) => (!item.requiresOrg || currentOrg) && (!item.requiresOrgAdmin || isOrgAdmin))
-    .map((item) => ({
-      ...item,
-      href: item.href.replace('{orgId}', currentOrg?.id || ''),
-    }));
+  const projectsHref = orgId ? `/dashboard/organizations/${orgId}/projects` : '/dashboard';
 
   return (
     <aside
@@ -80,7 +122,7 @@ export function DashboardSidebar() {
       }}
     >
       {/* Brand + organization switcher */}
-      <div className="px-4 pt-7 pb-6">
+      <div className="px-4 pt-7 pb-4">
         <div className="flex items-center gap-3 px-1 pb-5">
           <Logo variant="icon" className="h-9 w-auto" />
           <div className="font-display text-[15px] font-bold tracking-tight">APTISO</div>
@@ -113,54 +155,104 @@ export function DashboardSidebar() {
                 {currentOrg?.id === organization.id && <Check className="h-4 w-4 text-[var(--brand-orange)]" />}
               </DropdownMenuItem>
             ))}
-            {organizations.length > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuItem onSelect={() => router.push('/dashboard/organizations')}>
-              <Building2 className="h-4 w-4" />
-              Manage organizations
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 flex flex-col gap-1 px-3">
-        {resolvedItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            item.href === '/dashboard'
-              ? pathname === '/dashboard'
-              : pathname.startsWith(item.href);
+      {/* Contextual navigation */}
+      <nav className="flex-1 overflow-y-auto pb-2">
+        {inProjectContext ? (
+          <>
+            <NavSectionTitle>Project</NavSectionTitle>
+            <div className="flex flex-col gap-1 px-3">
+              <NavRow item={{ label: 'All projects', href: projectsHref, icon: ArrowLeft }} />
+              <div className="nav-item" aria-current="location">
+                <FolderOpen className="h-[18px] w-[18px] shrink-0 text-[var(--brand-orange)]" />
+                <span className="truncate">{currentProject?.name || 'Loading project…'}</span>
+              </div>
+            </div>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn('nav-item', isActive && 'active')}
-            >
-              <Icon className="h-[18px] w-[18px] shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+            <NavSectionTitle>Overview</NavSectionTitle>
+            <div className="flex flex-col gap-1 px-3">
+              <NavRow
+                item={{
+                  label: 'Dashboard',
+                  href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}` : undefined,
+                  icon: LayoutDashboard,
+                }}
+                isActive={Boolean(projectId) && pathname === `/dashboard/organizations/${orgId}/projects/${projectId}`}
+              />
+            </div>
+
+            <NavSectionTitle>Compliance</NavSectionTitle>
+            <div className="flex flex-col gap-1 px-3">
+              <NavRow item={{ label: 'Controls', icon: ListChecks, soon: true }} />
+              <NavRow item={{ label: 'Evidence', icon: Files, soon: true }} />
+              <NavRow item={{ label: 'Gaps', icon: AlertTriangle, soon: true }} />
+            </div>
+
+            <NavSectionTitle>Audit</NavSectionTitle>
+            <div className="flex flex-col gap-1 px-3">
+              <NavRow item={{ label: 'Audits', icon: ClipboardList, soon: true }} />
+              <NavRow item={{ label: 'Reports', icon: BarChart3, soon: true }} />
+            </div>
+
+            <NavSectionTitle>Team</NavSectionTitle>
+            <div className="flex flex-col gap-1 px-3">
+              <NavRow
+                item={{
+                  label: 'Project members',
+                  href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}/members` : undefined,
+                  icon: Users,
+                }}
+                isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/members`)}
+              />
+            </div>
+          </>
+        ) : (
+          currentOrg && (
+            <>
+              <NavSectionTitle>Overview</NavSectionTitle>
+              <div className="flex flex-col gap-1 px-3">
+                <NavRow
+                  item={{
+                    label: 'Organization dashboard',
+                    href: `/dashboard/organizations/${currentOrg.id}`,
+                    icon: Building2,
+                  }}
+                  isActive={pathname === `/dashboard/organizations/${currentOrg.id}`}
+                />
+              </div>
+
+              <NavSectionTitle>Workspace</NavSectionTitle>
+              <div className="flex flex-col gap-1 px-3">
+                <NavRow
+                  item={{ label: 'Projects', href: `/dashboard/organizations/${currentOrg.id}/projects`, icon: FolderOpen }}
+                  isActive={pathname.startsWith(`/dashboard/organizations/${currentOrg.id}/projects`)}
+                />
+                <NavRow
+                  item={{ label: 'Members', href: `/dashboard/organizations/${currentOrg.id}/members`, icon: Users }}
+                  isActive={pathname.startsWith(`/dashboard/organizations/${currentOrg.id}/members`)}
+                />
+              </div>
+            </>
+          )
+        )}
+
+        {/* Personal section - always visible */}
+        <NavSectionTitle>Personal</NavSectionTitle>
+        <div className="flex flex-col gap-1 px-3">
+          <NavRow item={{ label: 'My dashboard', href: '/dashboard', icon: Home }} isActive={pathname === '/dashboard'} />
+          <NavRow item={{ label: 'My tasks', icon: ListTodo, soon: true }} />
+          <NavRow
+            item={{ label: 'Manage organizations', href: '/dashboard/organizations', icon: Settings2 }}
+            isActive={pathname === '/dashboard/organizations'}
+          />
+        </div>
       </nav>
 
-      {/* Bottom section: Audit CTA + Logout */}
+      {/* Logout */}
       <div className="flex flex-col gap-3 px-3 pb-5 mt-auto">
-        {/* Audit reminder card */}
-        <div className="glass glass-hover p-4 text-center" style={{ borderRadius: 16 }}>
-          <div className="font-display text-[13.5px] font-semibold mb-1">
-            Audit due in 12 days
-          </div>
-          <div className="text-[11.5px] text-dim mb-3">
-            Finish evidence collection to stay on track
-          </div>
-          <button className="btn-accent w-full justify-center text-[13px]">
-            <ShieldCheck className="h-4 w-4" />
-            Review checklist
-          </button>
-        </div>
-
-        {/* Logout */}
         <button
           onClick={handleLogout}
           className="nav-item w-full text-muted-foreground hover:text-foreground"

@@ -77,6 +77,25 @@ export class OrganizationsService {
         },
       },
       include: {
+        members: {
+          where: { user_id: userId },
+          select: {
+            id: true,
+            organization_id: true,
+            user_id: true,
+            role: true,
+            created_at: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                first_name: true,
+                last_name: true,
+                is_active: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             members: true,

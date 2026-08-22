@@ -77,9 +77,9 @@ function RegisterContent() {
 
   const getPasswordStrengthColor = () => {
     const score = getPasswordStrengthScore();
-    if (score < 40) return 'bg-red-500';
-    if (score < 80) return 'bg-yellow-500';
-    return 'bg-green-500';
+    if (score < 40) return 'bg-destructive';
+    if (score < 80) return 'bg-warning';
+    return 'bg-success';
   };
 
   const getPasswordStrengthText = () => {
@@ -176,69 +176,69 @@ function RegisterContent() {
             <div className="text-center space-y-6">
               <div className="relative">
                 <div className="relative w-80 h-80 mx-auto animate-in zoom-in duration-500 delay-400">
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-100 via-blue-200 to-indigo-200 dark:from-blue-900/30 dark:via-blue-800/30 dark:to-indigo-900/30 flex items-center justify-center shadow-2xl">
+                  <div className="w-full h-full rounded-full bg-gradient-to-br from-primary/15 via-warning/10 to-brand-navy/20 flex items-center justify-center shadow-2xl">
                     <Logo variant="vertical" className="h-44 w-auto" />
                   </div>
-                  <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center shadow-xl animate-in bounce-in duration-500 delay-600">
+                  <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-brand-orange to-warning rounded-full flex items-center justify-center shadow-xl animate-in bounce-in duration-500 delay-600">
                     <Shield className="w-8 h-8 text-white animate-pulse" />
                   </div>
-                  <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-800 rounded-full flex items-center justify-center shadow-xl animate-in bounce-in duration-500 delay-800">
+                  <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-brand-navy to-accent-blue rounded-full flex items-center justify-center shadow-xl animate-in bounce-in duration-500 delay-800">
                     <Lock className="w-8 h-8 text-white animate-pulse" />
                   </div>
-                  <div className="absolute top-1/2 -right-6 w-14 h-14 bg-gradient-to-br from-sky-500 to-blue-700 rounded-full flex items-center justify-center shadow-xl animate-in bounce-in duration-500 delay-1000">
+                  <div className="absolute top-1/2 -right-6 w-14 h-14 bg-gradient-to-br from-success to-success/70 rounded-full flex items-center justify-center shadow-xl animate-in bounce-in duration-500 delay-1000">
                     <CheckCircle className="w-7 h-7 text-white animate-pulse" />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-1000">
-                <h2 className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 bg-clip-text dark:from-blue-400 dark:via-sky-400 dark:to-indigo-300">
+                <h2 className="text-4xl font-bold text-transparent bg-gradient-to-r from-brand-orange via-primary to-brand-navy bg-clip-text">
                   Simplify ISO 27001 Compliance
                 </h2>
-                <p className="text-xl text-gray-600 dark:text-gray-300 max-w-lg mx-auto leading-relaxed">
+                <p className="text-xl text-muted-foreground max-w-lg mx-auto leading-relaxed">
                   Plan, assess, and certify your information security management system with AI-powered guidance.
                 </p>
               </div>
 
               {/* Feature Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-10 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-1200">
-                <div className="group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-700">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                    <Shield className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                <div className="group bg-card p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-border hover:border-primary/40">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 dark:bg-primary/15 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                    <Shield className="w-8 h-8 text-primary" />
                   </div>
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">Gap Analysis</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">Identify control gaps against Annex A with AI-assisted assessment.</p>
+                  <h3 className="font-bold text-foreground mb-2 text-lg">Gap Analysis</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Identify control gaps against Annex A with AI-assisted assessment.</p>
                 </div>
 
-                <div className="group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 dark:border-gray-700 hover:border-sky-200 dark:hover:border-sky-700">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-sky-50 to-sky-100 dark:from-sky-900/30 dark:to-sky-800/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                    <CheckCircle className="w-8 h-8 text-sky-600 dark:text-sky-400" />
+                <div className="group bg-card p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-border hover:border-success/40">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-success/10 dark:bg-success/15 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                    <CheckCircle className="w-8 h-8 text-success" />
                   </div>
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">Risk Management</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">Track risks, treatments, and evidence across your entire ISMS.</p>
+                  <h3 className="font-bold text-foreground mb-2 text-lg">Risk Management</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Track risks, treatments, and evidence across your entire ISMS.</p>
                 </div>
 
-                <div className="group bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-700">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                    <Lock className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+                <div className="group bg-card p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-border hover:border-brand-navy/40 dark:hover:border-secondary-blue/40">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-brand-navy/10 dark:bg-secondary-blue/15 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                    <Lock className="w-8 h-8 text-brand-navy dark:text-secondary-blue" />
                   </div>
-                  <h3 className="font-bold text-gray-900 dark:text-white mb-2 text-lg">Audit Ready</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">Documentation and evidence organized for certification audits.</p>
+                  <h3 className="font-bold text-foreground mb-2 text-lg">Audit Ready</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">Documentation and evidence organized for certification audits.</p>
                 </div>
               </div>
 
               {/* Trust Indicators */}
               <div className="flex items-center justify-center space-x-8 mt-10 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-1400">
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-5 h-5 text-success" />
                   <span className="font-medium">ISO 27001:2022</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-5 h-5 text-success" />
                   <span className="font-medium">AI-Powered</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-5 h-5 text-success" />
                   <span className="font-medium">Audit Evidence</span>
                 </div>
               </div>
@@ -247,17 +247,17 @@ function RegisterContent() {
 
           {/* Right Side - Registration Form */}
           <div className="w-full max-w-lg mx-auto lg:mx-0">
-            <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
+            <Card className="shadow-2xl animate-in fade-in slide-in-from-right-4 duration-700 delay-200">
               <CardHeader className="space-y-1 pb-6">
                 <div className="text-center space-y-4">
-                  <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 via-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-lg">
+                  <div className="w-16 h-16 mx-auto bg-gradient-to-br from-brand-orange to-warning rounded-2xl flex items-center justify-center shadow-lg">
                     <UserPlus className="w-8 h-8 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-3xl font-bold text-gray-900 dark:text-white animate-in fade-in slide-in-from-top-2 duration-500 delay-400">
+                    <CardTitle className="text-3xl font-bold animate-in fade-in slide-in-from-top-2 duration-500 delay-400">
                       Create Account
                     </CardTitle>
-                    <CardDescription className="text-lg text-gray-600 dark:text-gray-300 mt-2 animate-in fade-in slide-in-from-top-2 duration-500 delay-500">
+                    <CardDescription className="text-lg mt-2 animate-in fade-in slide-in-from-top-2 duration-500 delay-500">
                       Start your ISO 27001 compliance journey
                     </CardDescription>
                   </div>
@@ -274,14 +274,14 @@ function RegisterContent() {
 
                   {/* Personal Information Section */}
                   <div className="space-y-4 animate-in fade-in slide-in-from-left-2 duration-500 delay-600">
-                    <div className="flex items-center space-x-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                      <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Personal Information</h3>
+                    <div className="flex items-center space-x-2 pb-2 border-b border-border">
+                      <User className="w-5 h-5 text-primary" />
+                      <h3 className="text-sm font-semibold text-foreground">Personal Information</h3>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="first_name" className="text-sm font-medium text-gray-700 dark:text-gray-300">First Name</Label>
+                        <Label htmlFor="first_name" className="text-sm font-medium">First Name</Label>
                         <Input
                           id="first_name"
                           name="first_name"
@@ -292,12 +292,12 @@ function RegisterContent() {
                           required
                           disabled={isLoading}
                           autoComplete="given-name"
-                          className="h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg focus:border-blue-500"
+                          className="h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="last_name" className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</Label>
+                        <Label htmlFor="last_name" className="text-sm font-medium">Last Name</Label>
                         <Input
                           id="last_name"
                           name="last_name"
@@ -308,15 +308,15 @@ function RegisterContent() {
                           required
                           disabled={isLoading}
                           autoComplete="family-name"
-                          className="h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg focus:border-blue-500"
+                          className="h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</Label>
+                      <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                         <Input
                           id="email"
                           name="email"
@@ -327,7 +327,7 @@ function RegisterContent() {
                           required
                           disabled={isLoading}
                           autoComplete="email"
-                          className="pl-12 h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg focus:border-blue-500"
+                          className="pl-12 h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg"
                         />
                       </div>
                     </div>
@@ -335,16 +335,16 @@ function RegisterContent() {
 
                   {/* Security Section */}
                   <div className="space-y-4 animate-in fade-in slide-in-from-right-2 duration-500 delay-700">
-                    <div className="flex items-center space-x-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                      <Lock className="w-5 h-5 text-green-600 dark:text-green-400" />
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Security</h3>
+                    <div className="flex items-center space-x-2 pb-2 border-b border-border">
+                      <Lock className="w-5 h-5 text-success" />
+                      <h3 className="text-sm font-semibold text-foreground">Security</h3>
                     </div>
 
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</Label>
+                        <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                           <Input
                             id="password"
                             name="password"
@@ -355,7 +355,7 @@ function RegisterContent() {
                             required
                             disabled={isLoading}
                             autoComplete="new-password"
-                            className="pl-12 pr-12 h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg focus:border-blue-500"
+                            className="pl-12 pr-12 h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg"
                           />
                           <button
                             type="button"
@@ -370,11 +370,11 @@ function RegisterContent() {
                         {formData.password && (
                           <div className="mt-4 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-400 delay-1100">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Password strength</span>
+                              <span className="text-sm font-medium">Password strength</span>
                               <span className={`text-sm font-semibold ${
-                                getPasswordStrengthScore() < 40 ? 'text-red-600 dark:text-red-400' :
-                                getPasswordStrengthScore() < 80 ? 'text-yellow-600 dark:text-yellow-400' :
-                                'text-green-600 dark:text-green-400'
+                                getPasswordStrengthScore() < 40 ? 'text-destructive' :
+                                getPasswordStrengthScore() < 80 ? 'text-warning' :
+                                'text-success'
                               }`}>
                                 {getPasswordStrengthText()}
                               </span>
@@ -399,8 +399,8 @@ function RegisterContent() {
                                   key={req.label}
                                   className={`px-2 py-0.5 rounded-full border ${
                                     req.met
-                                      ? 'border-green-500/40 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
-                                      : 'border-gray-200 dark:border-gray-700 text-gray-400'
+                                      ? 'border-success/40 bg-success/10 text-success'
+                                      : 'border-border text-muted-foreground'
                                   }`}
                                 >
                                   {req.met ? '✓' : '○'} {req.label}
@@ -412,9 +412,9 @@ function RegisterContent() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">Confirm Password</Label>
+                        <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</Label>
                         <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                           <Input
                             id="confirmPassword"
                             name="confirmPassword"
@@ -425,7 +425,7 @@ function RegisterContent() {
                             required
                             disabled={isLoading}
                             autoComplete="new-password"
-                            className="pl-12 pr-12 h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg focus:border-blue-500"
+                            className="pl-12 pr-12 h-12 transition-all duration-200 focus:scale-[1.02] focus:shadow-lg"
                           />
                           <button
                             type="button"
@@ -437,7 +437,7 @@ function RegisterContent() {
                           </button>
                         </div>
                         {formData.confirmPassword && formData.password !== formData.confirmPassword && (
-                          <p className="text-xs text-red-600 dark:text-red-400 animate-in fade-in slide-in-from-top-1 duration-200 flex items-center gap-1">
+                          <p className="text-xs text-destructive animate-in fade-in slide-in-from-top-1 duration-200 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             Passwords do not match
                           </p>
@@ -450,7 +450,7 @@ function RegisterContent() {
                 <CardFooter className="flex flex-col space-y-6 px-8 pt-6 pb-8 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-900">
                   <Button
                     type="submit"
-                    className="w-full h-14 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-800 hover:from-blue-500 hover:via-blue-600 hover:to-indigo-700 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl text-white font-semibold text-lg"
+                    className="w-full h-14 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg hover:shadow-xl font-semibold text-lg"
                     disabled={isLoading || !isPasswordValid() || formData.password !== formData.confirmPassword}
                   >
                     {isLoading ? (
@@ -468,7 +468,7 @@ function RegisterContent() {
 
                   <div className="text-center text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-2 duration-500 delay-1000">
                     Already have an account?{' '}
-                    <Link href="/login" className="text-blue-600 dark:text-blue-400 font-semibold hover:underline transition-colors duration-200 hover:scale-105">
+                    <Link href="/login" className="text-primary font-semibold hover:underline transition-colors duration-200">
                       Sign in
                     </Link>
                   </div>

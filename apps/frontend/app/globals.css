@@ -171,8 +171,8 @@
   /* Muted */
   --muted: rgba(255, 255, 253, 0.45);
 
-  /* Accent — deep navy */
-  --accent: #1C2624;
+  /* Accent — subtle warm tint for hover/highlight surfaces */
+  --accent: #EAE6DC;
 
   /* Destructive */
   --destructive: #BE123C;
@@ -589,6 +589,42 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
+}
+
+/* Section titles inside sidebar navigation */
+.nav-section-title {
+  padding: 20px 17px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Non-clickable placeholder items (features not yet built) */
+.nav-item-disabled {
+  cursor: default;
+}
+
+.nav-item-disabled:hover {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+
+.soon-badge {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 145, 0, 0.14);
+  color: var(--brand-orange);
+}
+
+.light .soon-badge {
+  background: rgba(196, 111, 0, 0.12);
 }
 
 /* ==========================================================================
