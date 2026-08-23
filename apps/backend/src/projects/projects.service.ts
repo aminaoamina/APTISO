@@ -78,8 +78,8 @@ export class ProjectsService {
         name: dto.name,
         description: dto.description,
         status: dto.status,
-        start_date: dto.start_date ? new Date(dto.start_date) : undefined,
-        target_date: dto.target_date ? new Date(dto.target_date) : undefined,
+        start_date: new Date(dto.start_date),
+        target_date: new Date(dto.target_date),
         compliance_framework_id: framework.id,
         created_by: userId,
         members: {

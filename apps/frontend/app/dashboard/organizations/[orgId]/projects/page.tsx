@@ -48,8 +48,8 @@ const createProjectSchema = z
   .object({
     name: z.string().min(1, 'Project name is required'),
     description: z.string().optional(),
-    start_date: z.string().optional(),
-    target_date: z.string().optional(),
+    start_date: z.string().min(1, 'Start date is required'),
+    target_date: z.string().min(1, 'Target date is required'),
     framework_id: z.string().min(1, 'Please select a compliance framework'),
   })
   .refine(
@@ -226,12 +226,12 @@ export default function ProjectsPage() {
                       <span>{formatDate(project.start_date)}</span>
                     )}
                   </div>
-                  {project.framework && (
+                  {project.compliance_framework && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/60">
                       <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-                      {project.framework.name}
-                      {project.framework.version && (
-                        <span className="text-dim">:{project.framework.version}</span>
+                      {project.compliance_framework.name}
+                      {project.compliance_framework.version && (
+                        <span className="text-dim">:{project.compliance_framework.version}</span>
                       )}
                     </div>
                   )}

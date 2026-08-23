@@ -30,15 +30,15 @@ export class CreateProjectDto {
   @IsEnum(ProjectStatus)
   status?: ProjectStatus;
 
-  @ApiPropertyOptional({ example: '2026-01-15' })
-  @IsOptional()
+  @ApiProperty({ example: '2026-01-15' })
   @IsDateString()
-  start_date?: string;
+  @IsNotEmpty()
+  start_date: string;
 
-  @ApiPropertyOptional({ example: '2026-07-15' })
-  @IsOptional()
+  @ApiProperty({ example: '2026-07-15' })
   @IsDateString()
-  target_date?: string;
+  @IsNotEmpty()
+  target_date: string;
 
   @ApiProperty({ description: 'Compliance framework to base the project on' })
   @IsUUID()

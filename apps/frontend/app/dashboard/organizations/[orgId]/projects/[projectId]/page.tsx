@@ -79,8 +79,8 @@ const editProjectSchema = z
   .object({
     name: z.string().min(1, 'Project name is required'),
     description: z.string().optional(),
-    start_date: z.string().optional(),
-    target_date: z.string().optional(),
+    start_date: z.string().min(1, 'Start date is required'),
+    target_date: z.string().min(1, 'Target date is required'),
   })
   .refine(
     (data) => {
@@ -182,7 +182,7 @@ export default function ProjectDetailPage() {
       : null;
 
   const leadAuditor = members.find((m) => m.privilege === 'PROJECT_LEAD')?.user;
-  const framework = currentProject.framework;
+  const framework = currentProject.compliance_framework;
 
   const completedPhases = phases.filter((p) => p.status === 'COMPLETED').length;
   const currentPhase = phases.find((p) => p.status === 'IN_PROGRESS');

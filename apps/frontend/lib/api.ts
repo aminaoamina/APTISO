@@ -57,7 +57,7 @@ export interface ComplianceProject {
   start_date: string | null;
   target_date: string | null;
   compliance_framework_id: string;
-  framework?: ComplianceFramework;
+  compliance_framework?: ComplianceFramework;
   created_by: string;
   created_at: string;
   organization?: { id: string; name: string };
