@@ -277,20 +277,25 @@ export default function ProjectDetailPage() {
         </Card>
       </div>
 
-      {/* Compliance workspace placeholder */}
+      {/* Compliance workspace entry point */}
       <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+        <CardContent className="flex flex-col items-center justify-center py-8 text-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 mb-4">
             <ShieldCheck className="h-6 w-6 text-primary" />
           </div>
           <h3 className="font-display font-semibold text-lg">
-            {framework ? `${framework.name}${framework.version ? `:${framework.version}` : ''}` : 'Compliance'}{' '}
-            workspace
+            {framework ? `${framework.name}${framework.version ? ` :${framework.version}` : ''}` : 'Compliance'}{' '}
+            implementation
           </h3>
           <p className="text-muted-foreground text-sm mt-1 max-w-md">
-            Your {framework?.name || 'ISO 27001'} implementation workspace will be available
-            here — implementation steps, controls, evidence, and audits.
+            Follow the guided implementation steps for your ISMS — starting with Project
+            Preparation.
           </p>
+          <Button size="sm" className="mt-4" asChild>
+            <Link href={`/dashboard/organizations/${orgId}/projects/${projectId}/steps`}>
+              Open Implementation Steps
+            </Link>
+          </Button>
         </CardContent>
       </Card>
 

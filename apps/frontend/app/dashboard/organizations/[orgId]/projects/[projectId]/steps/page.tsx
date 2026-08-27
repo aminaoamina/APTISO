@@ -1,0 +1,171 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import {
+  ChevronRight,
+  FileText,
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  ShieldCheck,
+} from 'lucide-react';
+import { useProjectStore } from '@/store/project-store';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+
+const phaseStatusColors: Record<string, string> = {
+  NOT_STARTED: 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400',
+  IN_PROGRESS: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  COMPLETED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+};
+
+const phaseStatusLabels: Record<string, string> = {
+  NOT_STARTED: 'Not Started',
+  IN_PROGRESS: 'In Progress',
+  COMPLETED: 'Completed',
+};
+
+export default function ImplementationStepsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const orgId = params.orgId as string;
+  const projectId = params.projectId as string;
+  const { currentProject, phases, isLoading, selectProject } = useProjectStore();
+
+  useEffect(() => {
+    if (projectId) selectProject(projectId);
+  }, [projectId, selectProject]);
+
+  if (isLoading || !currentProject) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Spinner className="h-6 w-6" />
+      </div>
+    );
+  }
+
+  const framework = currentProject.compliance_framework;
+  const phasesWithSteps = phases.filter((p) => (p.steps?.length ?? 0) > 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Implementation Steps</h1>
+        <p className="text-muted-foreground text-sm mt-1 flex items-center gap-1.5">
+          <ShieldCheck className="h-4 w-4 text-primary" />
+          {framework ? `${framework.name}${framework.version ? ` :${framework.version}` : ''}` : 'Compliance'}{' '}
+          guided implementation for {currentProject.name}
+        </p>
+      </div>
+
+      {phases.length === 0 && (
+        <Card className="border-dashed">
+          <CardContent className="py-10 text-center">
+            <p className="text-muted-foreground text-sm">No phases defined for this project.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Phases with steps */}
+      {phases.map((phase) => {
+        const steps = phase.steps ?? [];
+        const completed = steps.filter((s) => s.status === 'COMPLETED').length;
+
+        return (
+          <Card key={phase.id}>
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="text-base">
+                    Phase {phase.order} — {phase.name}
+                  </CardTitle>
+                  {phase.description && (
+                    <p className="text-muted-foreground text-xs mt-0.5">{phase.description}</p>
+                  )}
+                </div>
+                <Badge className={phaseStatusColors[phase.status]}>
+                  {phaseStatusLabels[phase.status]}
+                </Badge>
+              </div>
+              {steps.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {completed} / {steps.length} steps completed
+                </p>
+              )}
+            </CardHeader>
+            <CardContent className="pt-0">
+              {steps.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  Steps for this phase will be available soon.
+                </p>
+              ) : (
+                <div className="divide-y divide-border/60 -mx-2">
+                  {steps.map((step) => {
+                    const isDone = step.status === 'COMPLETED';
+                    const stepHref = `/dashboard/organizations/${orgId}/projects/${projectId}/steps/${step.id}`;
+                    return (
+                      <button
+                        key={step.id}
+                        onClick={() => router.push(stepHref)}
+                        className="w-full flex items-center gap-3 px-2 py-3 text-left hover:bg-muted/40 rounded-md transition-colors"
+                      >
+                        {isDone ? (
+                          <CheckCircle2 className="h-5 w-5 shrink-0 text-green-500" />
+                        ) : (
+                          <Circle className="h-5 w-5 shrink-0 text-muted-foreground/40" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm truncate ${isDone ? 'text-muted-foreground line-through' : 'font-medium'}`}>
+                            Step {step.order}: {step.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            {step.type === 'DOCUMENT' ? (
+                              <>
+                                <FileText className="h-3 w-3" /> Document step
+                              </>
+                            ) : step.type === 'REGISTER' ? (
+                              <>
+                                <FileText className="h-3 w-3" /> Register step
+                              </>
+                            ) : (
+                              <>
+                                <BookOpen className="h-3 w-3" /> Educational step
+                              </>
+                            )}
+                            {step.document_instance && (
+                              <>
+                                {' · '}
+                                Document {step.document_instance.version} ·{' '}
+                                {step.document_instance.status.toLowerCase()}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+
+      {/* Future phases note */}
+      {phasesWithSteps.length > 0 && phases.some((p) => (p.steps?.length ?? 0) === 0) && (
+        <p className="text-xs text-muted-foreground text-center pt-2">
+          Remaining phases are being prepared and will unlock as the implementation progresses.
+        </p>
+      )}
+    </div>
+  );
+}

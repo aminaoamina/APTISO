@@ -20,6 +20,7 @@ import {
   RefreshCcw,
   Presentation,
   UserCog,
+  BookOpen,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useAuthStore } from '@/store/auth-store';
@@ -227,19 +228,41 @@ export function DashboardSidebar() {
 
             <NavSectionTitle>Compliance</NavSectionTitle>
             <div className="flex flex-col gap-1 px-3">
-              <NavRow item={{ label: 'Implementation Steps', icon: ListChecks, soon: true }} />
+              <NavRow
+                item={{
+                  label: 'Implementation Steps',
+                  href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}/steps` : undefined,
+                  icon: ListChecks,
+                }}
+                isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/steps`)}
+              />
               <NavRow item={{ label: 'Audit & Evidence', icon: Files, soon: true }} />
               <NavRow item={{ label: 'Maintenance', icon: RefreshCcw, soon: true }} />
             </div>
 
             <NavSectionTitle>Collaboration</NavSectionTitle>
             <div className="flex flex-col gap-1 px-3">
+              <NavRow
+                item={{
+                  label: 'Document Library',
+                  href: `/dashboard/organizations/${orgId}/library`,
+                  icon: BookOpen,
+                }}
+                isActive={pathname.startsWith(`/dashboard/organizations/${orgId}/library`)}
+              />
               <NavRow item={{ label: 'Whiteboard', icon: Presentation, soon: true }} />
             </div>
 
             <NavSectionTitle>People & Tasks</NavSectionTitle>
             <div className="flex flex-col gap-1 px-3">
-              <NavRow item={{ label: 'My tasks', icon: ListTodo, soon: true }} />
+              <NavRow
+                item={{
+                  label: 'My tasks',
+                  href: '/dashboard/tasks',
+                  icon: ListTodo,
+                }}
+                isActive={pathname === '/dashboard/tasks'}
+              />
               {isLead && (
                 <NavRow item={{ label: 'Team Management', icon: UserCog, soon: true }} />
               )}
@@ -274,11 +297,15 @@ export function DashboardSidebar() {
                   item={{ label: 'Projects', href: `/dashboard/organizations/${currentOrg.id}/projects`, icon: FolderOpen }}
                   isActive={pathname.startsWith(`/dashboard/organizations/${currentOrg.id}/projects`)}
                 />
-                <NavRow
-                  item={{ label: 'Members', href: `/dashboard/organizations/${currentOrg.id}/members`, icon: Users }}
-                  isActive={pathname.startsWith(`/dashboard/organizations/${currentOrg.id}/members`)}
-                />
-              </div>
+              <NavRow
+                item={{ label: 'Members', href: `/dashboard/organizations/${currentOrg.id}/members`, icon: Users }}
+                isActive={pathname.startsWith(`/dashboard/organizations/${currentOrg.id}/members`)}
+              />
+              <NavRow
+                item={{ label: 'Document Library', href: `/dashboard/organizations/${currentOrg.id}/library`, icon: BookOpen }}
+                isActive={pathname.startsWith(`/dashboard/organizations/${currentOrg.id}/library`)}
+              />
+            </div>
             </>
           )
         )}

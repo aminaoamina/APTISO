@@ -6,10 +6,11 @@ import {
   IsEnum,
   IsDateString,
   IsUUID,
+  IsObject,
   MinLength,
   MaxLength,
 } from 'class-validator';
-import { ProjectStatus } from '@prisma/client';
+import { ProjectStatus, TaskType } from '@prisma/client';
 
 export class CreateProjectDto {
   @ApiProperty({ example: 'ISO 27001 Implementation' })
@@ -81,4 +82,34 @@ export class UpdatePhaseDto {
   @IsEnum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'] as const)
   @IsNotEmpty()
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+}
+
+export class UpdateStepCompletionDataDto {
+  @ApiProperty({ description: 'Completion data JSON — gate answer + question responses' })
+  @IsObject()
+  completion_data!: Record<string, unknown>;
+}
+
+export class UpdateStepMetadataDto {
+  @ApiPropertyOptional({ description: 'Step metadata — clause, workload, deadline, etc.' })
+  @IsOptional()
+  @IsObject()
+  metadata_json?: Record<string, unknown>;
+}
+
+export class AssignTaskDto {
+  @ApiProperty({ description: 'User ID of the person being assigned' })
+  @IsUUID()
+  @IsNotEmpty()
+  assigned_to!: string;
+
+  @ApiProperty({ enum: TaskType, description: 'Type of assignment' })
+  @IsEnum(TaskType)
+  @IsNotEmpty()
+  type!: TaskType;
+
+  @ApiPropertyOptional({ description: 'Optional notes for the assignment' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

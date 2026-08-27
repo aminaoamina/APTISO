@@ -86,6 +86,184 @@ export interface ProjectPhase {
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
   started_at: string | null;
   completed_at: string | null;
+  steps?: ProjectStep[];
+}
+
+export interface ProjectStep {
+  id: string;
+  phase_id: string;
+  key: string;
+  title: string;
+  purpose: string | null;
+  type: 'EDUCATIONAL' | 'DOCUMENT' | 'REGISTER';
+  order: number;
+  status: 'NOT_STARTED' | 'COMPLETED';
+  completed_at: string | null;
+  metadata_json?: {
+    clause?: string | null;
+    workload_hours?: number;
+    estimated_days?: number;
+    mandatory?: boolean;
+  } | null;
+  completion_data?: {
+    proceed?: boolean | null;
+    needs_awareness?: boolean;
+    awareness_people?: string[];
+    needs_training?: boolean;
+    training_name?: string;
+    training_people?: string[];
+    needs_technology?: boolean;
+    technology_notes?: string;
+    needs_hr?: boolean;
+    hr_notes?: string;
+    needs_finance?: boolean;
+    finance_notes?: string;
+  } | null;
+  document_instance?: {
+    id: string;
+    status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED';
+    version: string;
+    updated_at: string;
+    deadline?: string | null;
+    update_interval?: number | null;
+    owner_id?: string | null;
+    reviewer_id?: string | null;
+    approver_id?: string | null;
+    owner?: { id: string; first_name: string; last_name: string; email: string } | null;
+    reviewer?: { id: string; first_name: string; last_name: string; email: string } | null;
+    approver?: { id: string; first_name: string; last_name: string; email: string } | null;
+  } | null;
+}
+
+export interface DocumentTemplateQuestion {
+  id: string;
+  template_id: string;
+  key: string;
+  label: string;
+  help_text: string | null;
+  input_type: 'TEXT' | 'LONGTEXT' | 'PERSON' | 'SELECT' | 'DATE';
+  required: boolean;
+  options: string[] | null;
+  wizard_page: number;
+  order: number;
+}
+
+export interface DocumentTemplate {
+  id: string;
+  code: string;
+  name: string;
+  version: string;
+  description: string | null;
+  questions: DocumentTemplateQuestion[];
+}
+
+// ProseMirror/Tiptap structured document node
+export interface ProseMirrorNode {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: ProseMirrorNode[];
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+  text?: string;
+}
+
+export interface DocumentInstance {
+  id: string;
+  template_id: string;
+  step_id: string | null;
+  title: string;
+  status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED';
+  version: string;
+  content: ProseMirrorNode;
+  answers: Record<string, string> | null;
+  created_by: string;
+  last_edited_by?: string | null;
+  owner_id?: string | null;
+  reviewer_id?: string | null;
+  approver_id?: string | null;
+  update_interval?: number | null;
+  deadline?: string | null;
+  created_at: string;
+  updated_at: string;
+  template?: { code: string; name: string; version: string };
+  creator?: { id: string; email: string; first_name: string; last_name: string };
+  last_editor?: { id: string; first_name: string; last_name: string } | null;
+  owner?: { id: string; email: string; first_name: string; last_name: string } | null;
+  reviewer?: { id: string; email: string; first_name: string; last_name: string } | null;
+  approver?: { id: string; email: string; first_name: string; last_name: string } | null;
+  step?: {
+    id: string;
+    title: string;
+    phase: { project_id: string; name: string };
+  };
+  versions?: DocumentVersion[];
+}
+
+export interface DocumentVersion {
+  id: string;
+  document_id: string;
+  version: string;
+  published_at: string;
+  published_by: string;
+  notes?: string | null;
+  publisher?: { id: string; first_name: string; last_name: string };
+}
+
+export interface Requirement {
+  id: string;
+  step_id: string;
+  requirement_type: 'CONTRACTUAL' | 'LEGAL_REGULATORY' | 'OTHER';
+  status: 'NON_COMPLIANT' | 'COMPLIANT';
+  interested_party: string;
+  description: string;
+  responsible_person_id: string;
+  related_area?: string | null;
+  deadline?: string | null;
+  document_stipulating?: string | null;
+  date_of_document?: string | null;
+  valid_from?: string | null;
+  country?: string | null;
+  state?: string | null;
+  link?: string | null;
+  law_regulation_name?: string | null;
+  created_at: string;
+  updated_at: string;
+  responsible_person?: { id: string; first_name: string; last_name: string; email: string };
+}
+
+export interface CreateRequirementData {
+  requirement_type: 'CONTRACTUAL' | 'LEGAL_REGULATORY' | 'OTHER';
+  status: 'NON_COMPLIANT' | 'COMPLIANT';
+  interested_party: string;
+  description: string;
+  responsible_person_id: string;
+  related_area?: string;
+  deadline?: string;
+  document_stipulating?: string;
+  date_of_document?: string;
+  valid_from?: string;
+  country?: string;
+  state?: string;
+  link?: string;
+  law_regulation_name?: string;
+}
+
+export interface TaskAssignment {
+  id: string;
+  project_id: string;
+  step_id: string | null;
+  document_instance_id: string | null;
+  assigned_to: string;
+  assigned_by: string;
+  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST';
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+  deadline: string | null;
+  completed_at: string | null;
+  notes: string | null;
+  created_at: string;
+  project?: { id: string; name: string; organization_id: string };
+  step?: { id: string; title: string; key: string } | null;
+  assignee?: { id: string; email: string; first_name: string; last_name: string };
+  assigner?: { id: string; first_name: string; last_name: string };
 }
 
 export interface OrganizationNotification {
@@ -245,6 +423,205 @@ export const projectsApi = {
 
   assignIsoRoles: async (projectId: string, memberId: string, isoRoles: string[]): Promise<ProjectMember> => {
     const response = await apiClient.put(`/projects/${projectId}/members/${memberId}/iso-roles`, { iso_roles: isoRoles });
+    return response.data;
+  },
+
+  completeStep: async (
+    projectId: string,
+    stepId: string,
+  ): Promise<{
+    step: ProjectStep;
+    phase?: Pick<ProjectPhase, 'id' | 'status' | 'started_at' | 'completed_at'> | null;
+    project_status?: ComplianceProject['status'] | null;
+  }> => {
+    const response = await apiClient.put(`/projects/${projectId}/steps/${stepId}/complete`);
+    return response.data;
+  },
+
+  updateStepCompletionData: async (
+    projectId: string,
+    stepId: string,
+    completionData: Record<string, unknown>,
+  ): Promise<ProjectStep> => {
+    const response = await apiClient.patch(
+      `/projects/${projectId}/steps/${stepId}/completion-data`,
+      { completion_data: completionData },
+    );
+    return response.data;
+  },
+
+  updateStepMetadata: async (
+    projectId: string,
+    stepId: string,
+    metadata: Record<string, unknown>,
+  ): Promise<ProjectStep> => {
+    const response = await apiClient.patch(
+      `/projects/${projectId}/steps/${stepId}/metadata`,
+      { metadata_json: metadata },
+    );
+    return response.data;
+  },
+
+  assignTask: async (
+    projectId: string,
+    stepId: string,
+    data: { assigned_to: string; type: string; notes?: string },
+  ): Promise<TaskAssignment> => {
+    const response = await apiClient.post(
+      `/projects/${projectId}/steps/${stepId}/assign`,
+      data,
+    );
+    return response.data;
+  },
+
+  getProjectTasks: async (projectId: string): Promise<TaskAssignment[]> => {
+    const response = await apiClient.get(`/projects/${projectId}/tasks`);
+    return response.data;
+  },
+};
+
+// ============================================================
+// Documents API (guided document workflow)
+// ============================================================
+
+export const documentsApi = {
+  getTemplate: async (code: string): Promise<DocumentTemplate> => {
+    const response = await apiClient.get(`/document-templates/${code}`);
+    return response.data;
+  },
+
+  createFromWizard: async (
+    projectId: string,
+    stepId: string,
+    answers: Record<string, string>,
+  ): Promise<DocumentInstance> => {
+    const response = await apiClient.post(
+      `/projects/${projectId}/steps/${stepId}/document`,
+      { answers },
+    );
+    return response.data;
+  },
+
+  getOne: async (documentId: string): Promise<DocumentInstance> => {
+    const response = await apiClient.get(`/documents/${documentId}`);
+    return response.data;
+  },
+
+  updateContent: async (
+    documentId: string,
+    content: ProseMirrorNode,
+  ): Promise<DocumentInstance> => {
+    const response = await apiClient.patch(`/documents/${documentId}/content`, { content });
+    return response.data;
+  },
+
+  updateAssignments: async (
+    documentId: string,
+    data: {
+      owner_id?: string | null;
+      reviewer_id?: string | null;
+      approver_id?: string | null;
+      update_interval?: number | null;
+    },
+  ): Promise<DocumentInstance> => {
+    const response = await apiClient.patch(`/documents/${documentId}/assignments`, data);
+    return response.data;
+  },
+
+  exportDocx: async (documentId: string, content?: ProseMirrorNode): Promise<void> => {
+    const response = await apiClient.post(`/documents/${documentId}/export-docx`, {
+      ...(content ? { content } : {}),
+    }, {
+      responseType: 'blob',
+    });
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const disposition = response.headers['content-disposition'] as string | undefined;
+    const match = disposition?.match(/filename="([^"]+)"/);
+    a.download = match?.[1] ?? 'document.docx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  publish: async (documentId: string, notes?: string): Promise<{ version: string; pdfUrl: string }> => {
+    const response = await apiClient.post(`/documents/${documentId}/publish`, { notes });
+    return response.data;
+  },
+
+  unpublish: async (documentId: string): Promise<void> => {
+    await apiClient.post(`/documents/${documentId}/unpublish`);
+  },
+
+  delete: async (documentId: string): Promise<{ message: string }> => {
+    const response = await apiClient.delete(`/documents/${documentId}`);
+    return response.data;
+  },
+
+  getVersions: async (documentId: string): Promise<DocumentVersion[]> => {
+    const response = await apiClient.get(`/documents/${documentId}/versions`);
+    return response.data;
+  },
+
+  getLibrary: async (orgId: string): Promise<DocumentInstance[]> => {
+    const response = await apiClient.get(`/organizations/${orgId}/library`);
+    return response.data;
+  },
+};
+
+// ============================================================
+// Requirements API (register of legal/contractual requirements)
+// ============================================================
+
+export const requirementsApi = {
+  list: async (stepId: string): Promise<Requirement[]> => {
+    const response = await apiClient.get(`/steps/${stepId}/requirements`);
+    return response.data;
+  },
+
+  create: async (stepId: string, data: CreateRequirementData): Promise<Requirement> => {
+    const response = await apiClient.post(`/steps/${stepId}/requirements`, data);
+    return response.data;
+  },
+
+  update: async (requirementId: string, data: Partial<CreateRequirementData>): Promise<Requirement> => {
+    const response = await apiClient.patch(`/requirements/${requirementId}`, data);
+    return response.data;
+  },
+
+  delete: async (requirementId: string): Promise<{ message: string }> => {
+    const response = await apiClient.delete(`/requirements/${requirementId}`);
+    return response.data;
+  },
+
+  getDocument: async (stepId: string): Promise<DocumentInstance | null> => {
+    const response = await apiClient.get(`/steps/${stepId}/requirements/document`);
+    return response.data;
+  },
+
+  createDocument: async (stepId: string): Promise<DocumentInstance> => {
+    const response = await apiClient.post(`/steps/${stepId}/requirements/create-document`);
+    return response.data;
+  },
+};
+
+// ============================================================
+// Tasks API
+// ============================================================
+
+export const tasksApi = {
+  getMyTasks: async (): Promise<TaskAssignment[]> => {
+    const response = await apiClient.get('/tasks/mine');
+    return response.data;
+  },
+
+  completeTask: async (taskId: string): Promise<TaskAssignment> => {
+    const response = await apiClient.put(`/tasks/${taskId}/complete`);
     return response.data;
   },
 };

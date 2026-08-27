@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Ip,
@@ -20,6 +21,9 @@ import {
   CreateProjectDto,
   UpdateProjectDto,
   UpdatePhaseDto,
+  UpdateStepCompletionDataDto,
+  UpdateStepMetadataDto,
+  AssignTaskDto,
 } from './dto/project.dto';
 import { ProjectInviteMemberDto, AssignIsoRolesDto } from '../organizations/dto/member.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -129,6 +133,23 @@ export class ProjectDetailController {
     );
   }
 
+  @Put(':projectId/steps/:stepId/complete')
+  @ApiOperation({ summary: 'Mark an implementation step as completed' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async completeStep(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.completeStep(
+      projectId, stepId, userId, userRole, ipAddress, userAgent,
+    );
+  }
+
   @Post(':projectId/members')
   @ApiOperation({ summary: 'Add project member' })
   @UseGuards(ProjectRoleGuard)
@@ -177,5 +198,89 @@ export class ProjectDetailController {
     return this.projectsService.assignIsoRoles(
       projectId, memberId, dto.iso_roles, userId, userRole,
     );
+  }
+
+  @Patch(':projectId/steps/:stepId/completion-data')
+  @ApiOperation({ summary: 'Save step completion data (gate + question responses)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async updateStepCompletionData(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: UpdateStepCompletionDataDto,
+  ) {
+    return this.projectsService.updateStepCompletionData(
+      projectId, stepId, dto.completion_data, userId, userRole,
+    );
+  }
+
+  @Patch(':projectId/steps/:stepId/metadata')
+  @ApiOperation({ summary: 'Update step metadata (clause, workload, deadline…)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_AUDITOR)
+  async updateStepMetadata(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: UpdateStepMetadataDto,
+  ) {
+    return this.projectsService.updateStepMetadata(
+      projectId, stepId, dto.metadata_json ?? {}, userId, userRole,
+    );
+  }
+
+  @Post(':projectId/steps/:stepId/assign')
+  @ApiOperation({ summary: 'Assign a task to a project member' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_AUDITOR)
+  async assignTask(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: AssignTaskDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.assignTask(
+      projectId, stepId, dto, userId, userRole, ipAddress, userAgent,
+    );
+  }
+
+  @Get(':projectId/tasks')
+  @ApiOperation({ summary: 'List all tasks in a project' })
+  @UseGuards(ProjectRoleGuard)
+  async getProjectTasks(
+    @Param('projectId') projectId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.projectsService.getProjectTasks(projectId, userId);
+  }
+}
+
+@ApiTags('Tasks')
+@ApiBearerAuth()
+@Controller('tasks')
+export class TasksController {
+  constructor(private readonly projectsService: ProjectsService) {}
+
+  @Get('mine')
+  @ApiOperation({ summary: 'List all tasks assigned to the current user' })
+  async getMyTasks(@CurrentUser('id') userId: string) {
+    return this.projectsService.getMyTasks(userId);
+  }
+
+  @Put(':taskId/complete')
+  @ApiOperation({ summary: 'Mark a task as completed' })
+  async completeTask(
+    @Param('taskId') taskId: string,
+    @CurrentUser('id') userId: string,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.completeTask(taskId, userId, ipAddress, userAgent);
   }
 }

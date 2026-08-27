@@ -60,6 +60,8 @@ enum OrganizationJoinRequestStatus {
 
 enum NotificationType {
   ORGANIZATION_JOIN_REQUEST
+  TASK_ASSIGNED
+  TASK_COMPLETED
 }
 
 enum ProjectStatus {
@@ -114,6 +116,12 @@ enum AuditAction {
   PROJECT_MEMBER_REMOVED
   PROJECT_MEMBER_ROLE_CHANGED
   PHASE_UPDATED
+  STEP_COMPLETED
+  DOCUMENT_CREATED
+  DOCUMENT_UPDATED
+  DOCUMENT_PUBLISHED
+  TASK_ASSIGNED
+  TASK_COMPLETED
 }
 
 // ============================================================
@@ -152,6 +160,15 @@ model User {
   organization_join_requests         OrganizationJoinRequest[] @relation("JoinRequestsForUser")
   organization_join_requests_created OrganizationJoinRequest[] @relation("JoinRequestsCreated")
   notifications                      Notification[]
+  documents_created                  DocumentInstance[]        @relation("DocumentsCreated")
+  doc_last_edited                    DocumentInstance[]        @relation("DocLastEdited")
+  doc_owner                          DocumentInstance[]        @relation("DocOwner")
+  doc_reviewer                       DocumentInstance[]        @relation("DocReviewer")
+  doc_approver                       DocumentInstance[]        @relation("DocApprover")
+  doc_versions_published            DocumentVersion[]         @relation("DocVersionPublisher")
+  tasks_assigned_to                  TaskAssignment[]          @relation("TasksAssignedTo")
+  tasks_assigned_by                  TaskAssignment[]          @relation("TasksAssignedBy")
+  requirements_responsible           Requirement[]
 
   @@index([email])
   @@map("users")
@@ -295,6 +312,8 @@ model ComplianceProject {
   phases               ProjectPhase[]
   invitations          Invitation[]
   member_add_requests  MemberAddRequest[]
+  task_assignments     TaskAssignment[]
+  notifications        Notification[]
 
   @@index([organization_id])
   @@index([status])
@@ -378,17 +397,21 @@ model OrganizationJoinRequest {
 }
 
 model Notification {
-  id              String           @id @default(uuid()) @db.Uuid
-  user_id         String           @db.Uuid
-  organization_id String?          @db.Uuid
-  join_request_id String?          @db.Uuid
-  type            NotificationType
-  read_at         DateTime?        @db.Timestamp(6)
-  created_at      DateTime         @default(now()) @db.Timestamp(6)
+  id                 String           @id @default(uuid()) @db.Uuid
+  user_id            String           @db.Uuid
+  organization_id    String?          @db.Uuid
+  join_request_id    String?          @db.Uuid
+  task_assignment_id String?          @db.Uuid
+  project_id         String?          @db.Uuid
+  type               NotificationType
+  read_at            DateTime?        @db.Timestamp(6)
+  created_at         DateTime         @default(now()) @db.Timestamp(6)
 
-  user         User                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  organization Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
-  join_request OrganizationJoinRequest? @relation(fields: [join_request_id], references: [id], onDelete: Cascade)
+  user            User                     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  organization    Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  join_request    OrganizationJoinRequest? @relation(fields: [join_request_id], references: [id], onDelete: Cascade)
+  task_assignment TaskAssignment?          @relation(fields: [task_assignment_id], references: [id], onDelete: Cascade)
+  project         ComplianceProject?       @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, read_at])
   @@map("notifications")
@@ -408,9 +431,219 @@ model ProjectPhase {
 
   project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
+  steps ProjectStep[]
+
   @@unique([project_id, order])
   @@index([project_id])
   @@map("project_phases")
+}
+
+// ============================================================
+// IMPLEMENTATION STEPS & GUIDED DOCUMENTS
+// ============================================================
+
+enum StepType {
+  EDUCATIONAL
+  DOCUMENT
+  REGISTER
+}
+
+enum StepStatus {
+  NOT_STARTED
+  COMPLETED
+}
+
+enum RequirementType {
+  CONTRACTUAL
+  LEGAL_REGULATORY
+  OTHER
+}
+
+enum ComplianceStatus {
+  NON_COMPLIANT
+  COMPLIANT
+}
+
+enum TemplateInputType {
+  TEXT
+  LONGTEXT
+  PERSON
+  SELECT
+  DATE
+}
+
+enum DocumentStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+}
+
+enum TaskType {
+  WORK_ON_DOCUMENT
+  REVIEW_DOCUMENT
+  APPROVE_DOCUMENT
+  AWARENESS_TASK
+  TRAINING_TASK
+  HR_REQUEST
+  FINANCE_REQUEST
+  TECHNOLOGY_REQUEST
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model ProjectStep {
+  id              String     @id @default(uuid()) @db.Uuid
+  phase_id        String     @db.Uuid
+  key             String     @db.VarChar(100)
+  title           String     @db.VarChar(200)
+  purpose         String?    @db.Text
+  type            StepType   @default(EDUCATIONAL)
+  order           Int
+  status          StepStatus @default(NOT_STARTED)
+  completed_at    DateTime?  @db.Timestamp(6)
+  metadata_json   Json?
+  completion_data Json?
+  created_at      DateTime   @default(now()) @db.Timestamp(6)
+  updated_at      DateTime   @updatedAt @db.Timestamp(6)
+
+  phase             ProjectPhase      @relation(fields: [phase_id], references: [id], onDelete: Cascade)
+  document_instance DocumentInstance?
+  task_assignments  TaskAssignment[]
+  requirements      Requirement[]
+
+  @@unique([phase_id, key])
+  @@unique([phase_id, order])
+  @@index([phase_id])
+  @@map("project_steps")
+}
+
+model DocumentTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  code        String   @unique @db.VarChar(50)
+  name        String   @db.VarChar(200)
+  version     String   @default("1.0") @db.VarChar(20)
+  description String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+
+  questions TemplateQuestion[]
+  instances DocumentInstance[]
+
+  @@map("document_templates")
+}
+
+model TemplateQuestion {
+  id          String            @id @default(uuid()) @db.Uuid
+  template_id String            @db.Uuid
+  key         String            @db.VarChar(80)
+  label       String            @db.VarChar(200)
+  help_text   String?           @db.Text
+  input_type  TemplateInputType @default(TEXT)
+  required    Boolean           @default(false)
+  options     Json?
+  wizard_page Int
+  order       Int
+  created_at  DateTime          @default(now()) @db.Timestamp(6)
+  updated_at  DateTime          @updatedAt @db.Timestamp(6)
+
+  template DocumentTemplate @relation(fields: [template_id], references: [id], onDelete: Cascade)
+
+  @@unique([template_id, key])
+  @@index([template_id, wizard_page, order])
+  @@map("template_questions")
+}
+
+model DocumentInstance {
+  id              String         @id @default(uuid()) @db.Uuid
+  template_id     String         @db.Uuid
+  step_id         String?        @unique @db.Uuid
+  title           String         @db.VarChar(250)
+  status          DocumentStatus @default(DRAFT)
+  version         String         @default("0.1") @db.VarChar(20)
+  content         Json
+  answers         Json?
+  created_by      String         @db.Uuid
+  last_edited_by  String?        @db.Uuid
+  owner_id        String?        @db.Uuid
+  reviewer_id     String?        @db.Uuid
+  approver_id     String?        @db.Uuid
+  update_interval Int?
+  deadline        DateTime?      @db.Timestamp(6)
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime       @updatedAt @db.Timestamp(6)
+
+  template DocumentTemplate @relation(fields: [template_id], references: [id])
+  step     ProjectStep?     @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  creator  User             @relation("DocumentsCreated", fields: [created_by], references: [id])
+  last_editor User?         @relation("DocLastEdited", fields: [last_edited_by], references: [id], onDelete: SetNull)
+  owner    User?            @relation("DocOwner", fields: [owner_id], references: [id], onDelete: SetNull)
+  reviewer User?            @relation("DocReviewer", fields: [reviewer_id], references: [id], onDelete: SetNull)
+  approver User?            @relation("DocApprover", fields: [approver_id], references: [id], onDelete: SetNull)
+
+  task_assignments TaskAssignment[]
+  versions         DocumentVersion[]
+
+  @@index([template_id])
+  @@index([created_by])
+  @@map("document_instances")
+}
+
+// ============================================================
+// DOCUMENT VERSIONS & LIBRARY
+// ============================================================
+
+model DocumentVersion {
+  id              String   @id @default(uuid()) @db.Uuid
+  document_id     String   @db.Uuid
+  version         String   @db.VarChar(20)
+  content         Json
+  pdf_data        Bytes?
+  published_at    DateTime @default(now()) @db.Timestamp(6)
+  published_by    String   @db.Uuid
+  notes           String?  @db.VarChar(500)
+
+  document DocumentInstance @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  publisher User            @relation("DocVersionPublisher", fields: [published_by], references: [id])
+
+  @@index([document_id])
+  @@map("document_versions")
+}
+
+// ============================================================
+// TASK ASSIGNMENTS & WORKFLOW
+// ============================================================
+
+model TaskAssignment {
+  id                   String     @id @default(uuid()) @db.Uuid
+  project_id           String     @db.Uuid
+  step_id              String?    @db.Uuid
+  document_instance_id String?    @db.Uuid
+  assigned_to          String     @db.Uuid
+  assigned_by          String     @db.Uuid
+  type                 TaskType
+  status               TaskStatus @default(PENDING)
+  deadline             DateTime?  @db.Timestamp(6)
+  completed_at         DateTime?  @db.Timestamp(6)
+  notes                String?    @db.Text
+  created_at           DateTime   @default(now()) @db.Timestamp(6)
+
+  project  ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  step     ProjectStep?      @relation(fields: [step_id], references: [id], onDelete: SetNull)
+  document DocumentInstance? @relation(fields: [document_instance_id], references: [id], onDelete: SetNull)
+  assignee User              @relation("TasksAssignedTo", fields: [assigned_to], references: [id], onDelete: Cascade)
+  assigner User              @relation("TasksAssignedBy", fields: [assigned_by], references: [id], onDelete: Cascade)
+
+  notifications Notification[]
+
+  @@index([assigned_to, status])
+  @@index([project_id])
+  @@index([step_id])
+  @@map("task_assignments")
 }
 
 // ============================================================
@@ -466,4 +699,36 @@ model AuditLog {
   @@index([action])
   @@index([created_at])
   @@map("audit_logs")
+}
+
+model Requirement {
+  id                   String            @id @default(uuid()) @db.Uuid
+  step_id              String            @db.Uuid
+  requirement_type     RequirementType
+  status               ComplianceStatus  @default(NON_COMPLIANT)
+  interested_party     String            @db.VarChar(500)
+  description          String            @db.Text
+  responsible_person_id String           @db.Uuid
+  related_area         String?           @db.VarChar(500)
+  deadline             DateTime?         @db.Timestamp(6)
+
+  // Contractual & Other
+  document_stipulating String?           @db.Text
+  date_of_document     DateTime?         @db.Timestamp(6)
+
+  // Legal/Regulatory
+  valid_from           DateTime?         @db.Timestamp(6)
+  country              String?           @db.VarChar(200)
+  state                String?           @db.VarChar(200)
+  link                 String?           @db.Text
+  law_regulation_name  String?           @db.VarChar(500)
+
+  created_at           DateTime          @default(now()) @db.Timestamp(6)
+  updated_at           DateTime          @updatedAt @db.Timestamp(6)
+
+  step                ProjectStep      @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  responsible_person  User             @relation(fields: [responsible_person_id], references: [id], onDelete: Restrict)
+
+  @@index([step_id])
+  @@map("requirements")
 }
