@@ -12,6 +12,7 @@ import { useProjectStore } from '@/store/project-store';
 import { EducationalStepBody } from '@/lib/steps-content';
 import { projectsApi, documentsApi, TaskAssignment } from '@/lib/api';
 import RequirementsStep from '@/components/requirements/requirements-step';
+import RiskRegisterStep from '@/components/risk-register/risk-register-step';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -221,8 +222,13 @@ export default function StepDetailPage() {
       {step.type === 'EDUCATIONAL' && (<Card><CardContent className="py-6"><EducationalStepBody stepKey={step.key} /></CardContent></Card>)}
 
       {/* Register of Requirements — custom table-based step */}
-      {step.type === 'REGISTER' && (
+      {step.type === 'REGISTER' && step.key === 'iso27001.p1s5.legal-requirements' && (
         <RequirementsStep stepId={step.id} members={members} orgId={orgId} projectId={projectId} />
+      )}
+
+      {/* Risk Register — 7-step wizard */}
+      {step.type === 'REGISTER' && step.key === 'iso27001.p2s2.risk-register' && (
+        <RiskRegisterStep stepId={step.id} orgId={orgId} projectId={projectId} />
       )}
 
       {/* Document section — only for DOCUMENT steps */}

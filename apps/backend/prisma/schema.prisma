@@ -169,6 +169,9 @@ model User {
   tasks_assigned_to                  TaskAssignment[]          @relation("TasksAssignedTo")
   tasks_assigned_by                  TaskAssignment[]          @relation("TasksAssignedBy")
   requirements_responsible           Requirement[]
+  risks_owned                        RiskItem[]             @relation("RiskOwners")
+  risk_assets_owned                  RiskItem[]             @relation("RiskAssetOwners")
+  risk_decisions                     RiskItem[]             @relation("RiskDecisions")
 
   @@index([email])
   @@map("users")
@@ -464,6 +467,47 @@ enum ComplianceStatus {
   COMPLIANT
 }
 
+enum AssetCategory {
+  INFRASTRUCTURE
+  IT_COMMUNICATION
+  SOFTWARE_DATABASE
+  DOCUMENTS_DATA
+  HUMAN_RESOURCES
+  THIRD_PARTY
+}
+
+enum ThreatCategory {
+  FORCE_MAJEURE
+  INTERNAL_OVERSIGHT
+  UNINTENTIONAL_MISTAKE
+  MALICIOUS_INTENT
+  TECHNICAL_ERROR
+}
+
+enum RiskStatus {
+  NEW
+  EDITED
+  APPROVED
+}
+
+enum RiskAcceptability {
+  ACCEPTABLE
+  NOT_ACCEPTABLE
+}
+
+enum TreatmentOption {
+  DECREASE
+  TRANSFER
+  AVOID
+  ACCEPT
+}
+
+enum RiskApprovalDecision {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum TemplateInputType {
   TEXT
   LONGTEXT
@@ -515,6 +559,12 @@ model ProjectStep {
   document_instance DocumentInstance?
   task_assignments  TaskAssignment[]
   requirements      Requirement[]
+  risk_assets       RiskAsset[]
+  risk_vulnerabilities RiskVulnerability[]
+  risk_threats      RiskThreat[]
+  risk_asset_vuln_links RiskAssetVulnLink[]
+  risk_vuln_threat_links RiskVulnThreatLink[]
+  risks             RiskItem[]
 
   @@unique([phase_id, key])
   @@unique([phase_id, order])
@@ -731,4 +781,185 @@ model Requirement {
 
   @@index([step_id])
   @@map("requirements")
+}
+
+// ============================================================
+// RISK REGISTER (Phase 2 / Step 2)
+// ============================================================
+
+model RiskAsset {
+  id        String        @id @default(uuid()) @db.Uuid
+  step_id   String        @db.Uuid
+  name      String        @db.VarChar(300)
+  category  AssetCategory
+  is_custom Boolean       @default(false)
+  order     Int
+  created_at DateTime    @default(now()) @db.Timestamp(6)
+
+  step ProjectStep  @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  vuln_links RiskAssetVulnLink[]
+  threat_links RiskVulnThreatLink[]
+  risks RiskItem[]
+
+  @@unique([step_id, name, category])
+  @@index([step_id])
+  @@map("risk_assets")
+}
+
+model RiskVulnerability {
+  id                 String       @id @default(uuid()) @db.Uuid
+  step_id            String       @db.Uuid
+  name               String       @db.VarChar(300)
+  category           AssetCategory
+  applicable_controls Json?       @db.Json
+  is_custom          Boolean      @default(false)
+  created_at         DateTime     @default(now()) @db.Timestamp(6)
+
+  step ProjectStep  @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  asset_links RiskAssetVulnLink[]
+  threat_links RiskVulnThreatLink[]
+  risks RiskItem[]
+
+  @@unique([step_id, name, category])
+  @@index([step_id])
+  @@map("risk_vulnerabilities")
+}
+
+model RiskThreat {
+  id                 String       @id @default(uuid()) @db.Uuid
+  step_id            String       @db.Uuid
+  name               String       @db.VarChar(300)
+  threat_category    ThreatCategory
+  applicable_controls Json?       @db.Json
+  is_custom          Boolean      @default(false)
+  created_at         DateTime     @default(now()) @db.Timestamp(6)
+
+  step ProjectStep  @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  vuln_links RiskVulnThreatLink[]
+  risks RiskItem[]
+
+  @@unique([step_id, name, threat_category])
+  @@index([step_id])
+  @@map("risk_threats")
+}
+
+model RiskAssetVulnLink {
+  id              String          @id @default(uuid()) @db.Uuid
+  step_id         String          @db.Uuid
+  asset_id        String          @db.Uuid
+  vulnerability_id String          @db.Uuid
+  created_at      DateTime        @default(now()) @db.Timestamp(6)
+
+  step           ProjectStep      @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  asset          RiskAsset        @relation(fields: [asset_id], references: [id], onDelete: Cascade)
+  vulnerability  RiskVulnerability @relation(fields: [vulnerability_id], references: [id], onDelete: Cascade)
+
+  @@unique([asset_id, vulnerability_id])
+  @@index([step_id])
+  @@map("risk_asset_vuln_links")
+}
+
+// Threats are chosen per asset + vulnerability combination (Conformio: "up to 3
+// threats per vulnerability-asset combination"); each link becomes one risk.
+model RiskVulnThreatLink {
+  id              String          @id @default(uuid()) @db.Uuid
+  step_id         String          @db.Uuid
+  asset_id        String          @db.Uuid
+  vulnerability_id String          @db.Uuid
+  threat_id       String          @db.Uuid
+  created_at      DateTime        @default(now()) @db.Timestamp(6)
+
+  step           ProjectStep      @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  asset          RiskAsset        @relation(fields: [asset_id], references: [id], onDelete: Cascade)
+  vulnerability  RiskVulnerability @relation(fields: [vulnerability_id], references: [id], onDelete: Cascade)
+  threat         RiskThreat       @relation(fields: [threat_id], references: [id], onDelete: Cascade)
+
+  @@unique([asset_id, vulnerability_id, threat_id])
+  @@index([step_id])
+  @@map("risk_vuln_threat_links")
+}
+
+model RiskItem {
+  id             String              @id @default(uuid()) @db.Uuid
+  step_id        String              @db.Uuid
+  asset_id       String              @db.Uuid
+  vulnerability_id String            @db.Uuid
+  threat_id      String              @db.Uuid
+
+  // Scales follow the Risk Assessment and Treatment Methodology (P2S1):
+  // impact and likelihood 0-2, level = impact + likelihood (0-4), 3-4 unacceptable.
+  impact         Int?
+  likelihood     Int?
+  level          Int?
+  acceptability  RiskAcceptability?
+  risk_owner_id  String?             @db.Uuid
+  department     String?             @db.VarChar(200)
+  asset_owner_id String?             @db.Uuid
+  existing_controls String?          @db.Text
+  comment        String?             @db.Text
+
+  discarding     Boolean             @default(false)
+  status         RiskStatus          @default(NEW)
+
+  has_incidents  Boolean             @default(false)
+  is_reviewed    Boolean             @default(false)
+  is_evaluated   Boolean             @default(false)
+
+  treatment_option     TreatmentOption?
+  treatment_controls   Json?
+  treatment_description String?           @db.Text
+  residual_impact      Int?
+  residual_likelihood  Int?
+  residual_risk        Int?
+  treatment_confirmed  Boolean            @default(false)
+
+  approval_decision RiskApprovalDecision @default(PENDING)
+  approval_by       String?              @db.Uuid
+  approval_at       DateTime?            @db.Timestamp(6)
+  approval_comment  String?              @db.Text
+
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  step           ProjectStep     @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  asset          RiskAsset       @relation(fields: [asset_id], references: [id], onDelete: Cascade)
+  vulnerability  RiskVulnerability @relation(fields: [vulnerability_id], references: [id], onDelete: Cascade)
+  threat         RiskThreat      @relation(fields: [threat_id], references: [id], onDelete: Cascade)
+  risk_owner     User?           @relation("RiskOwners", fields: [risk_owner_id], references: [id], onDelete: SetNull)
+  asset_owner    User?           @relation("RiskAssetOwners", fields: [asset_owner_id], references: [id], onDelete: SetNull)
+  approval_user  User?           @relation("RiskDecisions", fields: [approval_by], references: [id], onDelete: SetNull)
+  treatment_controls_link RiskItemControl[]
+
+  @@unique([step_id, asset_id, vulnerability_id, threat_id])
+  @@index([step_id])
+  @@index([asset_id])
+  @@index([vulnerability_id])
+  @@index([threat_id])
+  @@index([risk_owner_id])
+  @@map("risk_items")
+}
+
+model RiskControl {
+  id    String @id @default(uuid()) @db.Uuid
+  code  String @unique @db.VarChar(20)
+  title String @db.VarChar(300)
+
+  item_links RiskItemControl[]
+
+  @@index([code])
+  @@map("risk_controls")
+}
+
+model RiskItemControl {
+  id         String @id @default(uuid()) @db.Uuid
+  item_id    String @db.Uuid
+  control_id String @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+
+  item    RiskItem    @relation(fields: [item_id], references: [id], onDelete: Cascade)
+  control RiskControl @relation(fields: [control_id], references: [id], onDelete: Restrict)
+
+  @@unique([item_id, control_id])
+  @@index([control_id])
+  @@map("risk_item_controls")
 }

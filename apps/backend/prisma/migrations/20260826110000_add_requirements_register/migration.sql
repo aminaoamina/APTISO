@@ -1,6 +1,3 @@
--- AlterEnum
-ALTER TYPE "StepType" ADD VALUE 'REGISTER';
-
 -- CreateEnum
 CREATE TYPE "RequirementType" AS ENUM ('CONTRACTUAL', 'LEGAL_REGULATORY', 'OTHER');
 

@@ -611,6 +611,255 @@ export const requirementsApi = {
 };
 
 // ============================================================
+// Risk Register API (ISO 27001 risk register - p2s2)
+// ============================================================
+
+export interface RiskCatalogCategory {
+  value: string;
+  label: string;
+}
+
+export interface UserBrief {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+export interface RiskAsset {
+  id: string;
+  step_id: string;
+  name: string;
+  category: string;
+  is_custom: boolean;
+  order: number;
+}
+
+export interface RiskVulnerability {
+  id: string;
+  step_id: string;
+  name: string;
+  category: string;
+  applicable_controls: string[] | null;
+  is_custom: boolean;
+}
+
+export interface RiskThreat {
+  id: string;
+  step_id: string;
+  name: string;
+  threat_category: string;
+  applicable_controls: string[] | null;
+  is_custom: boolean;
+}
+
+export interface RiskAssetVulnLink {
+  id: string;
+  asset_id: string;
+  vulnerability_id: string;
+}
+
+export interface RiskVulnThreatLink {
+  id: string;
+  asset_id: string;
+  vulnerability_id: string;
+  threat_id: string;
+}
+
+export interface ProjectUserBrief {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  label: string;
+  privilege?: 'PROJECT_LEAD' | 'PROJECT_MEMBER' | 'PROJECT_AUDITOR';
+}
+
+export type TreatmentOption = 'DECREASE' | 'TRANSFER' | 'AVOID' | 'ACCEPT';
+
+export interface RiskItem {
+  id: string;
+  step_id: string;
+  asset_id: string;
+  vulnerability_id: string;
+  threat_id: string;
+  impact: number | null;
+  likelihood: number | null;
+  level: number | null;
+  acceptability: 'ACCEPTABLE' | 'NOT_ACCEPTABLE' | null;
+  risk_owner_id: string | null;
+  risk_owner: UserBrief | null;
+  asset_owner_id: string | null;
+  asset_owner: UserBrief | null;
+  existing_controls: string | null;
+  comment: string | null;
+  department: string | null;
+  discarding: boolean;
+  status: 'NEW' | 'EDITED' | 'APPROVED';
+  has_incidents: boolean;
+  is_reviewed: boolean;
+  is_evaluated: boolean;
+  treatment_option: TreatmentOption | null;
+  treatment_description: string | null;
+  residual_impact: number | null;
+  residual_likelihood: number | null;
+  residual_risk: number | null;
+  treatment_confirmed: boolean;
+  approval_decision: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approval_by: string | null;
+  approval_at: string | null;
+  approval_comment: string | null;
+  approval_user: UserBrief | null;
+  asset: { id: string; name: string; category: string };
+  vulnerability: { id: string; name: string };
+  threat: { id: string; name: string; threat_category: string };
+  treatment_controls_link: { control: { id: string; code: string; title: string } }[];
+}
+
+export interface RiskRegisterState {
+  assets: RiskAsset[];
+  vulnerabilities: RiskVulnerability[];
+  threats: RiskThreat[];
+  assetVulnLinks: RiskAssetVulnLink[];
+  vulnThreatLinks: RiskVulnThreatLink[];
+  risks: RiskItem[];
+  projectUsers: ProjectUserBrief[];
+  summary: RiskRegisterSummary;
+  permissions: {
+    role: 'PROJECT_LEAD' | 'PROJECT_MEMBER' | 'PROJECT_AUDITOR';
+    canEdit: boolean;
+    canApproveAny: boolean;
+    userId: string;
+  };
+}
+
+export interface RiskRegisterSummary {
+  total: number;
+  evaluated: number;
+  reviewed: number;
+  acceptable: number;
+  unacceptable: number;
+  treated: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface RiskUpdate {
+  impact?: number;
+  likelihood?: number;
+  risk_owner_id?: string | null;
+  asset_owner_id?: string | null;
+  department?: string;
+  existing_controls?: string;
+  comment?: string;
+  has_incidents?: boolean;
+  treatment_option?: TreatmentOption;
+  treatment_controls?: string[];
+  treatment_description?: string;
+  residual_impact?: number | null;
+  residual_likelihood?: number | null;
+}
+
+export interface RiskSeedData {
+  assets: { name: string; category: string }[];
+  vulnerabilities: { name: string; category: string }[];
+  threats: { name: string; category: string }[];
+  controls: { code: string; title: string }[];
+  assetCategories: RiskCatalogCategory[];
+  scale: { min: number; max: number; maxAcceptableLevel: number; labels: Record<number, string> };
+  suggestions: {
+    threatsByVulnerability: Record<string, string[]>;
+    threatsByAssetCategory: Record<string, string[]>;
+    controlsByVulnerability: Record<string, string[]>;
+    controlsByThreat: Record<string, string[]>;
+  };
+}
+
+export const riskApi = {
+  getSeed: async (stepId: string): Promise<RiskSeedData> => {
+    const response = await apiClient.get(`/steps/${stepId}/risk-register/seed`);
+    return response.data;
+  },
+
+  getRegister: async (stepId: string): Promise<RiskRegisterState> => {
+    const response = await apiClient.get(`/steps/${stepId}/risk-register`);
+    return response.data;
+  },
+
+  saveAssets: async (stepId: string, data: {
+    assetNames: string[];
+    customAssets?: { name: string; category: string }[];
+  }): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/steps/${stepId}/risk-register/assets`, data);
+    return response.data;
+  },
+
+  saveVulnerabilities: async (stepId: string, data: {
+    vulnerabilitiesByAsset: Record<string, string[]>;
+    customVulnerabilities?: { name: string; category: string; applicable_controls?: string[] }[];
+  }): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/steps/${stepId}/risk-register/vulnerabilities`, data);
+    return response.data;
+  },
+
+  saveThreats: async (stepId: string, data: {
+    threatsByAssetVulnerability: Record<string, string[]>;
+    customThreats?: { name: string; threat_category: string; applicable_controls?: string[] }[];
+  }): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/steps/${stepId}/risk-register/threats`, data);
+    return response.data;
+  },
+
+  generateRisks: async (stepId: string): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/steps/${stepId}/risk-register/generate`);
+    return response.data;
+  },
+
+  updateRisk: async (riskId: string, data: RiskUpdate): Promise<RiskRegisterState> => {
+    const response = await apiClient.patch(`/risk-register/risks/${riskId}`, data);
+    return response.data;
+  },
+
+  reviewRisks: async (stepId: string, data: { riskIds: string[]; reviewed?: boolean }): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/steps/${stepId}/risk-register/review`, data);
+    return response.data;
+  },
+
+  confirmTreatment: async (riskId: string): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/risk-register/risks/${riskId}/confirm-treatment`);
+    return response.data;
+  },
+
+  approveRisk: async (riskId: string, data: {
+    approval_decision: 'APPROVED' | 'REJECTED';
+    comment?: string;
+  }): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/risk-register/risks/${riskId}/approval`, data);
+    return response.data;
+  },
+
+  deleteRisk: async (riskId: string): Promise<RiskRegisterState> => {
+    const response = await apiClient.delete(`/risk-register/risks/${riskId}`);
+    return response.data;
+  },
+
+  discardRisk: async (riskId: string): Promise<RiskRegisterState> => {
+    const response = await apiClient.post(`/risk-register/risks/${riskId}/discard`);
+    return response.data;
+  },
+
+  getDocuments: async (stepId: string): Promise<DocumentInstance[]> => {
+    const response = await apiClient.get(`/steps/${stepId}/risk-register/documents`);
+    return response.data;
+  },
+
+  createDocuments: async (stepId: string): Promise<DocumentInstance[]> => {
+    const response = await apiClient.post(`/steps/${stepId}/risk-register/create-documents`);
+    return response.data;
+  },
+};
+
+// ============================================================
 // Tasks API
 // ============================================================
 

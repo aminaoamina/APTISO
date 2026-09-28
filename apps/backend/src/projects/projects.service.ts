@@ -122,6 +122,32 @@ const PHASE_1_STEPS = [
   },
 ];
 
+const PHASE_2_STEPS = [
+  {
+    key: 'iso27001.p2s1.risk-methodology',
+    title: 'Risk Assessment and Risk Treatment Methodology',
+    purpose:
+      'Define the methodology for assessment and treatment of information risks, and the acceptable level of risk.',
+    type: StepType.DOCUMENT,
+    order: 1,
+    metadata_json: { clause: 'Clauses 6.1, 8.2, and 8.3', workload_hours: 4, estimated_days: 3, mandatory: true },
+  },
+  {
+    key: 'iso27001.p2s2.risk-register',
+    title: 'Risk Register',
+    purpose:
+      'List the risks to your information, assess their impact and likelihood, and manage them through treatment and approval.',
+    type: StepType.REGISTER,
+    order: 2,
+    metadata_json: {
+      clause: 'Clauses 6.1, 8.2, and 8.3',
+      workload_hours: 16,
+      estimated_days: 15,
+      mandatory: true,
+    },
+  },
+];
+
 const STEP_INCLUDE = {
   document_instance: {
     select: {
@@ -192,11 +218,11 @@ export class ProjectsService {
           },
         },
         phases: {
-          create: DEFAULT_PHASES.map((phase) =>
-            phase.order === 1
-              ? { ...phase, steps: { create: PHASE_1_STEPS } }
-              : { ...phase },
-          ),
+          create: DEFAULT_PHASES.map((phase) => {
+            if (phase.order === 1) return { ...phase, steps: { create: PHASE_1_STEPS } };
+            if (phase.order === 2) return { ...phase, steps: { create: PHASE_2_STEPS } };
+            return { ...phase };
+          }),
         },
       },
       include: {
