@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import {
   riskApi,
+  RiskRegisterCompletion,
   RiskRegisterState,
   RiskSeedData,
   RiskUpdate,
@@ -72,10 +73,13 @@ export default function RiskRegisterStep({
   stepId,
   orgId,
   projectId,
+  onCompletionChange,
 }: {
   stepId: string;
   orgId: string;
   projectId: string;
+  /** Lets the step page lock "Finish" until the register is complete. */
+  onCompletionChange?: (completion: RiskRegisterCompletion) => void;
 }) {
   const [seed, setSeed] = useState<RiskSeedData | null>(null);
   const [state, setState] = useState<RiskRegisterState | null>(null);
@@ -185,6 +189,10 @@ export default function RiskRegisterStep({
   }, [state]);
 
   const canEdit = state?.permissions.canEdit ?? false;
+
+  useEffect(() => {
+    if (state) onCompletionChange?.(state.completion);
+  }, [state, onCompletionChange]);
 
   const canProceed = useMemo(() => {
     if (step === 0) return selectedAssets.size > 0;
@@ -392,6 +400,7 @@ export default function RiskRegisterStep({
     try {
       const docs = await riskApi.createDocuments(stepId);
       setDocuments(docs);
+      setState(await riskApi.getRegister(stepId)); // refreshes the completion checklist
       toast.success('Report generated');
     } catch (err) {
       toast.error(getErrorMessage(err, 'Failed to generate the report'));

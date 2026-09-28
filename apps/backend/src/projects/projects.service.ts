@@ -7,10 +7,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
+import { RiskRegisterService } from '../risk-register/risk-register.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
   UpdatePhaseDto,
+  SendAwarenessDto,
+  ConfirmTrainingDto,
 } from './dto/project.dto';
 import {
   ProjectRole,
@@ -122,6 +125,8 @@ const PHASE_1_STEPS = [
   },
 ];
 
+const RISK_REGISTER_STEP_KEY = 'iso27001.p2s2.risk-register';
+
 const PHASE_2_STEPS = [
   {
     key: 'iso27001.p2s1.risk-methodology',
@@ -139,10 +144,11 @@ const PHASE_2_STEPS = [
       'List the risks to your information, assess their impact and likelihood, and manage them through treatment and approval.',
     type: StepType.REGISTER,
     order: 2,
+    // Conformio: 4 h to fill out the register + 2 h for review and approval; usually 4 days.
     metadata_json: {
       clause: 'Clauses 6.1, 8.2, and 8.3',
-      workload_hours: 16,
-      estimated_days: 15,
+      workload_hours: 6,
+      estimated_days: 4,
       mandatory: true,
     },
   },
@@ -174,6 +180,7 @@ export class ProjectsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
+    private readonly riskRegister: RiskRegisterService,
   ) {}
 
   async create(
@@ -508,10 +515,24 @@ export class ProjectsService {
       throw new NotFoundException('Step not found');
     }
 
+    // The risk register is only complete when the risks are assessed, treated
+    // and accepted by their owners (clauses 6.1.2, 6.1.3 f, 8.2 and 8.3).
+    if (step.key === RISK_REGISTER_STEP_KEY) {
+      const completion = await this.riskRegister.getCompletion(stepId);
+      if (!completion.ready) {
+        const missing = completion.items.filter(i => !i.done).map(i => `${i.label} (${i.detail})`);
+        throw new BadRequestException(`The risk register is not complete yet: ${missing.join('; ')}`);
+      }
+    }
+
     const updated = await this.prisma.projectStep.update({
       where: { id: stepId },
       data: { status: StepStatus.COMPLETED, completed_at: new Date() },
     });
+
+    if (step.key === RISK_REGISTER_STEP_KEY) {
+      await this.scheduleRiskReview(projectId, stepId, userId);
+    }
 
     // Derive the phase state from its steps: starting a step starts the
     // phase; finishing the last step finishes it.
@@ -855,15 +876,46 @@ export class ProjectsService {
       stepDeadline = step.document_instance?.deadline ?? undefined;
     }
 
-    const task = await this.prisma.taskAssignment.create({
-      data: {
-        project_id: projectId,
-        step_id: stepId ?? null,
-        assigned_to: dto.assigned_to,
-        assigned_by: userId,
+    return this.createTask(
+      {
+        projectId,
+        organizationId: project.organization_id,
+        stepId: stepId ?? null,
+        assignedTo: dto.assigned_to,
+        assignedBy: userId,
         type: dto.type,
         notes: dto.notes ?? null,
         deadline: stepDeadline ?? null,
+      },
+      ipAddress,
+      userAgent,
+    );
+  }
+
+  /** Creates a task, notifies the assignee and records it in the audit log. */
+  private async createTask(
+    t: {
+      projectId: string;
+      organizationId: string;
+      stepId: string | null;
+      assignedTo: string;
+      assignedBy: string;
+      type: TaskType;
+      notes: string | null;
+      deadline: Date | null;
+    },
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const task = await this.prisma.taskAssignment.create({
+      data: {
+        project_id: t.projectId,
+        step_id: t.stepId,
+        assigned_to: t.assignedTo,
+        assigned_by: t.assignedBy,
+        type: t.type,
+        notes: t.notes,
+        deadline: t.deadline,
       },
       include: {
         assignee: { select: { id: true, email: true, first_name: true, last_name: true } },
@@ -871,28 +923,171 @@ export class ProjectsService {
       },
     });
 
-    // Create notification for the assignee
     await this.prisma.notification.create({
       data: {
-        user_id: dto.assigned_to,
-        organization_id: project.organization_id,
-        project_id: projectId,
+        user_id: t.assignedTo,
+        organization_id: t.organizationId,
+        project_id: t.projectId,
         task_assignment_id: task.id,
         type: NotificationType.TASK_ASSIGNED,
       },
     });
 
     await this.auditLog.log({
-      userId,
+      userId: t.assignedBy,
       action: AuditAction.TASK_ASSIGNED,
       entityType: 'task_assignment',
       entityId: task.id,
-      details: { projectId, stepId: stepId ?? null, assignedTo: dto.assigned_to, type: dto.type },
+      details: { projectId: t.projectId, stepId: t.stepId, assignedTo: t.assignedTo, type: t.type },
       ipAddress,
       userAgent,
     });
 
     return task;
+  }
+
+  // ─── Awareness and training for a step (clauses 7.2 and 7.3) ──
+
+  /** "Send materials": one awareness task per person, listing the materials. */
+  async sendAwareness(
+    projectId: string,
+    stepId: string,
+    dto: SendAwarenessDto,
+    userId: string,
+    userRole: ProjectRole,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const { step, organizationId } = await this.getEditableStep(projectId, stepId, userRole);
+    await this.assertMembers(projectId, dto.user_ids);
+
+    const notes = [
+      `Awareness materials for "${step.title}":`,
+      ...dto.materials.map(m => `- ${m.title}${m.url ? ` (${m.url})` : ''}`),
+    ].join('\n');
+    for (const assignee of new Set(dto.user_ids)) {
+      await this.createTask(
+        { projectId, organizationId, stepId, assignedTo: assignee, assignedBy: userId,
+          type: TaskType.AWARENESS_TASK, notes, deadline: null },
+        ipAddress,
+        userAgent,
+      );
+    }
+
+    return this.mergeCompletionData(stepId, {
+      awareness: {
+        materials: dto.materials,
+        user_ids: [...new Set(dto.user_ids)],
+        sent_by: userId,
+        sent_at: new Date().toISOString(),
+      },
+      needs_awareness: true,
+    });
+  }
+
+  /** Training "Confirm": one training task per row (name, skills, training). */
+  async confirmTraining(
+    projectId: string,
+    stepId: string,
+    dto: ConfirmTrainingDto,
+    userId: string,
+    userRole: ProjectRole,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    const { step, organizationId } = await this.getEditableStep(projectId, stepId, userRole);
+    await this.assertMembers(projectId, dto.rows.map(r => r.user_id));
+
+    for (const r of dto.rows) {
+      const notes = [
+        `Training needed for "${step.title}".`,
+        `Required knowledge and skills: ${r.skills}`,
+        r.training ? `Training: ${r.training}` : null,
+      ].filter(Boolean).join('\n');
+      await this.createTask(
+        { projectId, organizationId, stepId, assignedTo: r.user_id, assignedBy: userId,
+          type: TaskType.TRAINING_TASK, notes, deadline: null },
+        ipAddress,
+        userAgent,
+      );
+    }
+
+    return this.mergeCompletionData(stepId, {
+      training: {
+        rows: dto.rows,
+        confirmed_by: userId,
+        confirmed_at: new Date().toISOString(),
+      },
+      needs_training: dto.rows.length > 0,
+    });
+  }
+
+  /**
+   * Methodology 3.4: risk owners review the risks at least once a year. When
+   * the register is completed, the project lead gets a "Review of risks" task
+   * due in one year; completing it schedules the next one (see completeTask).
+   */
+  private async scheduleRiskReview(projectId: string, stepId: string, completedBy: string) {
+    const existing = await this.prisma.taskAssignment.findFirst({
+      where: { step_id: stepId, type: TaskType.RISK_REVIEW, status: { not: 'COMPLETED' } },
+    });
+    if (existing) return;
+
+    const [project, lead] = await Promise.all([
+      this.prisma.complianceProject.findUnique({ where: { id: projectId }, select: { organization_id: true } }),
+      this.prisma.projectMember.findFirst({
+        where: { project_id: projectId, privilege: ProjectRole.PROJECT_LEAD },
+        orderBy: { joined_at: 'asc' },
+        select: { user_id: true },
+      }),
+    ]);
+    if (!project) return;
+
+    const due = new Date();
+    due.setFullYear(due.getFullYear() + 1);
+    await this.createTask({
+      projectId,
+      organizationId: project.organization_id,
+      stepId,
+      assignedTo: lead?.user_id ?? completedBy,
+      assignedBy: completedBy,
+      type: TaskType.RISK_REVIEW,
+      notes:
+        'Annual review of risks (Risk Assessment and Treatment Methodology, section 3.4): with the risk owners, ' +
+        'review existing risks, add newly identified ones, update the risk register and refresh the Risk Assessment ' +
+        'and Treatment Report. Review earlier after significant organizational, technology or business changes.',
+      deadline: due,
+    });
+  }
+
+  private async getEditableStep(projectId: string, stepId: string, userRole: ProjectRole) {
+    if (userRole !== ProjectRole.PROJECT_LEAD && userRole !== ProjectRole.PROJECT_MEMBER) {
+      throw new ForbiddenException('Only project leads and members can do this');
+    }
+    const step = await this.prisma.projectStep.findUnique({
+      where: { id: stepId },
+      include: { phase: { select: { project_id: true, project: { select: { organization_id: true } } } } },
+    });
+    if (!step || step.phase.project_id !== projectId) throw new NotFoundException('Step not found');
+    return { step, organizationId: step.phase.project.organization_id };
+  }
+
+  private async assertMembers(projectId: string, userIds: string[]) {
+    const unique = [...new Set(userIds)];
+    const count = await this.prisma.projectMember.count({
+      where: { project_id: projectId, user_id: { in: unique } },
+    });
+    if (count !== unique.length) throw new BadRequestException('Everyone selected must be a member of this project');
+  }
+
+  /** Merges into completion_data on the server so concurrent sections don't overwrite each other. */
+  private async mergeCompletionData(stepId: string, updates: Record<string, unknown>) {
+    const step = await this.prisma.projectStep.findUnique({ where: { id: stepId }, select: { completion_data: true } });
+    const current = (step?.completion_data ?? {}) as Record<string, unknown>;
+    return this.prisma.projectStep.update({
+      where: { id: stepId },
+      data: { completion_data: { ...current, ...updates } as Prisma.InputJsonValue },
+    });
   }
 
   async getMyTasks(userId: string) {
@@ -957,6 +1152,11 @@ export class ProjectsService {
         assigner: { select: { id: true, first_name: true, last_name: true } },
       },
     });
+
+    // The yearly risk review repeats: completing one schedules the next.
+    if (task.type === TaskType.RISK_REVIEW && task.step_id) {
+      await this.scheduleRiskReview(task.project_id, task.step_id, userId);
+    }
 
     // Notify the assigner that the task is complete
     await this.prisma.notification.create({

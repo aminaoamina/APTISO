@@ -24,6 +24,8 @@ import {
   UpdateStepCompletionDataDto,
   UpdateStepMetadataDto,
   AssignTaskDto,
+  SendAwarenessDto,
+  ConfirmTrainingDto,
 } from './dto/project.dto';
 import { ProjectInviteMemberDto, AssignIsoRolesDto } from '../organizations/dto/member.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -214,6 +216,38 @@ export class ProjectDetailController {
     return this.projectsService.updateStepCompletionData(
       projectId, stepId, dto.completion_data, userId, userRole,
     );
+  }
+
+  @Post(':projectId/steps/:stepId/awareness')
+  @ApiOperation({ summary: 'Send awareness materials for a step (creates awareness tasks)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async sendAwareness(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: SendAwarenessDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.sendAwareness(projectId, stepId, dto, userId, userRole, ipAddress, userAgent);
+  }
+
+  @Post(':projectId/steps/:stepId/training')
+  @ApiOperation({ summary: 'Confirm training needs for a step (creates training tasks)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async confirmTraining(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: ConfirmTrainingDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.confirmTraining(projectId, stepId, dto, userId, userRole, ipAddress, userAgent);
   }
 
   @Patch(':projectId/steps/:stepId/metadata')

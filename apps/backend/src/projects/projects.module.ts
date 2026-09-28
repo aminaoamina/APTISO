@@ -4,8 +4,10 @@ import { ProjectsController, ProjectDetailController, TasksController } from './
 import { AuditLogService } from '../common/services/audit-log.service';
 import { OrganizationRoleGuard } from '../common/guards/organization-role.guard';
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
+import { RiskRegisterModule } from '../risk-register/risk-register.module';
 
 @Module({
+  imports: [RiskRegisterModule],
   controllers: [ProjectsController, ProjectDetailController, TasksController],
   providers: [
     ProjectsService,

@@ -7,5 +7,6 @@ import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 @Module({
   controllers: [RiskRegisterController],
   providers: [RiskRegisterService, AuditLogService, ProjectRoleGuard],
+  exports: [RiskRegisterService],
 })
 export class RiskRegisterModule {}

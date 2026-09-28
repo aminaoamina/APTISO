@@ -13,6 +13,10 @@ import { EducationalStepBody } from '@/lib/steps-content';
 import { projectsApi, documentsApi, TaskAssignment } from '@/lib/api';
 import RequirementsStep from '@/components/requirements/requirements-step';
 import RiskRegisterStep from '@/components/risk-register/risk-register-step';
+import { AwarenessPanel, TrainingPanel } from '@/components/steps/awareness-training';
+import { STEP_AWARENESS_MATERIALS } from '@/lib/step-materials';
+import { useAuthStore } from '@/store/auth-store';
+import type { RiskRegisterCompletion } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +38,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   APPROVE_DOCUMENT: 'Approve document', AWARENESS_TASK: 'Awareness',
   TRAINING_TASK: 'Training', HR_REQUEST: 'HR request',
   FINANCE_REQUEST: 'Finance request', TECHNOLOGY_REQUEST: 'Technology request',
+  RISK_REVIEW: 'Review of risks',
 };
 
 const TASK_TYPE_COLORS: Record<string, string> = {
@@ -45,7 +50,10 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   HR_REQUEST: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400',
   FINANCE_REQUEST: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
+  RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
 };
+
+const RISK_REGISTER_KEY = 'iso27001.p2s2.risk-register';
 
 export default function StepDetailPage() {
   const params = useParams();
@@ -66,6 +74,8 @@ export default function StepDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [stepTasks, setStepTasks] = useState<TaskAssignment[]>([]);
   const [showRequests, setShowRequests] = useState(false);
+  const [registerCompletion, setRegisterCompletion] = useState<RiskRegisterCompletion | null>(null);
+  const currentUserId = useAuthStore((s) => s.user?.id);
 
   useEffect(() => { if (projectId) selectProject(projectId); }, [projectId, selectProject]);
 
@@ -122,6 +132,12 @@ export default function StepDetailPage() {
   const editorHref = doc ? '/dashboard/organizations/' + orgId + '/projects/' + projectId + '/documents/' + doc.id : null;
 
   const proceedAnswer = completionData.proceed as boolean | null | undefined;
+  const awarenessMaterials = STEP_AWARENESS_MATERIALS[step.key];
+  const myPrivilege = members.find((m) => m.user_id === currentUserId)?.privilege;
+  const canEditStep = myPrivilege === 'PROJECT_LEAD' || myPrivilege === 'PROJECT_MEMBER';
+  const isRiskRegister = step.key === RISK_REGISTER_KEY;
+  // The risk register can only be finished once its checklist is complete (also enforced by the API).
+  const finishBlocked = isRiskRegister && !registerCompletion?.ready;
   const isMandatory = meta?.mandatory ?? false;
 
   const saveCompletionData = async (updates: Record<string, unknown>, label: string) => {
@@ -228,7 +244,7 @@ export default function StepDetailPage() {
 
       {/* Risk Register — 7-step wizard */}
       {step.type === 'REGISTER' && step.key === 'iso27001.p2s2.risk-register' && (
-        <RiskRegisterStep stepId={step.id} orgId={orgId} projectId={projectId} />
+        <RiskRegisterStep stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />
       )}
 
       {/* Document section — only for DOCUMENT steps */}
@@ -344,6 +360,30 @@ export default function StepDetailPage() {
         )}
       </>)}
 
+      {/* Awareness and training with suggested materials (steps configured in step-materials.ts) */}
+      {!isDone && awarenessMaterials && (
+        <>
+          <AwarenessPanel
+            projectId={projectId}
+            stepId={step.id}
+            stepTitle={step.title}
+            materials={awarenessMaterials}
+            members={members}
+            sent={completionData.awareness as Parameters<typeof AwarenessPanel>[0]['sent']}
+            canEdit={canEditStep}
+            onSaved={setCompletionData}
+          />
+          <TrainingPanel
+            projectId={projectId}
+            stepId={step.id}
+            members={members}
+            confirmed={completionData.training as Parameters<typeof TrainingPanel>[0]['confirmed']}
+            canEdit={canEditStep}
+            onSaved={setCompletionData}
+          />
+        </>
+      )}
+
       {/* Optional additional requests — collapsed by default */}
       {!isDone && (
         <Card>
@@ -365,22 +405,22 @@ export default function StepDetailPage() {
               <p className="text-xs text-muted-foreground pt-4">If you need extra resources for this step, flag them here. These are optional and do not block step completion.</p>
 
               {/* Awareness */}
-              <RequestRow
+              {!awarenessMaterials && <RequestRow
                 label="Do your people need awareness for this step?"
                 description="Relevant people will be notified to review the related materials."
                 value={completionData.needs_awareness as boolean | undefined}
                 onToggle={(v) => saveCompletionData({ needs_awareness: v }, 'Awareness')}
                 saving={savingSection === 'Awareness'}
-              />
+              />}
 
               {/* Training */}
-              <RequestRow
+              {!awarenessMaterials && <RequestRow
                 label="Do your people need training for this step?"
                 description="A training request will be created for top management."
                 value={completionData.needs_training as boolean | undefined}
                 onToggle={(v) => saveCompletionData({ needs_training: v }, 'Training')}
                 saving={savingSection === 'Training'}
-              />
+              />}
 
               {/* Technology */}
               <RequestRow
@@ -446,15 +486,41 @@ export default function StepDetailPage() {
       {/* Mark as completed */}
       {!isDone && (
         <Card>
-          <CardContent className="py-5 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium">Ready to complete this step?</p>
-              <p className="text-xs text-muted-foreground">This will mark the step as done and advance the project.</p>
+          <CardContent className="py-5 space-y-4">
+            {isRiskRegister && registerCompletion && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Before finishing the risk register</p>
+                <ul className="space-y-1.5">
+                  {registerCompletion.items.map((i) => (
+                    <li key={i.key} className="flex items-start gap-2 text-sm">
+                      {i.done
+                        ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-green-600" aria-label="Done" />
+                        : <span className="mt-1 h-3 w-3 shrink-0 rounded-full border-2 border-amber-500" aria-label="Not done" />}
+                      <span>
+                        {i.label}
+                        {!i.done && <span className="block text-xs text-amber-700 dark:text-amber-400">{i.detail}</span>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium">Ready to complete this step?</p>
+                <p className="text-xs text-muted-foreground">
+                  {finishBlocked
+                    ? 'Complete the items above first.'
+                    : isRiskRegister
+                      ? 'This marks the step as done and schedules the yearly review of risks.'
+                      : 'This will mark the step as done and advance the project.'}
+                </p>
+              </div>
+              <Button onClick={handleCompleteStep} disabled={isCompleting || finishBlocked}>
+                {isCompleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                {isRiskRegister ? 'Finish step' : 'Mark as completed'}
+              </Button>
             </div>
-            <Button onClick={handleCompleteStep} disabled={isCompleting}>
-              {isCompleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-              Mark as completed
-            </Button>
           </CardContent>
         </Card>
       )}

@@ -9,7 +9,13 @@ import {
   IsObject,
   MinLength,
   MaxLength,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  ValidateNested,
+  IsUrl,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ProjectStatus, TaskType } from '@prisma/client';
 
 export class CreateProjectDto {
@@ -112,4 +118,62 @@ export class AssignTaskDto {
   @IsOptional()
   @IsString()
   notes?: string;
+}
+
+export class AwarenessMaterialDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(300)
+  title!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl({ require_protocol: true })
+  @MaxLength(1000)
+  url?: string;
+}
+
+export class SendAwarenessDto {
+  @ApiProperty({ type: [AwarenessMaterialDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => AwarenessMaterialDto)
+  materials!: AwarenessMaterialDto[];
+
+  @ApiProperty({ type: [String], description: 'Project members who receive the materials' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('all', { each: true })
+  user_ids!: string[];
+}
+
+export class TrainingRowDto {
+  @ApiProperty({ description: 'Project member who needs the training' })
+  @IsUUID()
+  user_id!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(1000)
+  skills!: string;
+
+  @ApiPropertyOptional({ description: 'Concrete training or course' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  training?: string;
+}
+
+export class ConfirmTrainingDto {
+  @ApiProperty({ type: [TrainingRowDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => TrainingRowDto)
+  rows!: TrainingRowDto[];
 }

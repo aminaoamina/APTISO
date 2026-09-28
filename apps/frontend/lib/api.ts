@@ -254,7 +254,7 @@ export interface TaskAssignment {
   document_instance_id: string | null;
   assigned_to: string;
   assigned_by: string;
-  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST';
+  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW';
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
   deadline: string | null;
   completed_at: string | null;
@@ -459,6 +459,24 @@ export const projectsApi = {
       `/projects/${projectId}/steps/${stepId}/metadata`,
       { metadata_json: metadata },
     );
+    return response.data;
+  },
+
+  sendAwareness: async (
+    projectId: string,
+    stepId: string,
+    data: { materials: { title: string; url?: string }[]; user_ids: string[] },
+  ): Promise<ProjectStep> => {
+    const response = await apiClient.post(`/projects/${projectId}/steps/${stepId}/awareness`, data);
+    return response.data;
+  },
+
+  confirmTraining: async (
+    projectId: string,
+    stepId: string,
+    data: { rows: { user_id: string; skills: string; training?: string }[] },
+  ): Promise<ProjectStep> => {
+    const response = await apiClient.post(`/projects/${projectId}/steps/${stepId}/training`, data);
     return response.data;
   },
 
@@ -725,12 +743,18 @@ export interface RiskRegisterState {
   risks: RiskItem[];
   projectUsers: ProjectUserBrief[];
   summary: RiskRegisterSummary;
+  completion: RiskRegisterCompletion;
   permissions: {
     role: 'PROJECT_LEAD' | 'PROJECT_MEMBER' | 'PROJECT_AUDITOR';
     canEdit: boolean;
     canApproveAny: boolean;
     userId: string;
   };
+}
+
+export interface RiskRegisterCompletion {
+  ready: boolean;
+  items: { key: string; label: string; done: boolean; detail: string }[];
 }
 
 export interface RiskRegisterSummary {

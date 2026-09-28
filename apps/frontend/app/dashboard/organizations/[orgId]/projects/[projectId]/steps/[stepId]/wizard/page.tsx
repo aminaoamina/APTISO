@@ -36,6 +36,7 @@ const STEP_TEMPLATE_MAP: Record<string, string> = {
   'iso27001.p1s4.req-identification': 'REQ-IDENTIFICATION',
   'iso27001.p1s6.isms-scope': 'ISMS-SCOPE',
   'iso27001.p1s7.security-policy': 'SECURITY-POLICY',
+  'iso27001.p2s1.risk-methodology': 'RISK-METHODOLOGY',
 };
 
 function QuestionField({

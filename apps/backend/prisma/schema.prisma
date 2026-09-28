@@ -532,6 +532,7 @@ enum TaskType {
   HR_REQUEST
   FINANCE_REQUEST
   TECHNOLOGY_REQUEST
+  RISK_REVIEW
 }
 
 enum TaskStatus {

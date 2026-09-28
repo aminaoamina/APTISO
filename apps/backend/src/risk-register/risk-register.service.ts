@@ -136,6 +136,7 @@ export class RiskRegisterService implements OnModuleInit {
         }),
         this.getProjectUsers(access.projectId),
       ]);
+    const completion = await this.getCompletion(stepId);
 
     return {
       assets,
@@ -146,6 +147,7 @@ export class RiskRegisterService implements OnModuleInit {
       risks,
       projectUsers,
       summary: this.summarize(risks),
+      completion,
       permissions: {
         role: access.role,
         canEdit: access.role !== ProjectRole.PROJECT_AUDITOR,
@@ -894,6 +896,82 @@ export class RiskRegisterService implements OnModuleInit {
     );
 
     return { type: 'doc', content };
+  }
+
+  // ─── Step completion (clauses 6.1.2, 6.1.3, 8.2, 8.3) ──────────
+
+  /**
+   * What must be true before the Risk Register step can be finished. Used by
+   * the register UI and enforced by ProjectsService.completeStep.
+   */
+  async getCompletion(stepId: string) {
+    const [risks, report] = await Promise.all([
+      this.prisma.riskItem.findMany({
+        where: { step_id: stepId, discarding: false },
+        select: {
+          discarding: true,
+          is_evaluated: true,
+          is_reviewed: true,
+          acceptability: true,
+          treatment_confirmed: true,
+          approval_decision: true,
+          updated_at: true,
+        },
+      }),
+      this.prisma.documentInstance.findUnique({
+        where: { step_id: stepId },
+        select: { updated_at: true },
+      }),
+    ]);
+    const s = this.summarize(risks);
+    const lastRiskChange = risks.reduce<Date | null>(
+      (max, r) => (!max || r.updated_at > max ? r.updated_at : max),
+      null,
+    );
+    const reportUpToDate = !!report && (!lastRiskChange || report.updated_at >= lastRiskChange);
+    const pending = s.total - s.approved - s.rejected;
+
+    const items = [
+      {
+        key: 'risks',
+        label: 'Risks are identified (assets, vulnerabilities and threats)',
+        done: s.total > 0,
+        detail: s.total > 0 ? `${s.total} risk(s)` : 'No risks yet',
+      },
+      {
+        key: 'evaluated',
+        label: 'Every risk has impact, likelihood and a risk owner',
+        done: s.total > 0 && s.evaluated === s.total,
+        detail: `${s.total - s.evaluated} risk(s) still empty`,
+      },
+      {
+        key: 'reviewed',
+        label: 'Every risk is marked as reviewed',
+        done: s.total > 0 && s.reviewed === s.total,
+        detail: `${s.total - s.reviewed} risk(s) not reviewed`,
+      },
+      {
+        key: 'treated',
+        label: 'Every unacceptable risk has a confirmed treatment',
+        done: s.treated === s.unacceptable,
+        detail: `${s.unacceptable - s.treated} unacceptable risk(s) without confirmed treatment`,
+      },
+      {
+        key: 'approved',
+        label: 'Every risk owner has approved the residual risk',
+        done: s.total > 0 && s.approved === s.total,
+        detail: [pending > 0 && `${pending} awaiting approval`, s.rejected > 0 && `${s.rejected} rejected`]
+          .filter(Boolean)
+          .join(', ') || 'No risks yet',
+      },
+      {
+        key: 'report',
+        label: 'The Risk Assessment and Treatment Report is generated and up to date',
+        done: reportUpToDate,
+        detail: report ? 'Risks changed after the report was generated; refresh it' : 'Report not generated yet',
+      },
+    ];
+    return { ready: items.every(i => i.done), items };
   }
 
   // ─── Helpers ───────────────────────────────────────────────────
