@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { RiskRegisterService } from '../risk-register/risk-register.service';
 import { SoaService } from '../soa/soa.service';
+import { PoliciesService } from '../policies/policies.service';
 import { NewTask, TaskService } from '../common/services/task.service';
 import {
   CreateProjectDto,
@@ -41,7 +42,8 @@ const FRAMEWORK_SELECT = {
 const DEFAULT_PHASES = [
   { name: 'Project Preparation', description: 'Prepare the ISMS project: align the team, set scope foundations and governance basics', order: 1 },
   { name: 'Risk Assessment', description: 'Identify and evaluate information security risks', order: 2 },
-  { name: 'Control Selection', description: 'Select appropriate security controls from Annex A', order: 3 },
+  // Conformio: Phase 3 steps are added automatically from the Statement of Applicability.
+  { name: 'Security Documentation', description: 'Write the security policies and procedures required by the Statement of Applicability', order: 3 },
   { name: 'Implementation', description: 'Implement selected controls and document policies', order: 4 },
   { name: 'Internal Audit', description: 'Conduct internal audit of the ISMS', order: 5 },
   { name: 'Management Review', description: 'Management review of ISMS performance', order: 6 },
@@ -201,6 +203,7 @@ export class ProjectsService {
     private readonly riskRegister: RiskRegisterService,
     private readonly soa: SoaService,
     private readonly tasks: TaskService,
+    private readonly policies: PoliciesService,
   ) {}
 
   async create(
@@ -555,6 +558,10 @@ export class ProjectsService {
 
     if (step.key === RISK_REGISTER_STEP_KEY) {
       await this.scheduleRiskReview(projectId, stepId, userId);
+    }
+    // Finishing the SoA adds the required policies to Phase 3 (Security Documentation).
+    if (step.key === SOA_STEP_KEY) {
+      await this.policies.syncFromSoa(stepId, userId);
     }
 
     // Derive the phase state from its steps: starting a step starts the

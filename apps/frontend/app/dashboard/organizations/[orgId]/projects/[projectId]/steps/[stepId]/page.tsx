@@ -14,6 +14,8 @@ import { projectsApi, documentsApi, TaskAssignment } from '@/lib/api';
 import RequirementsStep from '@/components/requirements/requirements-step';
 import RiskRegisterStep from '@/components/risk-register/risk-register-step';
 import SoaStep from '@/components/soa/soa-step';
+import { PolicyControls } from '@/components/policies/policy-controls';
+import { policiesApi } from '@/lib/api';
 import { AwarenessPanel, TrainingPanel } from '@/components/steps/awareness-training';
 import { STEP_AWARENESS_MATERIALS } from '@/lib/step-materials';
 import { useAuthStore } from '@/store/auth-store';
@@ -77,6 +79,7 @@ export default function StepDetailPage() {
   const [assignNotes, setAssignNotes] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const [stepTasks, setStepTasks] = useState<TaskAssignment[]>([]);
   const [showRequests, setShowRequests] = useState(false);
   const [registerCompletion, setRegisterCompletion] = useState<RiskRegisterCompletion | null>(null);
@@ -141,6 +144,8 @@ export default function StepDetailPage() {
   const myPrivilege = members.find((m) => m.user_id === currentUserId)?.privilege;
   const canEditStep = myPrivilege === 'PROJECT_LEAD' || myPrivilege === 'PROJECT_MEMBER';
   const isRiskRegister = step.key === RISK_REGISTER_KEY;
+  // Phase 3 policies are generated from the SoA: "Create document" builds a draft instead of opening a wizard.
+  const isPolicyStep = !!meta?.policy_key;
   const hasChecklist = CHECKLIST_STEPS.includes(step.key);
   const finishBlocked = hasChecklist && !registerCompletion?.ready;
   const isMandatory = meta?.mandatory ?? false;
@@ -184,6 +189,20 @@ export default function StepDetailPage() {
     try { await completeStep(step!.id); toast.success('Step skipped'); }
     catch (err) { toast.error(getErrorMessage(err, 'Failed to skip step')); }
     finally { setIsCompleting(false); }
+  };
+
+  const handleCreatePolicyDraft = async () => {
+    setIsCreatingDraft(true);
+    try {
+      const created = await policiesApi.createDraft(stepId);
+      await selectProject(projectId);
+      toast.success('Draft created from the Statement of Applicability');
+      router.push('/dashboard/organizations/' + orgId + '/projects/' + projectId + '/documents/' + created.id);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to create the draft'));
+    } finally {
+      setIsCreatingDraft(false);
+    }
   };
 
   const handleDeleteDocument = async () => {
@@ -257,6 +276,9 @@ export default function StepDetailPage() {
         <SoaStep stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />
       )}
 
+      {/* Phase 3 policy: why it is required and the controls it covers */}
+      {isPolicyStep && <PolicyControls stepId={step.id} />}
+
       {/* Document section — only for DOCUMENT steps */}
       {step.type === 'DOCUMENT' && (<>
         {/* Document info card */}
@@ -289,11 +311,18 @@ export default function StepDetailPage() {
                   <Button onClick={() => router.push(editorHref!)} disabled={!editorHref}><FileText className="h-4 w-4 mr-2" />Open document</Button>
                   <Button variant="destructive" size="sm" onClick={handleDeleteDocument} disabled={isDeleting}>
                     {isDeleting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
-                    Delete &amp; restart wizard
+                    {isPolicyStep ? 'Delete & regenerate draft' : 'Delete & restart wizard'}
                   </Button>
                 </>
               ) : (
-                <Button onClick={() => router.push(wizardHref)}><FileText className="h-4 w-4 mr-2" />Create document</Button>
+                isPolicyStep ? (
+                  <Button onClick={handleCreatePolicyDraft} disabled={isCreatingDraft}>
+                    {isCreatingDraft ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                    Create draft from the SoA
+                  </Button>
+                ) : (
+                  <Button onClick={() => router.push(wizardHref)}><FileText className="h-4 w-4 mr-2" />Create document</Button>
+                )
               )}
             </div>
           </CardContent>

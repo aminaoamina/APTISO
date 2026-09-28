@@ -104,6 +104,12 @@ export interface ProjectStep {
     workload_hours?: number;
     estimated_days?: number;
     mandatory?: boolean;
+    // Phase 3 policy steps generated from the Statement of Applicability
+    policy_key?: string;
+    controls?: string[];
+    required?: boolean;
+    why?: string;
+    generated_from_soa?: boolean;
   } | null;
   completion_data?: {
     proceed?: boolean | null;
@@ -995,6 +1001,31 @@ export const soaApi = {
 
   createDocument: async (stepId: string): Promise<DocumentInstance[]> =>
     (await apiClient.post(`/steps/${stepId}/soa/documents`)).data,
+};
+
+// ============================================================
+// Security Documentation (Phase 3 policies)
+// ============================================================
+
+export interface PolicyInfo {
+  policy: { key: string; title: string; purpose: string };
+  required: boolean;
+  why: string;
+  controls: {
+    code: string;
+    title: string;
+    applicable: boolean;
+    method: string | null;
+    status: ControlStatus | null;
+  }[];
+}
+
+export const policiesApi = {
+  get: async (stepId: string): Promise<PolicyInfo> =>
+    (await apiClient.get(`/steps/${stepId}/policy`)).data,
+
+  createDraft: async (stepId: string): Promise<DocumentInstance> =>
+    (await apiClient.post(`/steps/${stepId}/policy/draft`)).data,
 };
 
 // ============================================================

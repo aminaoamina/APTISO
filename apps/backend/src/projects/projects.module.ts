@@ -6,10 +6,11 @@ import { OrganizationRoleGuard } from '../common/guards/organization-role.guard'
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { RiskRegisterModule } from '../risk-register/risk-register.module';
 import { SoaModule } from '../soa/soa.module';
+import { PoliciesModule } from '../policies/policies.module';
 import { TaskService } from '../common/services/task.service';
 
 @Module({
-  imports: [RiskRegisterModule, SoaModule],
+  imports: [RiskRegisterModule, SoaModule, PoliciesModule],
   controllers: [ProjectsController, ProjectDetailController, TasksController],
   providers: [
     ProjectsService,

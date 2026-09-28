@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { PHASE3_CANDIDATES, SECURITY_DOCUMENTATION_PHASE_ORDER } from '@/lib/policy-catalog';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ChevronRight,
@@ -102,7 +103,16 @@ export default function ImplementationStepsPage() {
               )}
             </CardHeader>
             <CardContent className="pt-0">
-              {steps.length === 0 ? (
+              {steps.length === 0 && phase.order === SECURITY_DOCUMENTATION_PHASE_ORDER ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    After completing the Statement of Applicability, the necessary policy and procedure documents (from the list below) will be automatically added as steps here:
+                  </p>
+                  <ul className="grid gap-x-6 gap-y-1 text-xs text-muted-foreground sm:grid-cols-2 list-disc pl-5">
+                    {PHASE3_CANDIDATES.map((t) => <li key={t}>{t}</li>)}
+                  </ul>
+                </div>
+              ) : steps.length === 0 ? (
                 <p className="text-xs text-muted-foreground italic">
                   Steps for this phase will be available soon.
                 </p>
@@ -125,6 +135,9 @@ export default function ImplementationStepsPage() {
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm truncate ${isDone ? 'text-muted-foreground line-through' : 'font-medium'}`}>
                             Step {step.order}: {step.title}
+                            {step.metadata_json?.required === false && (
+                              <Badge variant="outline" className="ml-2 text-[10px] font-normal no-underline">No longer required</Badge>
+                            )}
                           </p>
                           <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                             {step.type === 'DOCUMENT' ? (
