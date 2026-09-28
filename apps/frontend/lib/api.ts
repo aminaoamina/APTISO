@@ -254,7 +254,7 @@ export interface TaskAssignment {
   document_instance_id: string | null;
   assigned_to: string;
   assigned_by: string;
-  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW';
+  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL';
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
   deadline: string | null;
   completed_at: string | null;
@@ -881,6 +881,120 @@ export const riskApi = {
     const response = await apiClient.post(`/steps/${stepId}/risk-register/create-documents`);
     return response.data;
   },
+};
+
+// ============================================================
+// Statement of Applicability API (ISO 27001 p2s3)
+// ============================================================
+
+export type ControlStatus = 'IMPLEMENTED' | 'UNDERWAY' | 'PLANNED' | 'REVIEW_NEEDED';
+export type Decision = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface SoaRow {
+  id: string;
+  step_id: string;
+  control_id: string;
+  applicable: boolean | null;
+  justification: string | null;
+  implementation_method: string | null;
+  status: ControlStatus | null;
+  suggestion: {
+    applicable: boolean;
+    justification: string;
+    method: string | null;
+    sources: { risks: { ref: string; label: string }[]; requirements: string[]; setup: string | null };
+  } | null;
+  is_user_edited: boolean;
+  responsible_id: string | null;
+  responsible: UserBrief | null;
+  deadline: string | null;
+  resources: string | null;
+  resources_decision: Decision | null;
+  resources_comment: string | null;
+  resources_decider: UserBrief | null;
+  resources_decided_at: string | null;
+  task_id: string | null;
+  updated_at: string;
+  control: { code: string; title: string };
+  in_treatment_plan: boolean;
+  treated_risks: { ref: string; label: string }[];
+  documents: string[];
+}
+
+export interface SoaState {
+  setup: {
+    questions: { key: string; question: string; help: string; excludes: string[] }[];
+    answers: Record<string, boolean> | null;
+    completedAt: string | null;
+  };
+  rtpConfirmedAt: string | null;
+  rows: SoaRow[];
+  approvals: { user: UserBrief; decision: Decision; comment: string | null; decider: UserBrief | null; decided_at: string | null }[];
+  projectUsers: ProjectUserBrief[];
+  riskRegister: { completed: boolean; risks: number };
+  summary: {
+    total: number;
+    undecided: number;
+    unjustified: number;
+    applicable: number;
+    notApplicable: number;
+    implemented: number;
+    planned: number;
+    applicableIncomplete: number;
+    planIncomplete: number;
+    resourcesPending: number;
+    resourcesRejected: number;
+  };
+  completion: RiskRegisterCompletion;
+  permissions: {
+    role: 'PROJECT_LEAD' | 'PROJECT_MEMBER' | 'PROJECT_AUDITOR';
+    canEdit: boolean;
+    isLead: boolean;
+    canApproveResources: boolean;
+    userId: string;
+  };
+}
+
+export interface SoaControlUpdate {
+  applicable?: boolean;
+  justification?: string;
+  implementation_method?: string;
+  status?: ControlStatus | null;
+  responsible_id?: string | null;
+  deadline?: string | null;
+  resources?: string;
+}
+
+export const soaApi = {
+  get: async (stepId: string): Promise<SoaState> =>
+    (await apiClient.get(`/steps/${stepId}/soa`)).data,
+
+  saveSetup: async (stepId: string, answers: Record<string, boolean>): Promise<SoaState> =>
+    (await apiClient.put(`/steps/${stepId}/soa/setup`, { answers })).data,
+
+  refreshSuggestions: async (stepId: string, overwrite = false): Promise<SoaState> =>
+    (await apiClient.post(`/steps/${stepId}/soa/suggestions`, { overwrite })).data,
+
+  updateControl: async (rowId: string, data: SoaControlUpdate): Promise<SoaState> =>
+    (await apiClient.patch(`/soa/controls/${rowId}`, data)).data,
+
+  confirmPlan: async (stepId: string): Promise<SoaState> =>
+    (await apiClient.post(`/steps/${stepId}/soa/treatment-plan/confirm`)).data,
+
+  decideResources: async (rowId: string, decision: 'APPROVED' | 'REJECTED', comment?: string): Promise<SoaState> =>
+    (await apiClient.post(`/soa/controls/${rowId}/resources`, { decision, comment })).data,
+
+  ownerApproval: async (
+    stepId: string,
+    data: { decision: 'APPROVED' | 'REJECTED'; comment?: string; on_behalf_of?: string },
+  ): Promise<SoaState> =>
+    (await apiClient.post(`/steps/${stepId}/soa/owner-approval`, data)).data,
+
+  getDocuments: async (stepId: string): Promise<DocumentInstance[]> =>
+    (await apiClient.get(`/steps/${stepId}/soa/documents`)).data,
+
+  createDocument: async (stepId: string): Promise<DocumentInstance[]> =>
+    (await apiClient.post(`/steps/${stepId}/soa/documents`)).data,
 };
 
 // ============================================================

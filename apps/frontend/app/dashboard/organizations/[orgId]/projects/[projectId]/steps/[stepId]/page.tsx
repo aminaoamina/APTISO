@@ -13,6 +13,7 @@ import { EducationalStepBody } from '@/lib/steps-content';
 import { projectsApi, documentsApi, TaskAssignment } from '@/lib/api';
 import RequirementsStep from '@/components/requirements/requirements-step';
 import RiskRegisterStep from '@/components/risk-register/risk-register-step';
+import SoaStep from '@/components/soa/soa-step';
 import { AwarenessPanel, TrainingPanel } from '@/components/steps/awareness-training';
 import { STEP_AWARENESS_MATERIALS } from '@/lib/step-materials';
 import { useAuthStore } from '@/store/auth-store';
@@ -38,7 +39,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   APPROVE_DOCUMENT: 'Approve document', AWARENESS_TASK: 'Awareness',
   TRAINING_TASK: 'Training', HR_REQUEST: 'HR request',
   FINANCE_REQUEST: 'Finance request', TECHNOLOGY_REQUEST: 'Technology request',
-  RISK_REVIEW: 'Review of risks',
+  RISK_REVIEW: 'Review of risks', IMPLEMENT_CONTROL: 'Implement control',
 };
 
 const TASK_TYPE_COLORS: Record<string, string> = {
@@ -51,9 +52,13 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   FINANCE_REQUEST: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  IMPLEMENT_CONTROL: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
 };
 
 const RISK_REGISTER_KEY = 'iso27001.p2s2.risk-register';
+const SOA_KEY = 'iso27001.p2s3.statement-of-applicability';
+// Steps that can only be finished once their checklist is complete (also enforced by the API).
+const CHECKLIST_STEPS = [RISK_REGISTER_KEY, SOA_KEY];
 
 export default function StepDetailPage() {
   const params = useParams();
@@ -136,8 +141,8 @@ export default function StepDetailPage() {
   const myPrivilege = members.find((m) => m.user_id === currentUserId)?.privilege;
   const canEditStep = myPrivilege === 'PROJECT_LEAD' || myPrivilege === 'PROJECT_MEMBER';
   const isRiskRegister = step.key === RISK_REGISTER_KEY;
-  // The risk register can only be finished once its checklist is complete (also enforced by the API).
-  const finishBlocked = isRiskRegister && !registerCompletion?.ready;
+  const hasChecklist = CHECKLIST_STEPS.includes(step.key);
+  const finishBlocked = hasChecklist && !registerCompletion?.ready;
   const isMandatory = meta?.mandatory ?? false;
 
   const saveCompletionData = async (updates: Record<string, unknown>, label: string) => {
@@ -245,6 +250,11 @@ export default function StepDetailPage() {
       {/* Risk Register — 7-step wizard */}
       {step.type === 'REGISTER' && step.key === 'iso27001.p2s2.risk-register' && (
         <RiskRegisterStep stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />
+      )}
+
+      {/* Statement of Applicability + Risk Treatment Plan — 5-stage module */}
+      {step.type === 'REGISTER' && step.key === SOA_KEY && (
+        <SoaStep stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />
       )}
 
       {/* Document section — only for DOCUMENT steps */}
@@ -487,9 +497,9 @@ export default function StepDetailPage() {
       {!isDone && (
         <Card>
           <CardContent className="py-5 space-y-4">
-            {isRiskRegister && registerCompletion && (
+            {hasChecklist && registerCompletion && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">Before finishing the risk register</p>
+                <p className="text-sm font-medium">Before finishing this step</p>
                 <ul className="space-y-1.5">
                   {registerCompletion.items.map((i) => (
                     <li key={i.key} className="flex items-start gap-2 text-sm">
@@ -518,7 +528,7 @@ export default function StepDetailPage() {
               </div>
               <Button onClick={handleCompleteStep} disabled={isCompleting || finishBlocked}>
                 {isCompleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                {isRiskRegister ? 'Finish step' : 'Mark as completed'}
+                {hasChecklist ? 'Finish step' : 'Mark as completed'}
               </Button>
             </div>
           </CardContent>

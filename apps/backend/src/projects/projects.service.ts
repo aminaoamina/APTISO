@@ -8,6 +8,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { RiskRegisterService } from '../risk-register/risk-register.service';
+import { SoaService } from '../soa/soa.service';
+import { NewTask, TaskService } from '../common/services/task.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -126,6 +128,7 @@ const PHASE_1_STEPS = [
 ];
 
 const RISK_REGISTER_STEP_KEY = 'iso27001.p2s2.risk-register';
+const SOA_STEP_KEY = 'iso27001.p2s3.statement-of-applicability';
 
 const PHASE_2_STEPS = [
   {
@@ -149,6 +152,21 @@ const PHASE_2_STEPS = [
       clause: 'Clauses 6.1, 8.2, and 8.3',
       workload_hours: 6,
       estimated_days: 4,
+      mandatory: true,
+    },
+  },
+  {
+    key: SOA_STEP_KEY,
+    title: 'Statement of Applicability',
+    purpose:
+      'List which controls are appropriate to be implemented, why, and how they are implemented, and plan the implementation of the controls that are not yet in place (Risk Treatment Plan).',
+    type: StepType.REGISTER,
+    order: 3,
+    // Conformio: 4 h to fill out the register + 1 h for review and approval; usually 2 days.
+    metadata_json: {
+      clause: 'Clauses 6.1.3 d), 6.1.3 e), 6.2, and 8.3',
+      workload_hours: 5,
+      estimated_days: 2,
       mandatory: true,
     },
   },
@@ -181,6 +199,8 @@ export class ProjectsService {
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
     private readonly riskRegister: RiskRegisterService,
+    private readonly soa: SoaService,
+    private readonly tasks: TaskService,
   ) {}
 
   async create(
@@ -517,12 +537,15 @@ export class ProjectsService {
 
     // The risk register is only complete when the risks are assessed, treated
     // and accepted by their owners (clauses 6.1.2, 6.1.3 f, 8.2 and 8.3).
-    if (step.key === RISK_REGISTER_STEP_KEY) {
-      const completion = await this.riskRegister.getCompletion(stepId);
-      if (!completion.ready) {
-        const missing = completion.items.filter(i => !i.done).map(i => `${i.label} (${i.detail})`);
-        throw new BadRequestException(`The risk register is not complete yet: ${missing.join('; ')}`);
-      }
+    // Registers are only complete when their checklist is: the risk register
+    // (clauses 6.1.2, 6.1.3 f, 8.2, 8.3) and the SoA (clauses 6.1.3 d-f, 8.3).
+    const checklist =
+      step.key === RISK_REGISTER_STEP_KEY ? await this.riskRegister.getCompletion(stepId)
+        : step.key === SOA_STEP_KEY ? await this.soa.getCompletion(stepId)
+          : null;
+    if (checklist && !checklist.ready) {
+      const missing = checklist.items.filter(i => !i.done).map(i => `${i.label} (${i.detail})`);
+      throw new BadRequestException(`${step.title} is not complete yet: ${missing.join('; ')}`);
     }
 
     const updated = await this.prisma.projectStep.update({
@@ -892,58 +915,8 @@ export class ProjectsService {
     );
   }
 
-  /** Creates a task, notifies the assignee and records it in the audit log. */
-  private async createTask(
-    t: {
-      projectId: string;
-      organizationId: string;
-      stepId: string | null;
-      assignedTo: string;
-      assignedBy: string;
-      type: TaskType;
-      notes: string | null;
-      deadline: Date | null;
-    },
-    ipAddress?: string,
-    userAgent?: string,
-  ) {
-    const task = await this.prisma.taskAssignment.create({
-      data: {
-        project_id: t.projectId,
-        step_id: t.stepId,
-        assigned_to: t.assignedTo,
-        assigned_by: t.assignedBy,
-        type: t.type,
-        notes: t.notes,
-        deadline: t.deadline,
-      },
-      include: {
-        assignee: { select: { id: true, email: true, first_name: true, last_name: true } },
-        assigner: { select: { id: true, email: true, first_name: true, last_name: true } },
-      },
-    });
-
-    await this.prisma.notification.create({
-      data: {
-        user_id: t.assignedTo,
-        organization_id: t.organizationId,
-        project_id: t.projectId,
-        task_assignment_id: task.id,
-        type: NotificationType.TASK_ASSIGNED,
-      },
-    });
-
-    await this.auditLog.log({
-      userId: t.assignedBy,
-      action: AuditAction.TASK_ASSIGNED,
-      entityType: 'task_assignment',
-      entityId: task.id,
-      details: { projectId: t.projectId, stepId: t.stepId, assignedTo: t.assignedTo, type: t.type },
-      ipAddress,
-      userAgent,
-    });
-
-    return task;
+  private createTask(t: NewTask, ipAddress?: string, userAgent?: string) {
+    return this.tasks.create(t, ipAddress, userAgent);
   }
 
   // ─── Awareness and training for a step (clauses 7.2 and 7.3) ──

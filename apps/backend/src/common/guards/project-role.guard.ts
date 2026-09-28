@@ -67,7 +67,7 @@ export class ProjectRoleGuard implements CanActivate {
   }
 
   /**
-   * Routes nested under a step, risk, requirement or document do not carry
+   * Routes nested under a step, risk, requirement, SoA control or document do not carry
    * :projectId, so resolve the owning project from whichever id is present.
    * Without this the guard silently skipped membership and role checks.
    */
@@ -92,6 +92,15 @@ export class ProjectRoleGuard implements CanActivate {
       });
       if (!requirement) throw new NotFoundException('Requirement not found');
       stepId = requirement.step_id;
+    }
+
+    if (!stepId && params.soaControlId) {
+      const row = await this.prisma.soaControl.findUnique({
+        where: { id: params.soaControlId },
+        select: { step_id: true },
+      });
+      if (!row) throw new NotFoundException('Control not found');
+      stepId = row.step_id;
     }
 
     if (!stepId && params.documentId) {

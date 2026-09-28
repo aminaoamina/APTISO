@@ -28,6 +28,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   FINANCE_REQUEST: 'Finance request',
   TECHNOLOGY_REQUEST: 'Technology request',
   RISK_REVIEW: 'Review of risks',
+  IMPLEMENT_CONTROL: 'Implement control',
 };
 
 const TASK_TYPE_COLORS: Record<string, string> = {
@@ -40,6 +41,7 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   FINANCE_REQUEST: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
+  IMPLEMENT_CONTROL: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
 };
 
 export default function MyTasksPage() {

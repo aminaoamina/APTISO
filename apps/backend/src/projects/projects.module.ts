@@ -5,13 +5,16 @@ import { AuditLogService } from '../common/services/audit-log.service';
 import { OrganizationRoleGuard } from '../common/guards/organization-role.guard';
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { RiskRegisterModule } from '../risk-register/risk-register.module';
+import { SoaModule } from '../soa/soa.module';
+import { TaskService } from '../common/services/task.service';
 
 @Module({
-  imports: [RiskRegisterModule],
+  imports: [RiskRegisterModule, SoaModule],
   controllers: [ProjectsController, ProjectDetailController, TasksController],
   providers: [
     ProjectsService,
     AuditLogService,
+    TaskService,
     OrganizationRoleGuard,
     ProjectRoleGuard,
   ],

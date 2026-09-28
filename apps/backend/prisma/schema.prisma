@@ -172,6 +172,10 @@ model User {
   risks_owned                        RiskItem[]             @relation("RiskOwners")
   risk_assets_owned                  RiskItem[]             @relation("RiskAssetOwners")
   risk_decisions                     RiskItem[]             @relation("RiskDecisions")
+  soa_controls_responsible           SoaControl[]           @relation("SoaResponsible")
+  soa_resource_decisions             SoaControl[]           @relation("SoaResourceDecisions")
+  soa_owner_approvals                SoaOwnerApproval[]     @relation("SoaOwnerApprovals")
+  soa_approval_decisions             SoaOwnerApproval[]     @relation("SoaApprovalDecisions")
 
   @@index([email])
   @@map("users")
@@ -533,6 +537,7 @@ enum TaskType {
   FINANCE_REQUEST
   TECHNOLOGY_REQUEST
   RISK_REVIEW
+  IMPLEMENT_CONTROL
 }
 
 enum TaskStatus {
@@ -566,6 +571,9 @@ model ProjectStep {
   risk_asset_vuln_links RiskAssetVulnLink[]
   risk_vuln_threat_links RiskVulnThreatLink[]
   risks             RiskItem[]
+  soa_register      SoaRegister?
+  soa_controls      SoaControl[]
+  soa_owner_approvals SoaOwnerApproval[]
 
   @@unique([phase_id, key])
   @@unique([phase_id, order])
@@ -946,6 +954,7 @@ model RiskControl {
   title String @db.VarChar(300)
 
   item_links RiskItemControl[]
+  soa_rows   SoaControl[]
 
   @@index([code])
   @@map("risk_controls")
@@ -963,4 +972,86 @@ model RiskItemControl {
   @@unique([item_id, control_id])
   @@index([control_id])
   @@map("risk_item_controls")
+}
+
+// ============================================================
+// STATEMENT OF APPLICABILITY + RISK TREATMENT PLAN (Phase 2 / Step 3)
+// ============================================================
+
+enum ControlImplementationStatus {
+  IMPLEMENTED
+  UNDERWAY
+  PLANNED
+  REVIEW_NEEDED
+}
+
+/// One per SoA step: setup answers and the Risk Treatment Plan confirmation.
+model SoaRegister {
+  id                 String    @id @default(uuid()) @db.Uuid
+  step_id            String    @unique @db.Uuid
+  setup              Json?
+  setup_completed_at DateTime? @db.Timestamp(6)
+  rtp_confirmed_at   DateTime? @db.Timestamp(6)
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @updatedAt @db.Timestamp(6)
+
+  step ProjectStep @relation(fields: [step_id], references: [id], onDelete: Cascade)
+
+  @@map("soa_registers")
+}
+
+/// One row per Annex A control: applicability (SoA) and treatment plan (RTP).
+model SoaControl {
+  id                    String                       @id @default(uuid()) @db.Uuid
+  step_id               String                       @db.Uuid
+  control_id            String                       @db.Uuid
+  applicable            Boolean?
+  justification         String?                      @db.Text
+  implementation_method String?                      @db.Text
+  status                ControlImplementationStatus?
+  /// Platform suggestion: { applicable, justification, sources: { risks[], requirements[], setup } }
+  suggestion            Json?
+  is_user_edited        Boolean                      @default(false)
+
+  // Risk Treatment Plan (applicable controls not yet implemented)
+  responsible_id        String?                      @db.Uuid
+  deadline              DateTime?                    @db.Timestamp(6)
+  resources             String?                      @db.Text
+  resources_decision    RiskApprovalDecision?
+  resources_comment     String?                      @db.Text
+  resources_decided_by  String?                      @db.Uuid
+  resources_decided_at  DateTime?                    @db.Timestamp(6)
+  task_id               String?                      @db.Uuid
+
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  step              ProjectStep @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  control           RiskControl @relation(fields: [control_id], references: [id], onDelete: Restrict)
+  responsible       User?       @relation("SoaResponsible", fields: [responsible_id], references: [id], onDelete: SetNull)
+  resources_decider User?       @relation("SoaResourceDecisions", fields: [resources_decided_by], references: [id], onDelete: SetNull)
+
+  @@unique([step_id, control_id])
+  @@index([step_id])
+  @@map("soa_controls")
+}
+
+/// Risk owners' approval of the Risk Treatment Plan and residual risks (clause 6.1.3 f).
+model SoaOwnerApproval {
+  id          String               @id @default(uuid()) @db.Uuid
+  step_id     String               @db.Uuid
+  user_id     String               @db.Uuid
+  decision    RiskApprovalDecision @default(PENDING)
+  comment     String?              @db.Text
+  decided_by  String?              @db.Uuid
+  decided_at  DateTime?            @db.Timestamp(6)
+  created_at  DateTime             @default(now()) @db.Timestamp(6)
+  updated_at  DateTime             @updatedAt @db.Timestamp(6)
+
+  step    ProjectStep @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  user    User        @relation("SoaOwnerApprovals", fields: [user_id], references: [id], onDelete: Cascade)
+  decider User?       @relation("SoaApprovalDecisions", fields: [decided_by], references: [id], onDelete: SetNull)
+
+  @@unique([step_id, user_id])
+  @@map("soa_owner_approvals")
 }

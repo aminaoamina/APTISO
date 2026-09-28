@@ -115,7 +115,7 @@ function ScaleSelect({
 }
 
 /** Text field that saves on blur instead of on every keystroke. */
-function BlurField({
+export function BlurField({
   value,
   onSave,
   multiline,
