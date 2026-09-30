@@ -19,6 +19,7 @@ import TrainingPlan from '@/components/audit-prep/training-plan';
 import SecurityObjectives from '@/components/audit-prep/objectives';
 import InternalAudit from '@/components/audit-prep/internal-audit';
 import { ManagementReviewMeeting, ManagementReviewSetup } from '@/components/audit-prep/management-review';
+import Maintenance from '@/components/maintenance/maintenance';
 import { policiesApi } from '@/lib/api';
 import { AwarenessPanel, TrainingPanel } from '@/components/steps/awareness-training';
 import { STEP_AWARENESS_MATERIALS } from '@/lib/step-materials';
@@ -47,6 +48,8 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   FINANCE_REQUEST: 'Finance request', TECHNOLOGY_REQUEST: 'Technology request',
   RISK_REVIEW: 'Review of risks', IMPLEMENT_CONTROL: 'Implement control',
   CORRECTIVE_ACTION: 'Corrective action', INTERNAL_AUDIT: 'Internal audit', MANAGEMENT_REVIEW_ACTION: 'Management review action',
+  MANAGEMENT_REVIEW_DUE: 'Management review due', OBJECTIVES_REVIEW: 'Review of objectives', DOCUMENT_REVIEW: 'Review of document',
+  INCIDENTS_REVIEW: 'Review of incidents', TRAININGS_REVIEW: 'Review of trainings',
 };
 
 const TASK_TYPE_COLORS: Record<string, string> = {
@@ -63,6 +66,11 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   CORRECTIVE_ACTION: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
   INTERNAL_AUDIT: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
   MANAGEMENT_REVIEW_ACTION: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  MANAGEMENT_REVIEW_DUE: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  OBJECTIVES_REVIEW: 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-400',
+  DOCUMENT_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  INCIDENTS_REVIEW: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  TRAININGS_REVIEW: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
 };
 
 const RISK_REGISTER_KEY = 'iso27001.p2s2.risk-register';
@@ -77,7 +85,8 @@ const P4 = {
   INTERNAL_AUDIT: 'iso27001.p4s6.internal-audit',
   MANAGEMENT_REVIEW: 'iso27001.p4s7.management-review',
 };
-const CHECKLIST_STEPS = [RISK_REGISTER_KEY, SOA_KEY, P4.TRAINING_PLAN, P4.OBJECTIVES, P4.REVIEW_SETUP, P4.INTERNAL_AUDIT, P4.MANAGEMENT_REVIEW];
+const MAINTENANCE_KEY = 'iso27001.p5s1.maintenance';
+const CHECKLIST_STEPS = [RISK_REGISTER_KEY, SOA_KEY, P4.TRAINING_PLAN, P4.OBJECTIVES, P4.REVIEW_SETUP, P4.INTERNAL_AUDIT, P4.MANAGEMENT_REVIEW, MAINTENANCE_KEY];
 
 export default function StepDetailPage() {
   const params = useParams();
@@ -292,6 +301,9 @@ export default function StepDetailPage() {
       {step.type === 'REGISTER' && step.key === SOA_KEY && (
         <SoaStep stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />
       )}
+
+      {/* Phase 5: maintenance module */}
+      {step.key === MAINTENANCE_KEY && <Maintenance orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />}
 
       {/* Phase 4 registers and modules */}
       {step.key === P4.TRAINING_PLAN && <TrainingPlan stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />}

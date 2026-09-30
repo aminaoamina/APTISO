@@ -15,6 +15,8 @@ import { RiskRegisterModule } from './risk-register/risk-register.module';
 import { SoaModule } from './soa/soa.module';
 import { PoliciesModule } from './policies/policies.module';
 import { AuditPrepModule } from './audit-prep/audit-prep.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { CsrfController } from './common/controllers/csrf.controller';
 import { AuditLogService } from './common/services/audit-log.service';
@@ -43,6 +45,9 @@ import { AuditLogService } from './common/services/audit-log.service';
     SoaModule,
     PoliciesModule,
     AuditPrepModule,
+    MaintenanceModule,
+    // Nightly jobs (ISMS maintenance reminders).
+    ScheduleModule.forRoot(),
   ],
   controllers: [
     AppController,

@@ -8,10 +8,11 @@ import { RiskRegisterModule } from '../risk-register/risk-register.module';
 import { SoaModule } from '../soa/soa.module';
 import { PoliciesModule } from '../policies/policies.module';
 import { AuditPrepModule } from '../audit-prep/audit-prep.module';
+import { MaintenanceModule } from '../maintenance/maintenance.module';
 import { TaskService } from '../common/services/task.service';
 
 @Module({
-  imports: [RiskRegisterModule, SoaModule, PoliciesModule, AuditPrepModule],
+  imports: [RiskRegisterModule, SoaModule, PoliciesModule, AuditPrepModule, MaintenanceModule],
   controllers: [ProjectsController, ProjectDetailController, TasksController],
   providers: [
     ProjectsService,

@@ -15,6 +15,7 @@ import { ObjectivesService } from '../audit-prep/objectives.service';
 import { InternalAuditService } from '../audit-prep/internal-audit.service';
 import { ManagementReviewService } from '../audit-prep/management-review.service';
 import { P4 } from '../audit-prep/keys';
+import { MaintenanceService, MAINTENANCE_STEP_KEY } from '../maintenance/maintenance.service';
 import { NewTask, TaskService } from '../common/services/task.service';
 import {
   CreateProjectDto,
@@ -133,6 +134,18 @@ const PHASE_1_STEPS = [
 ];
 
 const RISK_REGISTER_STEP_KEY = 'iso27001.p2s2.risk-register';
+
+/** Phase 5: Conformio's maintenance module (certification cycle and recurring activities). */
+const PHASE_5_STEPS = [
+  {
+    key: MAINTENANCE_STEP_KEY,
+    title: 'ISMS Maintenance & Certification Cycle',
+    purpose: 'Keep the ISMS running after certification: track the certification cycle and perform the recurring reviews, audits and management reviews on time.',
+    type: StepType.REGISTER,
+    order: 1,
+    metadata_json: { clause: 'Clauses 9.1, 9.2, 9.3 and 10.1', mandatory: true },
+  },
+];
 
 /** Phase 4 (Preparation for External Audit), in Conformio's order. */
 const PROCEDURE_OPTIONAL = 'This document is not mandatory, so if you do not see a benefit in using it, you can skip it.';
@@ -272,6 +285,7 @@ export class ProjectsService {
     private readonly objectives: ObjectivesService,
     private readonly audits: InternalAuditService,
     private readonly reviews: ManagementReviewService,
+    private readonly maintenance: MaintenanceService,
   ) {}
 
   async create(
@@ -320,6 +334,7 @@ export class ProjectsService {
             if (phase.order === 1) return { ...phase, steps: { create: PHASE_1_STEPS } };
             if (phase.order === 2) return { ...phase, steps: { create: PHASE_2_STEPS } };
             if (phase.order === 4) return { ...phase, steps: { create: PHASE_4_STEPS } };
+            if (phase.order === 5) return { ...phase, steps: { create: PHASE_5_STEPS } };
             return { ...phase };
           }),
         },
@@ -619,6 +634,7 @@ export class ProjectsService {
       [P4.REVIEW_SETUP]: id => this.reviews.getSetupCompletion(id),
       [P4.INTERNAL_AUDIT]: id => this.audits.getCompletion(id),
       [P4.MANAGEMENT_REVIEW]: id => this.reviews.getReviewCompletion(id),
+      [MAINTENANCE_STEP_KEY]: id => this.maintenance.getCompletion(id),
     };
     const checklist = completionProviders[step.key] ? await completionProviders[step.key](stepId) : null;
     if (checklist && !checklist.ready) {
@@ -637,6 +653,11 @@ export class ProjectsService {
     // Finishing the SoA adds the required policies to Phase 3 (Security Documentation).
     if (step.key === SOA_STEP_KEY) {
       await this.policies.syncFromSoa(stepId, userId);
+    }
+    // After the first management review the ISMS runs: start the maintenance cycle (Phase 5).
+    if (step.key === P4.MANAGEMENT_REVIEW) {
+      await this.maintenance.ensureSetup(projectId);
+      await this.maintenance.runForProject(projectId);
     }
 
     // Derive the phase state from its steps: starting a step starts the

@@ -32,6 +32,11 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   CORRECTIVE_ACTION: 'Corrective action',
   INTERNAL_AUDIT: 'Internal audit',
   MANAGEMENT_REVIEW_ACTION: 'Management review action',
+  MANAGEMENT_REVIEW_DUE: 'Management review due',
+  OBJECTIVES_REVIEW: 'Review of objectives',
+  DOCUMENT_REVIEW: 'Review of document',
+  INCIDENTS_REVIEW: 'Review of incidents',
+  TRAININGS_REVIEW: 'Review of trainings',
 };
 
 const TASK_TYPE_COLORS: Record<string, string> = {
@@ -48,6 +53,11 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   CORRECTIVE_ACTION: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
   INTERNAL_AUDIT: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
   MANAGEMENT_REVIEW_ACTION: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  MANAGEMENT_REVIEW_DUE: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
+  OBJECTIVES_REVIEW: 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-400',
+  DOCUMENT_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+  INCIDENTS_REVIEW: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+  TRAININGS_REVIEW: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
 };
 
 export default function MyTasksPage() {

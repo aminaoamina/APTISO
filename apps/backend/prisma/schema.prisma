@@ -328,6 +328,7 @@ model ComplianceProject {
   internal_audits      InternalAudit[]
   review_setup         ManagementReviewSetup?
   management_reviews   ManagementReview[]
+  maintenance          MaintenanceSetup?
 
   @@index([organization_id])
   @@index([status])
@@ -548,6 +549,11 @@ enum TaskType {
   CORRECTIVE_ACTION
   INTERNAL_AUDIT
   MANAGEMENT_REVIEW_ACTION
+  MANAGEMENT_REVIEW_DUE
+  OBJECTIVES_REVIEW
+  DOCUMENT_REVIEW
+  INCIDENTS_REVIEW
+  TRAININGS_REVIEW
 }
 
 enum TaskStatus {
@@ -699,6 +705,9 @@ model TaskAssignment {
   deadline             DateTime?  @db.Timestamp(6)
   completed_at         DateTime?  @db.Timestamp(6)
   notes                String?    @db.Text
+  /// Recurring maintenance activity this task belongs to (e.g. "incidents",
+  /// "document:<id>"); an activity never has two open tasks.
+  activity_key         String?    @db.VarChar(100)
   created_at           DateTime   @default(now()) @db.Timestamp(6)
 
   project  ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
@@ -710,6 +719,7 @@ model TaskAssignment {
   notifications Notification[]
 
   @@index([assigned_to, status])
+  @@index([project_id, type, activity_key])
   @@index([project_id])
   @@index([step_id])
   @@map("task_assignments")
@@ -1433,4 +1443,27 @@ model ManagementReviewDecision {
 
   @@index([review_id])
   @@map("management_review_decisions")
+}
+
+// ============================================================
+// PHASE 5: ISMS MAINTENANCE & CERTIFICATION CYCLE
+// ============================================================
+
+/// Certification cycle dates and the frequency of the recurring reviews.
+/// Everything else on the maintenance page is derived from the ISMS modules.
+model MaintenanceSetup {
+  id                        String          @id @default(uuid()) @db.Uuid
+  project_id                String          @unique @db.Uuid
+  certification_date        DateTime?       @db.Timestamp(6)
+  certification_body        String?         @db.VarChar(200)
+  certificate_number        String?         @db.VarChar(100)
+  incident_review_frequency ReviewFrequency @default(QUARTERLY)
+  training_review_frequency ReviewFrequency @default(YEARLY)
+  last_run_at               DateTime?       @db.Timestamp(6)
+  created_at                DateTime        @default(now()) @db.Timestamp(6)
+  updated_at                DateTime        @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("maintenance_setups")
 }

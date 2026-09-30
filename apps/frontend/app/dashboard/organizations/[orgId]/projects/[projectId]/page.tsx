@@ -302,6 +302,11 @@ export default function ProjectDetailPage() {
                 Nonconformities &amp; incidents
               </Link>
             </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/dashboard/organizations/${orgId}/projects/${projectId}/maintenance`}>
+                Maintenance
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
