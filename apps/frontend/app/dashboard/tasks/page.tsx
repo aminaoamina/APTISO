@@ -29,6 +29,9 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   TECHNOLOGY_REQUEST: 'Technology request',
   RISK_REVIEW: 'Review of risks',
   IMPLEMENT_CONTROL: 'Implement control',
+  CORRECTIVE_ACTION: 'Corrective action',
+  INTERNAL_AUDIT: 'Internal audit',
+  MANAGEMENT_REVIEW_ACTION: 'Management review action',
 };
 
 const TASK_TYPE_COLORS: Record<string, string> = {
@@ -42,6 +45,9 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
   IMPLEMENT_CONTROL: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
+  CORRECTIVE_ACTION: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
+  INTERNAL_AUDIT: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
+  MANAGEMENT_REVIEW_ACTION: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
 };
 
 export default function MyTasksPage() {

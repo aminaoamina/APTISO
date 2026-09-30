@@ -291,11 +291,18 @@ export default function ProjectDetailPage() {
             Follow the guided implementation steps for your ISMS — starting with Project
             Preparation.
           </p>
-          <Button size="sm" className="mt-4" asChild>
-            <Link href={`/dashboard/organizations/${orgId}/projects/${projectId}/steps`}>
-              Open Implementation Steps
-            </Link>
-          </Button>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button size="sm" asChild>
+              <Link href={`/dashboard/organizations/${orgId}/projects/${projectId}/steps`}>
+                Open Implementation Steps
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link href={`/dashboard/organizations/${orgId}/projects/${projectId}/registers`}>
+                Nonconformities &amp; incidents
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

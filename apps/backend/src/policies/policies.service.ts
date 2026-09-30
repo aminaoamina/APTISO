@@ -27,6 +27,7 @@ import {
   findPolicyByStepKey,
   policyStepKey,
 } from './policy-catalog';
+import { PROCEDURE_WHY, ProcedureDefinition, findProcedureByStepKey } from './procedure-catalog';
 
 const SOA_STEP_KEY = 'iso27001.p2s3.statement-of-applicability';
 const SECURITY_DOCUMENTATION_PHASE_ORDER = 3;
@@ -138,6 +139,15 @@ export class PoliciesService implements OnModuleInit {
   // ─── Policy step ───────────────────────────────────────────────
 
   async getPolicy(stepId: string, userId: string) {
+    const procedure = await this.findProcedureStep(stepId, userId);
+    if (procedure) {
+      return {
+        policy: { key: procedure.key, title: procedure.title, purpose: procedure.purpose },
+        required: true,
+        why: PROCEDURE_WHY,
+        controls: [],
+      };
+    }
     const { step, policy } = await this.ensurePolicyStep(stepId, userId);
     const controls = await this.getControlDetails(step.phase.project_id, policy);
     const meta = (step.metadata_json ?? {}) as Record<string, unknown>;
@@ -151,6 +161,8 @@ export class PoliciesService implements OnModuleInit {
 
   /** Creates the first draft of the policy from the SoA (no question wizard). */
   async createDraft(stepId: string, userId: string, ipAddress?: string, userAgent?: string) {
+    const procedure = await this.findProcedureStep(stepId, userId);
+    if (procedure) return this.createProcedureDraft(stepId, procedure, userId, ipAddress, userAgent);
     const { step, policy, role } = await this.ensurePolicyStep(stepId, userId);
     if (role === ProjectRole.PROJECT_AUDITOR) throw new ForbiddenException('Auditors cannot create documents');
     const existing = await this.prisma.documentInstance.findUnique({ where: { step_id: stepId } });
@@ -274,6 +286,98 @@ export class PoliciesService implements OnModuleInit {
     );
 
     return { type: 'doc', content };
+  }
+
+  // ─── Phase 4 procedures (nonconformities, internal audit) ───────
+
+  private async findProcedureStep(stepId: string, userId: string) {
+    const step = await this.prisma.projectStep.findUnique({
+      where: { id: stepId },
+      select: {
+        key: true,
+        phase: { select: { project: { select: { members: { where: { user_id: userId }, select: { privilege: true } } } } } },
+      },
+    });
+    const procedure = step ? findProcedureByStepKey(step.key) : undefined;
+    if (!step || !procedure) return null;
+    const member = step.phase.project.members[0];
+    if (!member) throw new ForbiddenException('You are not a member of this project');
+    return { ...procedure, role: member.privilege };
+  }
+
+  private async createProcedureDraft(
+    stepId: string,
+    procedure: ProcedureDefinition & { role: ProjectRole },
+    userId: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ) {
+    if (procedure.role === ProjectRole.PROJECT_AUDITOR) throw new ForbiddenException('Auditors cannot create documents');
+    const existing = await this.prisma.documentInstance.findUnique({ where: { step_id: stepId } });
+    if (existing) throw new ConflictException('This step already has a document; delete it first to regenerate the draft');
+    const step = await this.prisma.projectStep.findUnique({
+      where: { id: stepId },
+      select: { phase: { select: { project: { select: { organization: { select: { name: true } } } } } } },
+    });
+    const orgName = step?.phase.project.organization?.name ?? 'Organization';
+    const code = `P4-${procedure.key.toUpperCase()}`.slice(0, 50);
+    const template = await this.prisma.documentTemplate.upsert({
+      where: { code },
+      update: {},
+      create: { code, name: procedure.title, description: `Procedure to ${procedure.purpose}.` },
+    });
+    const fillOrg = (t: string) => t.split('{org}').join(orgName);
+
+    const content: ProseMirrorNode[] = [
+      heading(1, procedure.title),
+      table([
+        [[text('Organization')], [text(orgName)]],
+        [[text('Document code')], [placeholder('document code')]],
+        [[text('Version')], [text('0.1')]],
+        [[text('Created by')], [placeholder('author')]],
+        [[text('Approved by')], [placeholder('approver')]],
+        [[text('Confidentiality level')], [text('Internal')]],
+      ]),
+      heading(2, '1. Purpose, scope and users'),
+      paragraph(text(`The purpose of this procedure is to ${procedure.purpose}.`)),
+      paragraph(text(`This procedure applies to the entire scope of the Information Security Management System (ISMS) of ${orgName}. Users of this document are all employees, and in particular top management and the persons responsible for the ISMS.`)),
+      heading(2, '2. Reference documents'),
+      bulletList(procedure.references.map(r => [text(r)])),
+    ];
+    procedure.sections.forEach((section, i) => {
+      content.push(heading(2, `${i + 3}. ${section.heading}`));
+      (section.paragraphs ?? []).forEach(par => content.push(paragraph(text(fillOrg(par)))));
+      if (section.bullets?.length) content.push(bulletList(section.bullets.map(b => [text(fillOrg(b))])));
+    });
+    content.push(
+      heading(2, `${procedure.sections.length + 3}. Validity and document management`),
+      paragraph(text('This document is valid as of '), placeholder('effective date'), text('.')),
+      paragraph(text('The owner of this document is '), placeholder('document owner'), text(', who must check and, if necessary, update the document at least once a year.')),
+    );
+
+    const doc = await this.prisma.documentInstance.create({
+      data: {
+        template_id: template.id,
+        step_id: stepId,
+        title: procedure.title,
+        status: 'DRAFT',
+        version: '0.1',
+        content: { type: 'doc', content } as never,
+        answers: { generated_from: 'procedure_template', procedure_key: procedure.key, organization: orgName } as Prisma.InputJsonValue,
+        created_by: userId,
+        last_edited_by: userId,
+      },
+    });
+    await this.auditLog.log({
+      userId,
+      action: AuditAction.DOCUMENT_CREATED,
+      entityType: 'document_instance',
+      entityId: doc.id,
+      details: { action: 'procedure_draft', procedure: procedure.key },
+      ipAddress,
+      userAgent,
+    });
+    return doc;
   }
 
   // ─── Helpers ───────────────────────────────────────────────────

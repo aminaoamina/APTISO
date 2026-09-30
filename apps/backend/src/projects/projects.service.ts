@@ -10,6 +10,11 @@ import { AuditLogService } from '../common/services/audit-log.service';
 import { RiskRegisterService } from '../risk-register/risk-register.service';
 import { SoaService } from '../soa/soa.service';
 import { PoliciesService } from '../policies/policies.service';
+import { TrainingsService } from '../audit-prep/trainings.service';
+import { ObjectivesService } from '../audit-prep/objectives.service';
+import { InternalAuditService } from '../audit-prep/internal-audit.service';
+import { ManagementReviewService } from '../audit-prep/management-review.service';
+import { P4 } from '../audit-prep/keys';
 import { NewTask, TaskService } from '../common/services/task.service';
 import {
   CreateProjectDto,
@@ -41,13 +46,11 @@ const FRAMEWORK_SELECT = {
 
 const DEFAULT_PHASES = [
   { name: 'Project Preparation', description: 'Prepare the ISMS project: align the team, set scope foundations and governance basics', order: 1 },
-  { name: 'Risk Assessment', description: 'Identify and evaluate information security risks', order: 2 },
+  { name: 'Risk Management', description: 'Assess information security risks, decide how to treat them and which controls apply', order: 2 },
   // Conformio: Phase 3 steps are added automatically from the Statement of Applicability.
   { name: 'Security Documentation', description: 'Write the security policies and procedures required by the Statement of Applicability', order: 3 },
-  { name: 'Implementation', description: 'Implement selected controls and document policies', order: 4 },
-  { name: 'Internal Audit', description: 'Conduct internal audit of the ISMS', order: 5 },
-  { name: 'Management Review', description: 'Management review of ISMS performance', order: 6 },
-  { name: 'Certification Readiness', description: 'Prepare for external certification audit', order: 7 },
+  { name: 'Preparation for External Audit', description: 'Run the ISMS and produce the evidence the certification auditor will check: trainings, objectives, internal audit and management review', order: 4 },
+  { name: 'ISMS Maintenance & Certification Cycle', description: 'Keep the ISMS running after certification: recurring reviews, audits and certification dates', order: 5 },
 ];
 
 /**
@@ -130,6 +133,67 @@ const PHASE_1_STEPS = [
 ];
 
 const RISK_REGISTER_STEP_KEY = 'iso27001.p2s2.risk-register';
+
+/** Phase 4 (Preparation for External Audit), in Conformio's order. */
+const PROCEDURE_OPTIONAL = 'This document is not mandatory, so if you do not see a benefit in using it, you can skip it.';
+const PHASE_4_STEPS = [
+  {
+    key: P4.NC_PROCEDURE,
+    title: 'Procedure for Nonconformities and Corrective Actions',
+    purpose: 'Describe all activities related to corrective actions and the use of the Nonconformity and Corrective Action registers.',
+    type: StepType.DOCUMENT,
+    order: 1,
+    metadata_json: { clause: 'Clauses 10.1 and 10.2', workload_hours: 1.5, estimated_days: 1, mandatory: false, policy_key: 'nonconformity-procedure', why: PROCEDURE_OPTIONAL },
+  },
+  {
+    key: P4.AUDIT_PROCEDURE,
+    title: 'Internal Audit Procedure',
+    purpose: 'Describe all audit related activities: writing the audit programme, selecting an auditor, conducting individual audits and reporting.',
+    type: StepType.DOCUMENT,
+    order: 2,
+    metadata_json: { clause: 'Clause 9.2', workload_hours: 1.5, estimated_days: 1, mandatory: false, policy_key: 'internal-audit-procedure', why: PROCEDURE_OPTIONAL },
+  },
+  {
+    key: P4.TRAINING_PLAN,
+    title: 'Initial Training Plan',
+    purpose: 'Define which people will need to attend which security trainings, and keep the record of trainings performed.',
+    type: StepType.REGISTER,
+    order: 3,
+    metadata_json: { clause: 'Clause 7.2 and control A.6.3', workload_hours: 0.5, estimated_days: 1, mandatory: true },
+  },
+  {
+    key: P4.OBJECTIVES,
+    title: 'Setting Up Security Objectives',
+    purpose: 'Set up the information security objectives, who is responsible for them and how they are measured.',
+    type: StepType.REGISTER,
+    order: 4,
+    metadata_json: { clause: 'Clauses 6.2 and 9.1', workload_hours: 1.5, estimated_days: 1, mandatory: true },
+  },
+  {
+    key: P4.REVIEW_SETUP,
+    title: 'Setting Up Management Review',
+    purpose: 'Set up how top management controls what is being done with security: what is reviewed, by whom and how often.',
+    type: StepType.REGISTER,
+    order: 5,
+    metadata_json: { clause: 'Clauses 5.1, 5.3, and 9.3', workload_hours: 0.5, estimated_days: 1, mandatory: true },
+  },
+  {
+    key: P4.INTERNAL_AUDIT,
+    title: 'Internal Audit',
+    purpose: 'Plan and perform the internal audit using a checklist of the ISO 27001 requirements and your applicable controls, and report the results.',
+    type: StepType.REGISTER,
+    order: 6,
+    metadata_json: { clause: 'Clauses 9.2 and 10.1', workload_hours: 9, estimated_days: 1, mandatory: true },
+  },
+  {
+    key: P4.MANAGEMENT_REVIEW,
+    title: 'First Official Management Review',
+    purpose: 'Provide top management with crucial information about security, and ask them for key decisions.',
+    type: StepType.REGISTER,
+    order: 7,
+    metadata_json: { clause: 'Clauses 5.1, 9.3, 10.1, and 10.2', workload_hours: 1, estimated_days: 1, mandatory: true },
+  },
+];
 const SOA_STEP_KEY = 'iso27001.p2s3.statement-of-applicability';
 
 const PHASE_2_STEPS = [
@@ -204,6 +268,10 @@ export class ProjectsService {
     private readonly soa: SoaService,
     private readonly tasks: TaskService,
     private readonly policies: PoliciesService,
+    private readonly trainings: TrainingsService,
+    private readonly objectives: ObjectivesService,
+    private readonly audits: InternalAuditService,
+    private readonly reviews: ManagementReviewService,
   ) {}
 
   async create(
@@ -251,6 +319,7 @@ export class ProjectsService {
           create: DEFAULT_PHASES.map((phase) => {
             if (phase.order === 1) return { ...phase, steps: { create: PHASE_1_STEPS } };
             if (phase.order === 2) return { ...phase, steps: { create: PHASE_2_STEPS } };
+            if (phase.order === 4) return { ...phase, steps: { create: PHASE_4_STEPS } };
             return { ...phase };
           }),
         },
@@ -542,10 +611,16 @@ export class ProjectsService {
     // and accepted by their owners (clauses 6.1.2, 6.1.3 f, 8.2 and 8.3).
     // Registers are only complete when their checklist is: the risk register
     // (clauses 6.1.2, 6.1.3 f, 8.2, 8.3) and the SoA (clauses 6.1.3 d-f, 8.3).
-    const checklist =
-      step.key === RISK_REGISTER_STEP_KEY ? await this.riskRegister.getCompletion(stepId)
-        : step.key === SOA_STEP_KEY ? await this.soa.getCompletion(stepId)
-          : null;
+    const completionProviders: Record<string, (id: string) => Promise<{ ready: boolean; items: { label: string; done: boolean; detail: string }[] }>> = {
+      [RISK_REGISTER_STEP_KEY]: id => this.riskRegister.getCompletion(id),
+      [SOA_STEP_KEY]: id => this.soa.getCompletion(id),
+      [P4.TRAINING_PLAN]: id => this.trainings.getCompletion(id),
+      [P4.OBJECTIVES]: id => this.objectives.getCompletion(id),
+      [P4.REVIEW_SETUP]: id => this.reviews.getSetupCompletion(id),
+      [P4.INTERNAL_AUDIT]: id => this.audits.getCompletion(id),
+      [P4.MANAGEMENT_REVIEW]: id => this.reviews.getReviewCompletion(id),
+    };
+    const checklist = completionProviders[step.key] ? await completionProviders[step.key](stepId) : null;
     if (checklist && !checklist.ready) {
       const missing = checklist.items.filter(i => !i.done).map(i => `${i.label} (${i.detail})`);
       throw new BadRequestException(`${step.title} is not complete yet: ${missing.join('; ')}`);
@@ -1136,6 +1211,13 @@ export class ProjectsService {
     // The yearly risk review repeats: completing one schedules the next.
     if (task.type === TaskType.RISK_REVIEW && task.step_id) {
       await this.scheduleRiskReview(task.project_id, task.step_id, userId);
+    }
+    // Completing the task of a corrective action or a management review action completes the action itself.
+    if (task.type === TaskType.CORRECTIVE_ACTION) {
+      await this.prisma.correctiveAction.updateMany({ where: { task_id: task.id, status: { not: 'DONE' } }, data: { status: 'DONE', completed_at: new Date() } });
+    }
+    if (task.type === TaskType.MANAGEMENT_REVIEW_ACTION) {
+      await this.prisma.managementReviewDecision.updateMany({ where: { task_id: task.id, status: { not: 'DONE' } }, data: { status: 'DONE', completed_at: new Date() } });
     }
 
     // Notify the assigner that the task is complete

@@ -260,7 +260,7 @@ export interface TaskAssignment {
   document_instance_id: string | null;
   assigned_to: string;
   assigned_by: string;
-  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL';
+  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL' | 'CORRECTIVE_ACTION' | 'INTERNAL_AUDIT' | 'MANAGEMENT_REVIEW_ACTION';
   status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
   deadline: string | null;
   completed_at: string | null;

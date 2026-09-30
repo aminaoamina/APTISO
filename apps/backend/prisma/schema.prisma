@@ -321,6 +321,13 @@ model ComplianceProject {
   member_add_requests  MemberAddRequest[]
   task_assignments     TaskAssignment[]
   notifications        Notification[]
+  nonconformities      Nonconformity[]
+  incidents            Incident[]
+  trainings            Training[]
+  security_objectives  SecurityObjective[]
+  internal_audits      InternalAudit[]
+  review_setup         ManagementReviewSetup?
+  management_reviews   ManagementReview[]
 
   @@index([organization_id])
   @@index([status])
@@ -538,6 +545,9 @@ enum TaskType {
   TECHNOLOGY_REQUEST
   RISK_REVIEW
   IMPLEMENT_CONTROL
+  CORRECTIVE_ACTION
+  INTERNAL_AUDIT
+  MANAGEMENT_REVIEW_ACTION
 }
 
 enum TaskStatus {
@@ -1054,4 +1064,373 @@ model SoaOwnerApproval {
 
   @@unique([step_id, user_id])
   @@map("soa_owner_approvals")
+}
+
+// ============================================================
+// PHASE 4: PREPARATION FOR EXTERNAL AUDIT
+// People are stored as user ids and validated as project members by the
+// services (the project member list resolves their names).
+// ============================================================
+
+enum NonconformityStatus {
+  UNASSIGNED
+  ASSIGNED
+  ACTIONS_DEFINED
+  RESOLVED
+  NOT_RELEVANT
+}
+
+enum FindingSource {
+  INTERNAL_AUDIT
+  EXTERNAL_AUDIT
+  INCIDENT
+  MANAGEMENT_REVIEW
+  EMPLOYEE
+  SUPPLIER
+  OTHER
+}
+
+enum ActionStatus {
+  PLANNED
+  IN_PROGRESS
+  DONE
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum IncidentStatus {
+  REPORTED
+  ASSESSED
+  RESOLVED
+  CLOSED
+}
+
+enum TrainingStatus {
+  PROPOSED
+  APPROVED
+  SCHEDULED
+  PERFORMED
+  CANCELLED
+}
+
+enum ObjectiveType {
+  TOP_LEVEL
+  OPERATIONAL
+}
+
+enum ReviewFrequency {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUALLY
+  YEARLY
+}
+
+enum ObjectiveStatus {
+  DRAFT
+  APPROVED
+}
+
+enum AuditStatus {
+  PLANNED
+  IN_PROGRESS
+  REPORTED
+  APPROVED
+}
+
+enum AuditResult {
+  CONFORMING
+  MINOR_NONCONFORMITY
+  MAJOR_NONCONFORMITY
+  OBSERVATION
+  NOT_AUDITED
+}
+
+enum ManagementReviewStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ReviewDecisionType {
+  IMPROVEMENT
+  ISMS_CHANGE
+  RESOURCES
+  OTHER
+}
+
+/// Clauses 10.1 / 10.2: nonconformities and their corrective actions.
+model Nonconformity {
+  id                        String              @id @default(uuid()) @db.Uuid
+  project_id                String              @db.Uuid
+  number                    Int
+  title                     String              @db.VarChar(300)
+  description               String              @db.Text
+  source                    FindingSource       @default(OTHER)
+  detected_on               DateTime            @db.Timestamp(6)
+  reported_by               String              @db.Uuid
+  responsible_id            String?             @db.Uuid
+  status                    NonconformityStatus @default(UNASSIGNED)
+  correction                String?             @db.Text
+  root_cause                String?             @db.Text
+  effectiveness_review      String?             @db.Text
+  effectiveness_verified_by String?             @db.Uuid
+  effectiveness_verified_at DateTime?           @db.Timestamp(6)
+  not_relevant_reason       String?             @db.Text
+  closed_at                 DateTime?           @db.Timestamp(6)
+  audit_item_id             String?             @unique @db.Uuid
+  incident_id               String?             @db.Uuid
+  created_at                DateTime            @default(now()) @db.Timestamp(6)
+  updated_at                DateTime            @updatedAt @db.Timestamp(6)
+
+  project    ComplianceProject   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  audit_item AuditChecklistItem? @relation(fields: [audit_item_id], references: [id], onDelete: SetNull)
+  incident   Incident?           @relation(fields: [incident_id], references: [id], onDelete: SetNull)
+  actions    CorrectiveAction[]
+
+  @@unique([project_id, number])
+  @@index([project_id, status])
+  @@map("nonconformities")
+}
+
+model CorrectiveAction {
+  id               String       @id @default(uuid()) @db.Uuid
+  nonconformity_id String       @db.Uuid
+  description      String       @db.Text
+  responsible_id   String       @db.Uuid
+  due_date         DateTime?    @db.Timestamp(6)
+  status           ActionStatus @default(PLANNED)
+  completed_at     DateTime?    @db.Timestamp(6)
+  task_id          String?      @db.Uuid
+  created_at       DateTime     @default(now()) @db.Timestamp(6)
+  updated_at       DateTime     @updatedAt @db.Timestamp(6)
+
+  nonconformity Nonconformity @relation(fields: [nonconformity_id], references: [id], onDelete: Cascade)
+
+  @@index([nonconformity_id])
+  @@map("corrective_actions")
+}
+
+/// Controls A.5.24-A.5.28 and A.6.8: information security events and incidents.
+model Incident {
+  id                      String           @id @default(uuid()) @db.Uuid
+  project_id              String           @db.Uuid
+  number                  Int
+  title                   String           @db.VarChar(300)
+  description             String           @db.Text
+  occurred_at             DateTime         @db.Timestamp(6)
+  reported_at             DateTime         @default(now()) @db.Timestamp(6)
+  reported_by             String           @db.Uuid
+  responsible_id          String?          @db.Uuid
+  affects_confidentiality Boolean          @default(false)
+  affects_integrity       Boolean          @default(false)
+  affects_availability    Boolean          @default(false)
+  severity                IncidentSeverity @default(LOW)
+  status                  IncidentStatus   @default(REPORTED)
+  is_security_incident    Boolean?
+  assessment              String?          @db.Text
+  response                String?          @db.Text
+  lessons_learned         String?          @db.Text
+  evidence                String?          @db.Text
+  closed_at               DateTime?        @db.Timestamp(6)
+  created_at              DateTime         @default(now()) @db.Timestamp(6)
+  updated_at              DateTime         @updatedAt @db.Timestamp(6)
+
+  project         ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  nonconformities Nonconformity[]
+
+  @@unique([project_id, number])
+  @@map("incidents")
+}
+
+/// Clause 7.2 / A.6.3: training plan and record.
+model Training {
+  id              String         @id @default(uuid()) @db.Uuid
+  project_id      String         @db.Uuid
+  title           String         @db.VarChar(300)
+  skills          String         @db.Text
+  method          String?        @db.VarChar(200)
+  provider        String?        @db.VarChar(200)
+  planned_date    DateTime?      @db.Timestamp(6)
+  performed_date  DateTime?      @db.Timestamp(6)
+  status          TrainingStatus @default(PROPOSED)
+  participant_ids Json
+  evidence        String?        @db.Text
+  effectiveness   String?        @db.Text
+  source_step_id  String?        @db.Uuid
+  source_key      String?        @db.VarChar(200)
+  approved_by     String?        @db.Uuid
+  approved_at     DateTime?      @db.Timestamp(6)
+  created_by      String         @db.Uuid
+  created_at      DateTime       @default(now()) @db.Timestamp(6)
+  updated_at      DateTime       @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, source_key])
+  @@map("trainings")
+}
+
+/// Clauses 6.2 / 9.1: information security objectives and their measurement.
+model SecurityObjective {
+  id             String          @id @default(uuid()) @db.Uuid
+  project_id     String          @db.Uuid
+  order          Int
+  title          String          @db.Text
+  type           ObjectiveType   @default(TOP_LEVEL)
+  action_plan    String?         @db.Text
+  resources      String?         @db.Text
+  responsible_id String?         @db.Uuid
+  due_date       DateTime?       @db.Timestamp(6)
+  measurement    String?         @db.Text
+  frequency      ReviewFrequency @default(YEARLY)
+  status         ObjectiveStatus @default(DRAFT)
+  approved_by    String?         @db.Uuid
+  approved_at    DateTime?       @db.Timestamp(6)
+  created_at     DateTime        @default(now()) @db.Timestamp(6)
+  updated_at     DateTime        @updatedAt @db.Timestamp(6)
+
+  project      ComplianceProject      @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  measurements ObjectiveMeasurement[]
+
+  @@index([project_id])
+  @@map("security_objectives")
+}
+
+model ObjectiveMeasurement {
+  id           String   @id @default(uuid()) @db.Uuid
+  objective_id String   @db.Uuid
+  measured_on  DateTime @db.Timestamp(6)
+  result       String   @db.Text
+  achieved     Boolean
+  comment      String?  @db.Text
+  recorded_by  String   @db.Uuid
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+
+  objective SecurityObjective @relation(fields: [objective_id], references: [id], onDelete: Cascade)
+
+  @@index([objective_id])
+  @@map("objective_measurements")
+}
+
+/// Clause 9.2: internal audit programme, checklist and findings.
+model InternalAudit {
+  id              String      @id @default(uuid()) @db.Uuid
+  project_id      String      @db.Uuid
+  title           String      @db.VarChar(300)
+  scope           String      @db.Text
+  criteria        String      @db.Text
+  start_date      DateTime    @db.Timestamp(6)
+  end_date        DateTime    @db.Timestamp(6)
+  lead_auditor_id String      @db.Uuid
+  auditees        String?     @db.Text
+  status          AuditStatus @default(PLANNED)
+  conclusion      String?     @db.Text
+  approved_by     String?     @db.Uuid
+  approved_at     DateTime?   @db.Timestamp(6)
+  task_id         String?     @db.Uuid
+  created_at      DateTime    @default(now()) @db.Timestamp(6)
+  updated_at      DateTime    @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  items   AuditChecklistItem[]
+
+  @@index([project_id])
+  @@map("internal_audits")
+}
+
+model AuditChecklistItem {
+  id          String       @id @default(uuid()) @db.Uuid
+  audit_id    String       @db.Uuid
+  order       Int
+  ref         String       @db.VarChar(20)
+  requirement String       @db.VarChar(300)
+  question    String       @db.Text
+  result      AuditResult?
+  evidence    String?      @db.Text
+  updated_at  DateTime     @updatedAt @db.Timestamp(6)
+
+  audit         InternalAudit  @relation(fields: [audit_id], references: [id], onDelete: Cascade)
+  nonconformity Nonconformity?
+
+  @@unique([audit_id, ref])
+  @@map("audit_checklist_items")
+}
+
+/// Clauses 5.1 / 9.3: what top management reviews, and how often.
+model ManagementReviewSetup {
+  id               String          @id @default(uuid()) @db.Uuid
+  project_id       String          @unique @db.Uuid
+  frequency        ReviewFrequency @default(YEARLY)
+  next_review_date DateTime?       @db.Timestamp(6)
+  reviewer_ids     Json
+  items            Json
+  configured_at    DateTime?       @db.Timestamp(6)
+  created_at       DateTime        @default(now()) @db.Timestamp(6)
+  updated_at       DateTime        @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("management_review_setups")
+}
+
+/// Clause 9.3: a management review meeting, its inputs and decisions (minutes).
+model ManagementReview {
+  id              String                 @id @default(uuid()) @db.Uuid
+  project_id      String                 @db.Uuid
+  title           String                 @db.VarChar(300)
+  review_date     DateTime               @db.Timestamp(6)
+  participant_ids Json
+  status          ManagementReviewStatus @default(PLANNED)
+  conclusions     String?                @db.Text
+  completed_at    DateTime?              @db.Timestamp(6)
+  created_by      String                 @db.Uuid
+  created_at      DateTime               @default(now()) @db.Timestamp(6)
+  updated_at      DateTime               @updatedAt @db.Timestamp(6)
+
+  project   ComplianceProject          @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  inputs    ManagementReviewInput[]
+  decisions ManagementReviewDecision[]
+
+  @@index([project_id])
+  @@map("management_reviews")
+}
+
+model ManagementReviewInput {
+  id         String   @id @default(uuid()) @db.Uuid
+  review_id  String   @db.Uuid
+  order      Int
+  item_key   String   @db.VarChar(20)
+  title      String   @db.VarChar(300)
+  summary    String   @db.Text
+  notes      String?  @db.Text
+  discussed  Boolean  @default(false)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  review ManagementReview @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@unique([review_id, item_key])
+  @@map("management_review_inputs")
+}
+
+model ManagementReviewDecision {
+  id             String             @id @default(uuid()) @db.Uuid
+  review_id      String             @db.Uuid
+  type           ReviewDecisionType @default(IMPROVEMENT)
+  description    String             @db.Text
+  responsible_id String?            @db.Uuid
+  due_date       DateTime?          @db.Timestamp(6)
+  status         ActionStatus       @default(PLANNED)
+  task_id        String?            @db.Uuid
+  completed_at   DateTime?          @db.Timestamp(6)
+  created_at     DateTime           @default(now()) @db.Timestamp(6)
+  updated_at     DateTime           @updatedAt @db.Timestamp(6)
+
+  review ManagementReview @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@index([review_id])
+  @@map("management_review_decisions")
 }

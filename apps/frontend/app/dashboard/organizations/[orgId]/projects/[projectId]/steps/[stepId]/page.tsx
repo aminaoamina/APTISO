@@ -15,6 +15,10 @@ import RequirementsStep from '@/components/requirements/requirements-step';
 import RiskRegisterStep from '@/components/risk-register/risk-register-step';
 import SoaStep from '@/components/soa/soa-step';
 import { PolicyControls } from '@/components/policies/policy-controls';
+import TrainingPlan from '@/components/audit-prep/training-plan';
+import SecurityObjectives from '@/components/audit-prep/objectives';
+import InternalAudit from '@/components/audit-prep/internal-audit';
+import { ManagementReviewMeeting, ManagementReviewSetup } from '@/components/audit-prep/management-review';
 import { policiesApi } from '@/lib/api';
 import { AwarenessPanel, TrainingPanel } from '@/components/steps/awareness-training';
 import { STEP_AWARENESS_MATERIALS } from '@/lib/step-materials';
@@ -42,6 +46,7 @@ const TASK_TYPE_LABELS: Record<string, string> = {
   TRAINING_TASK: 'Training', HR_REQUEST: 'HR request',
   FINANCE_REQUEST: 'Finance request', TECHNOLOGY_REQUEST: 'Technology request',
   RISK_REVIEW: 'Review of risks', IMPLEMENT_CONTROL: 'Implement control',
+  CORRECTIVE_ACTION: 'Corrective action', INTERNAL_AUDIT: 'Internal audit', MANAGEMENT_REVIEW_ACTION: 'Management review action',
 };
 
 const TASK_TYPE_COLORS: Record<string, string> = {
@@ -55,12 +60,24 @@ const TASK_TYPE_COLORS: Record<string, string> = {
   TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
   IMPLEMENT_CONTROL: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
+  CORRECTIVE_ACTION: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
+  INTERNAL_AUDIT: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
+  MANAGEMENT_REVIEW_ACTION: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
 };
 
 const RISK_REGISTER_KEY = 'iso27001.p2s2.risk-register';
 const SOA_KEY = 'iso27001.p2s3.statement-of-applicability';
 // Steps that can only be finished once their checklist is complete (also enforced by the API).
-const CHECKLIST_STEPS = [RISK_REGISTER_KEY, SOA_KEY];
+// Phase 4: Preparation for External Audit
+const P4 = {
+  NC_PROCEDURE: 'iso27001.p4s1.nonconformity-procedure',
+  TRAINING_PLAN: 'iso27001.p4s3.training-plan',
+  OBJECTIVES: 'iso27001.p4s4.security-objectives',
+  REVIEW_SETUP: 'iso27001.p4s5.management-review-setup',
+  INTERNAL_AUDIT: 'iso27001.p4s6.internal-audit',
+  MANAGEMENT_REVIEW: 'iso27001.p4s7.management-review',
+};
+const CHECKLIST_STEPS = [RISK_REGISTER_KEY, SOA_KEY, P4.TRAINING_PLAN, P4.OBJECTIVES, P4.REVIEW_SETUP, P4.INTERNAL_AUDIT, P4.MANAGEMENT_REVIEW];
 
 export default function StepDetailPage() {
   const params = useParams();
@@ -274,6 +291,25 @@ export default function StepDetailPage() {
       {/* Statement of Applicability + Risk Treatment Plan — 5-stage module */}
       {step.type === 'REGISTER' && step.key === SOA_KEY && (
         <SoaStep stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />
+      )}
+
+      {/* Phase 4 registers and modules */}
+      {step.key === P4.TRAINING_PLAN && <TrainingPlan stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />}
+      {step.key === P4.OBJECTIVES && <SecurityObjectives stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />}
+      {step.key === P4.REVIEW_SETUP && <ManagementReviewSetup stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />}
+      {step.key === P4.INTERNAL_AUDIT && <InternalAudit stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />}
+      {step.key === P4.MANAGEMENT_REVIEW && <ManagementReviewMeeting stepId={step.id} orgId={orgId} projectId={projectId} onCompletionChange={setRegisterCompletion} />}
+      {step.key === P4.NC_PROCEDURE && (
+        <Card>
+          <CardContent className="py-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground max-w-xl">
+              This procedure describes how the Nonconformity and Corrective Action registers are used. The registers are available at any time.
+            </p>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={'/dashboard/organizations/' + orgId + '/projects/' + projectId + '/registers'}>Open the registers</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Phase 3 policy: why it is required and the controls it covers */}
