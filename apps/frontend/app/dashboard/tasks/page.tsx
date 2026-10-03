@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { EvidencePanel } from '@/components/evidence/evidence-panel';
 
 type View = 'todo' | 'done' | 'team';
 
@@ -179,6 +180,10 @@ function MyTaskCard({ task, highlighted, onCompleted }: { task: TaskAssignment; 
         </div>
         {completing && (
           <div className="space-y-2 rounded-lg border p-3">
+            <EvidencePanel projectId={task.project_id} target={{ type: 'TASK', id: task.id }} canEdit
+              hint={task.type === 'IMPLEMENT_CONTROL'
+                ? 'Attach proof that the control is in place; it is also linked to the control in the Statement of Applicability.'
+                : 'Attach proof of what you did (optional).'} />
             <Textarea
               rows={2}
               maxLength={2000}

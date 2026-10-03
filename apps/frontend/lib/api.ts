@@ -1105,6 +1105,90 @@ export const requestsApi = {
   awaitingMe: async (): Promise<{ id: string; project_id: string }[]> => (await apiClient.get('/requests/awaiting-me')).data,
 };
 
+export type EvidenceTargetType = 'CLAUSE' | 'SOA_CONTROL' | 'TASK';
+export interface EvidenceTarget { type: EvidenceTargetType; id: string }
+
+/** Proof that a clause, control or task is done: a file, a link or a note. */
+export interface Evidence {
+  id: string;
+  project_id: string;
+  title: string;
+  description: string | null;
+  kind: 'FILE' | 'LINK' | 'NOTE';
+  url: string | null;
+  collected_on: string;
+  valid_until: string | null;
+  created_at: string;
+  creator: Person;
+  /** Newest first: the first one is the current file. */
+  files: { id: string; file_name: string; mime_type: string; size_bytes: number; sha256: string; uploaded_at: string; uploader: Person }[];
+  /** label: what it proves, e.g. "A.8.13 Information backup". */
+  links: { id: string; target_type: EvidenceTargetType; target_id: string; label?: string }[];
+}
+
+export type CoverageStatus = 'COVERED' | 'EXPIRED' | 'MISSING_EVIDENCE' | 'MISSING_DOCUMENT' | 'NOT_IMPLEMENTED';
+interface MapDocument { step_id: string; title: string; in_library: boolean; version: string | null }
+interface MapEvidence { valid: number; expired: number }
+
+/** What an auditor checks for each clause and applicable control. */
+export interface AuditMap {
+  clauses: { ref: string; title: string; question: string; documents: MapDocument[]; records: { label: string; count: number }[]; evidence: MapEvidence; status: CoverageStatus }[];
+  controls: { id: string; code: string; title: string; implementation: ControlStatus | null; documents: MapDocument[]; evidence: MapEvidence; status: CoverageStatus }[];
+  soa_step_id: string | null;
+}
+
+export interface NewEvidence {
+  title: string;
+  description?: string;
+  kind: Evidence['kind'];
+  url?: string;
+  collected_on: string;
+  valid_until?: string;
+  links: EvidenceTarget[];
+  file?: File;
+}
+
+export const evidenceApi = {
+  list: async (projectId: string, target?: EvidenceTarget): Promise<Evidence[]> =>
+    (await apiClient.get(`/projects/${projectId}/evidence`, { params: target && { target_type: target.type, target_id: target.id } })).data,
+
+  create: async (projectId: string, { file, links, ...fields }: NewEvidence): Promise<Evidence> => {
+    const form = new FormData();
+    for (const [key, value] of Object.entries(fields)) if (value) form.append(key, value);
+    form.append('links', JSON.stringify(links));
+    if (file) form.append('file', file);
+    return (await apiClient.post(`/projects/${projectId}/evidence`, form, { headers: { 'Content-Type': 'multipart/form-data' } })).data;
+  },
+
+  link: async (evidenceId: string, target: EvidenceTarget): Promise<Evidence> =>
+    (await apiClient.post(`/evidence/${evidenceId}/links`, target)).data,
+
+  unlink: async (evidenceId: string, linkId: string): Promise<void> => {
+    await apiClient.delete(`/evidence/${evidenceId}/links/${linkId}`);
+  },
+
+  map: async (projectId: string): Promise<AuditMap> => (await apiClient.get(`/projects/${projectId}/audit-map`)).data,
+
+  update: async (evidenceId: string, data: { title?: string; description?: string; collected_on?: string; valid_until?: string | null }): Promise<void> => {
+    await apiClient.patch(`/evidence/${evidenceId}`, data);
+  },
+
+  replaceFile: async (evidenceId: string, file: File): Promise<void> => {
+    const form = new FormData();
+    form.append('file', file);
+    await apiClient.post(`/evidence/${evidenceId}/file`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+
+  withdraw: async (evidenceId: string, reason: string): Promise<void> => {
+    await apiClient.delete(`/evidence/${evidenceId}`, { data: { reason } });
+  },
+
+  download: async (evidenceId: string, fileId?: string): Promise<void> => {
+    const response = await apiClient.get(`/evidence/${evidenceId}/file`, { params: fileId && { version: fileId }, responseType: 'blob' });
+    saveBlob(response.data, String(response.headers['content-type'] ?? 'application/octet-stream'), response.headers['content-disposition'], 'evidence');
+  },
+};
+
 export const notificationsApi = {
   list: async (): Promise<{ items: AppNotification[]; unread_count: number }> => (await apiClient.get('/notifications')).data,
 

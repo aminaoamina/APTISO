@@ -29,17 +29,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ProjectRoles } from '../common/decorators/project-role.decorator';
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { OrganizationRoleGuard } from '../common/guards/organization-role.guard';
-
-/** Sends a file; the UTF-8 name keeps accents and other characters of document titles. */
-function sendFile(res: Response, buffer: Buffer, filename: string, type: string, disposition: 'inline' | 'attachment') {
-  const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
-  res.set({
-    'Content-Type': type,
-    'Content-Disposition': `${disposition}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
-    'Access-Control-Expose-Headers': 'Content-Disposition',
-  });
-  res.end(buffer);
-}
+import { sendFile } from '../common/utils/send-file';
 
 /**
  * Every route that names a document runs through ProjectRoleGuard, which

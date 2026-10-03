@@ -159,7 +159,7 @@ export default function SoaStep({
           }} />
       )}
       {stage === 1 && (
-        <SoaTableStage state={state}
+        <SoaTableStage projectId={projectId} state={state}
           onUpdate={async (id, data: SoaControlUpdate) => { await run(() => soaApi.updateControl(id, data)); }}
           onRefresh={async (overwrite) => { await run(() => soaApi.refreshSuggestions(stepId, overwrite), 'Suggestions updated'); }} />
       )}

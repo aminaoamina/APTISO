@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
+import { EvidencePanel } from '@/components/evidence/evidence-panel';
 import { BlurField, InfoTip } from '@/components/risk-register/risk-stages';
 
 export const STATUS_LABELS: Record<ControlStatus, string> = {
@@ -117,10 +118,12 @@ export function SetupStage({
 type Filter = 'all' | 'applicable' | 'not_applicable' | 'incomplete' | ControlStatus;
 
 export function SoaTableStage({
+  projectId,
   state,
   onUpdate,
   onRefresh,
 }: {
+  projectId: string;
   state: SoaState;
   onUpdate: (rowId: string, data: SoaControlUpdate) => Promise<void>;
   onRefresh: (overwrite: boolean) => Promise<void>;
@@ -205,7 +208,7 @@ export function SoaTableStage({
             <div key={theme} className="space-y-1.5">
               <p className="text-sm font-semibold pt-2">{title}</p>
               {rows.map(r => (
-                <SoaRowItem key={r.id} row={r} open={expanded.has(r.id)} onToggle={() => toggle(r.id)} canEdit={canEdit} onUpdate={onUpdate}
+                <SoaRowItem key={r.id} projectId={projectId} row={r} open={expanded.has(r.id)} onToggle={() => toggle(r.id)} canEdit={canEdit} onUpdate={onUpdate}
                   incomplete={isIncomplete(r)} />
               ))}
             </div>
@@ -218,6 +221,7 @@ export function SoaTableStage({
 }
 
 function SoaRowItem({
+  projectId,
   row: r,
   open,
   onToggle,
@@ -225,6 +229,7 @@ function SoaRowItem({
   onUpdate,
   incomplete,
 }: {
+  projectId: string;
   row: SoaRow;
   open: boolean;
   onToggle: () => void;
@@ -307,6 +312,14 @@ function SoaRowItem({
                 )}
               </div>
             </div>
+          )}
+
+          {/* Proof that the control works, for the auditor (clause 9.1) */}
+          {r.applicable && (
+            <EvidencePanel projectId={projectId} target={{ type: 'SOA_CONTROL', id: r.id }} canEdit={canEdit}
+              hint={r.status === 'IMPLEMENTED'
+                ? 'Implemented, but no evidence yet: add what an auditor can check (a screenshot, a report, a log, a signed record).'
+                : 'Add evidence once the control is in place.'} />
           )}
         </div>
       )}

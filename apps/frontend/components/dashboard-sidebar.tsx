@@ -254,7 +254,14 @@ export function DashboardSidebar() {
                 }}
                 isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/steps`)}
               />
-              <NavRow item={{ label: 'Audit & Evidence', icon: Files, soon: true }} />
+              <NavRow
+                item={{
+                  label: 'Audit & Evidence',
+                  href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}/audit` : undefined,
+                  icon: Files,
+                }}
+                isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/audit`)}
+              />
               <NavRow
                 item={{
                   label: 'Requests',

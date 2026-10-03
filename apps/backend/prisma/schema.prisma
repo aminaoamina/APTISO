@@ -160,6 +160,9 @@ model User {
   notifications                      Notification[]
   notifications_triggered            Notification[]            @relation("NotificationActor")
   resource_requests_made             ResourceRequest[]         @relation("ResourceRequester")
+  evidence_created                   Evidence[]                @relation("EvidenceCreator")
+  evidence_deleted                   Evidence[]                @relation("EvidenceDeleter")
+  evidence_files                     EvidenceFile[]
   resource_requests_decided          ResourceRequest[]         @relation("ResourceDecider")
   documents_created                  DocumentInstance[]        @relation("DocumentsCreated")
   doc_last_edited                    DocumentInstance[]        @relation("DocLastEdited")
@@ -325,6 +328,7 @@ model ComplianceProject {
   task_assignments     TaskAssignment[]
   notifications        Notification[]
   resource_requests    ResourceRequest[]
+  evidence             Evidence[]
   nonconformities      Nonconformity[]
   incidents            Incident[]
   trainings            Training[]
@@ -785,6 +789,85 @@ model ResourceRequest {
   @@index([project_id, status])
   @@index([step_id])
   @@map("resource_requests")
+}
+
+// ============================================================
+// EVIDENCE (clauses 7.5.3 and 9.1)
+// ============================================================
+
+enum EvidenceKind {
+  FILE
+  LINK
+  NOTE
+}
+
+/// What a piece of evidence proves: an ISO clause (target_id = "9.2"), an SoA control row or a task.
+enum EvidenceTargetType {
+  CLAUSE
+  SOA_CONTROL
+  TASK
+}
+
+/// Proof that a requirement is met. Evidence is a record: it is never erased,
+/// only withdrawn (deleted_at) with a reason, and a replaced file stays as an earlier version.
+model Evidence {
+  id            String       @id @default(uuid()) @db.Uuid
+  project_id    String       @db.Uuid
+  title         String       @db.VarChar(200)
+  description   String?      @db.Text
+  kind          EvidenceKind
+  url           String?      @db.VarChar(1000)
+  collected_on  DateTime     @db.Date
+  valid_until   DateTime?    @db.Date
+  created_by    String       @db.Uuid
+  created_at    DateTime     @default(now()) @db.Timestamp(6)
+  updated_at    DateTime     @updatedAt @db.Timestamp(6)
+  deleted_at    DateTime?    @db.Timestamp(6)
+  deleted_by    String?      @db.Uuid
+  delete_reason String?      @db.VarChar(500)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  creator User              @relation("EvidenceCreator", fields: [created_by], references: [id])
+  deleter User?             @relation("EvidenceDeleter", fields: [deleted_by], references: [id], onDelete: SetNull)
+  files   EvidenceFile[]
+  links   EvidenceLink[]
+
+  @@index([project_id, deleted_at])
+  @@map("evidence")
+}
+
+/// A stored file of an evidence item; the newest one is the current file.
+model EvidenceFile {
+  id          String   @id @default(uuid()) @db.Uuid
+  evidence_id String   @db.Uuid
+  storage_key String   @db.VarChar(300)
+  file_name   String   @db.VarChar(255)
+  mime_type   String   @db.VarChar(150)
+  size_bytes  Int
+  /// SHA-256 of the content, to show the file was not changed after upload.
+  sha256      String   @db.Char(64)
+  uploaded_by String   @db.Uuid
+  uploaded_at DateTime @default(now()) @db.Timestamp(6)
+
+  evidence Evidence @relation(fields: [evidence_id], references: [id], onDelete: Cascade)
+  uploader User     @relation(fields: [uploaded_by], references: [id])
+
+  @@index([evidence_id])
+  @@map("evidence_files")
+}
+
+model EvidenceLink {
+  id          String             @id @default(uuid()) @db.Uuid
+  evidence_id String             @db.Uuid
+  target_type EvidenceTargetType
+  target_id   String             @db.VarChar(64)
+  created_at  DateTime           @default(now()) @db.Timestamp(6)
+
+  evidence Evidence @relation(fields: [evidence_id], references: [id], onDelete: Cascade)
+
+  @@unique([evidence_id, target_type, target_id])
+  @@index([target_type, target_id])
+  @@map("evidence_links")
 }
 
 // ============================================================

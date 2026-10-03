@@ -48,7 +48,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen relative" style={{ background: 'var(--background)' }}>
+    // The page itself never scrolls: only the content area does, so the sidebar always stays in place.
+    <div className="flex h-screen relative overflow-hidden" style={{ background: 'var(--background)' }}>
       {/* Ambient background */}
       <AmbientBackground />
 
@@ -60,7 +61,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <DashboardSidebar />
 
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto py-7 px-9">
+        {/* relative: tooltips and hidden inputs are placed inside the scrolling area, not below the page */}
+        <main className="relative flex-1 min-w-0 overflow-y-auto py-7 px-9">
           <DashboardHeader />
           {children}
         </main>
