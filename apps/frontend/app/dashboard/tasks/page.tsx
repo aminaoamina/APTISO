@@ -1,243 +1,274 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import {
-  CheckCircle2,
-  Clock,
-  FolderOpen,
-  ListTodo,
-  Loader2,
-  ExternalLink,
-} from 'lucide-react';
-import { tasksApi, TaskAssignment } from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Spinner } from '@/components/ui/spinner';
+import { useSearchParams } from 'next/navigation';
+import { AlertTriangle, CalendarClock, CheckCircle2, ExternalLink, FolderOpen, ListTodo, Loader2, UserRound, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { ProjectMember, projectsApi, TaskAssignment, tasksApi } from '@/lib/api';
+import { formatDay, fullName, isOpen, isOverdue, MANUAL_TASK_TYPES, TASK_TYPE_COLORS, TASK_TYPE_LABELS, taskHref, taskSubject } from '@/lib/tasks';
 import { getErrorMessage } from '@/lib/utils';
+import { useInboxStore } from '@/store/inbox-store';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 
-const TASK_TYPE_LABELS: Record<string, string> = {
-  WORK_ON_DOCUMENT: 'Write document',
-  REVIEW_DOCUMENT: 'Review document',
-  APPROVE_DOCUMENT: 'Approve document',
-  AWARENESS_TASK: 'Awareness',
-  TRAINING_TASK: 'Training',
-  HR_REQUEST: 'HR request',
-  FINANCE_REQUEST: 'Finance request',
-  TECHNOLOGY_REQUEST: 'Technology request',
-  RISK_REVIEW: 'Review of risks',
-  IMPLEMENT_CONTROL: 'Implement control',
-  CORRECTIVE_ACTION: 'Corrective action',
-  INTERNAL_AUDIT: 'Internal audit',
-  MANAGEMENT_REVIEW_ACTION: 'Management review action',
-  MANAGEMENT_REVIEW_DUE: 'Management review due',
-  OBJECTIVES_REVIEW: 'Review of objectives',
-  DOCUMENT_REVIEW: 'Review of document',
-  INCIDENTS_REVIEW: 'Review of incidents',
-  TRAININGS_REVIEW: 'Review of trainings',
+type View = 'todo' | 'done' | 'team';
+
+const STATUS_LABELS: Record<TaskAssignment['status'], string> = {
+  PENDING: 'To do', IN_PROGRESS: 'In progress', COMPLETED: 'Done', CANCELLED: 'Cancelled',
 };
 
-const TASK_TYPE_COLORS: Record<string, string> = {
-  WORK_ON_DOCUMENT: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  REVIEW_DOCUMENT: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  APPROVE_DOCUMENT: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  AWARENESS_TASK: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  TRAINING_TASK: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  HR_REQUEST: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400',
-  FINANCE_REQUEST: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
-  RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  IMPLEMENT_CONTROL: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
-  CORRECTIVE_ACTION: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
-  INTERNAL_AUDIT: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
-  MANAGEMENT_REVIEW_ACTION: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
-  MANAGEMENT_REVIEW_DUE: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
-  OBJECTIVES_REVIEW: 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-400',
-  DOCUMENT_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  INCIDENTS_REVIEW: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  TRAININGS_REVIEW: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-};
+export default function TasksPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-16"><Spinner className="h-6 w-6" /></div>}>
+      <TasksView />
+    </Suspense>
+  );
+}
 
-export default function MyTasksPage() {
-  const [tasks, setTasks] = useState<TaskAssignment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [completingId, setCompletingId] = useState<string | null>(null);
+function TasksView() {
+  const highlight = useSearchParams().get('task');
+  const { myTasks, loaded, refresh } = useInboxStore();
+  const [view, setView] = useState<View>('todo');
+  const [team, setTeam] = useState<TaskAssignment[] | null>(null);
 
-  const loadTasks = useCallback(async () => {
-    try {
-      const data = await tasksApi.getMyTasks();
-      setTasks(data);
-    } catch {
-      /* silent */
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  useEffect(() => { void tasksApi.team().then(setTeam).catch(() => setTeam([])); }, []);
 
+  // A link from an e-mail or a notification scrolls to its task.
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    if (!highlight || !loaded) return;
+    if (myTasks.some((t) => t.id === highlight && !isOpen(t))) setView('done');
+    setTimeout(() => document.getElementById(`task-${highlight}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+  }, [highlight, loaded, myTasks]);
 
-  const handleComplete = async (taskId: string) => {
-    setCompletingId(taskId);
-    try {
-      await tasksApi.completeTask(taskId);
-      setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId
-            ? { ...t, status: 'COMPLETED' as const, completed_at: new Date().toISOString() }
-            : t,
-        ),
-      );
-      toast.success('Task completed');
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'Failed to complete task'));
-    } finally {
-      setCompletingId(null);
-    }
-  };
+  const todo = useMemo(() => myTasks.filter(isOpen), [myTasks]);
+  const done = useMemo(() => myTasks.filter((t) => t.status === 'COMPLETED').sort((a, b) => (b.completed_at ?? '').localeCompare(a.completed_at ?? '')), [myTasks]);
+  const overdue = todo.filter(isOverdue).length;
 
-  const pendingTasks = tasks.filter((t) => t.status !== 'COMPLETED');
-  const completedTasks = tasks.filter((t) => t.status === 'COMPLETED');
+  const reloadTeam = () => tasksApi.team().then(setTeam);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Spinner className="h-6 w-6" />
-      </div>
-    );
+  if (!loaded) {
+    return <div className="flex justify-center py-16"><Spinner className="h-6 w-6" /></div>;
   }
+
+  const tabs: { key: View; label: string; count: number }[] = [
+    { key: 'todo', label: 'To do', count: todo.length },
+    { key: 'done', label: 'Done', count: done.length },
+    ...(team?.length ? [{ key: 'team' as const, label: 'Team', count: team.filter(isOpen).length }] : []),
+  ];
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5">
           <ListTodo className="h-6 w-6 text-primary" />
-          My Tasks
+          My tasks
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Tasks assigned to you across all projects.
+          What you need to do across all your projects. Open a task to go where the work is done.
         </p>
       </div>
 
-      {tasks.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center space-y-3">
-            <ListTodo className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-            <p className="text-muted-foreground text-sm">No tasks assigned to you yet.</p>
-            <p className="text-xs text-muted-foreground">
-              Tasks will appear here when someone assigns you to work on, review, or approve documents.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {/* Pending tasks */}
-          {pendingTasks.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Pending ({pendingTasks.length})</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {pendingTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 rounded-lg border px-4 py-3 hover:bg-accent/30 transition-colors"
-                  >
-                    <Badge className={TASK_TYPE_COLORS[task.type]}>
-                      {TASK_TYPE_LABELS[task.type]}
-                    </Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {task.step?.title ?? 'Step task'}
-                      </p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-2">
-                        {task.project && (
-                          <span className="flex items-center gap-1">
-                            <FolderOpen className="h-3 w-3" />
-                            {task.project.name}
-                          </span>
-                        )}
-                        {task.assigner && (
-                          <span>Assigned by {task.assigner.first_name}</span>
-                        )}
-                      </p>
-                    </div>
-                    {task.deadline && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1 shrink-0">
-                        <Clock className="h-3 w-3" />
-                        {new Date(task.deadline).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    )}
-                    {task.step && task.project && (
-                      <Link
-                        href={`/dashboard/organizations/${task.project.organization_id}/projects/${task.project_id}/steps/${task.step_id}`}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Link>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleComplete(task.id)}
-                      disabled={completingId === task.id}
-                    >
-                      {completingId === task.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+      {overdue > 0 && view === 'todo' && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-2.5 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+          <AlertTriangle className="h-4 w-4" />
+          {overdue} task{overdue > 1 ? 's are' : ' is'} past the deadline.
+        </div>
+      )}
 
-          {/* Completed tasks */}
-          {completedTasks.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base text-muted-foreground">
-                  Completed ({completedTasks.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {completedTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 rounded-lg border px-4 py-3 opacity-60"
-                  >
-                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
-                    <Badge className={TASK_TYPE_COLORS[task.type]}>
-                      {TASK_TYPE_LABELS[task.type]}
-                    </Badge>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate line-through">
-                        {task.step?.title ?? 'Step task'}
-                      </p>
-                    </div>
-                    {task.completed_at && (
-                      <span className="text-xs text-muted-foreground shrink-0">
-                        {new Date(task.completed_at).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </>
+      <div className="flex gap-1 border-b">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setView(t.key)}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${view === t.key ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          >
+            {t.label} <span className="ml-1 text-xs text-muted-foreground">{t.count}</span>
+          </button>
+        ))}
+      </div>
+
+      {view === 'team' ? (
+        <TaskList tasks={team ?? []} empty="No tasks assigned by you or in projects you lead." render={(t) => (
+          <TeamTaskCard key={t.id} task={t} onChanged={reloadTeam} />
+        )} />
+      ) : (
+        <TaskList
+          tasks={view === 'todo' ? todo : done}
+          empty={view === 'todo' ? 'Nothing to do. Tasks appear here when someone assigns you work.' : 'No completed tasks yet.'}
+          render={(t) => <MyTaskCard key={t.id} task={t} highlighted={t.id === highlight} onCompleted={refresh} />}
+        />
       )}
     </div>
+  );
+}
+
+function TaskList({ tasks, empty, render }: { tasks: TaskAssignment[]; empty: string; render: (t: TaskAssignment) => React.ReactNode }) {
+  if (!tasks.length) {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-12 text-center text-sm text-muted-foreground">{empty}</CardContent>
+      </Card>
+    );
+  }
+  return <div className="space-y-3">{tasks.map(render)}</div>;
+}
+
+/** Type, subject, project, who assigned it and when it is due — shared by both views. */
+function TaskSummary({ task, person }: { task: TaskAssignment; person: { label: string; name: string } }) {
+  const late = isOverdue(task);
+  return (
+    <div className="min-w-0 flex-1 space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge className={TASK_TYPE_COLORS[task.type]}>{TASK_TYPE_LABELS[task.type]}</Badge>
+        <span className="text-sm font-semibold">{taskSubject(task)}</span>
+      </div>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1"><FolderOpen className="h-3 w-3" />{task.project.name}</span>
+        <span className="flex items-center gap-1"><UserRound className="h-3 w-3" />{person.label} {person.name} on {formatDay(task.created_at)}</span>
+        {task.deadline && (
+          <span className={`flex items-center gap-1 ${late ? 'font-semibold text-red-600 dark:text-red-400' : ''}`}>
+            <CalendarClock className="h-3 w-3" />{late ? 'Overdue since' : 'Due'} {formatDay(task.deadline)}
+          </span>
+        )}
+      </p>
+      {task.notes && <p className="whitespace-pre-line text-sm text-muted-foreground line-clamp-6">{task.notes}</p>}
+      {task.completion_notes && (
+        <p className="text-sm"><span className="text-muted-foreground">Done on {task.completed_at && formatDay(task.completed_at)}: </span>{task.completion_notes}</p>
+      )}
+    </div>
+  );
+}
+
+function MyTaskCard({ task, highlighted, onCompleted }: { task: TaskAssignment; highlighted: boolean; onCompleted: () => Promise<void> }) {
+  const [completing, setCompleting] = useState(false);
+  const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const complete = async () => {
+    setSaving(true);
+    try {
+      await tasksApi.complete(task.id, note || undefined);
+      toast.success('Task completed');
+      await onCompleted();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to complete the task'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card id={`task-${task.id}`} className={highlighted ? 'ring-2 ring-primary' : ''}>
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <TaskSummary task={task} person={{ label: 'Assigned by', name: fullName(task.assigner) }} />
+          <div className="flex shrink-0 gap-2">
+            <Button size="sm" variant="outline" asChild>
+              <Link href={taskHref(task)}><ExternalLink className="h-4 w-4 mr-1.5" />Open</Link>
+            </Button>
+            {isOpen(task) && !completing && (
+              <Button size="sm" onClick={() => setCompleting(true)}><CheckCircle2 className="h-4 w-4 mr-1.5" />Complete</Button>
+            )}
+          </div>
+        </div>
+        {completing && (
+          <div className="space-y-2 rounded-lg border p-3">
+            <Textarea
+              rows={2}
+              maxLength={2000}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="What did you do? (optional, kept with the task as a record)"
+            />
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setCompleting(false)}>Cancel</Button>
+              <Button size="sm" onClick={complete} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />}
+                Mark as done
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** A task handed out to someone else: hand-assigned tasks can be reassigned, rescheduled or cancelled. */
+function TeamTaskCard({ task, onChanged }: { task: TaskAssignment; onChanged: () => Promise<unknown> }) {
+  const [editing, setEditing] = useState(false);
+  const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [assignee, setAssignee] = useState(task.assigned_to);
+  const [deadline, setDeadline] = useState(task.deadline?.slice(0, 10) ?? '');
+  const [busy, setBusy] = useState(false);
+  const manageable = isOpen(task) && MANUAL_TASK_TYPES.includes(task.type);
+
+  const startEditing = async () => {
+    setEditing(true);
+    if (!members.length) {
+      const project = await projectsApi.getOne(task.project_id);
+      setMembers(project.members ?? []);
+    }
+  };
+
+  const run = async (action: () => Promise<unknown>, success: string) => {
+    setBusy(true);
+    try {
+      await action();
+      toast.success(success);
+      setEditing(false);
+      await onChanged();
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'The task could not be changed'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <TaskSummary task={task} person={{ label: 'Assigned to', name: fullName(task.assignee) }} />
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <Badge variant="outline">{STATUS_LABELS[task.status]}</Badge>
+            {manageable && !editing && <Button size="sm" variant="outline" onClick={startEditing}>Change</Button>}
+          </div>
+        </div>
+        {!manageable && isOpen(task) && (
+          <p className="text-xs text-muted-foreground">This task follows its register record; change it from there.</p>
+        )}
+        {editing && (
+          <div className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Assigned to</label>
+              <NativeSelect value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+                {members.map((m) => <option key={m.user_id} value={m.user_id}>{fullName(m.user)}</option>)}
+              </NativeSelect>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-muted-foreground">Deadline</label>
+              <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" disabled={busy} onClick={() => run(() => tasksApi.update(task.id, {
+                ...(assignee !== task.assigned_to && { assigned_to: assignee }),
+                deadline: deadline || null,
+              }), 'Task updated')}>Save</Button>
+              <Button size="sm" variant="ghost" disabled={busy} onClick={() => setEditing(false)}>Close</Button>
+              <Button size="sm" variant="ghost" className="text-destructive" disabled={busy} onClick={() => {
+                if (window.confirm('Cancel this task? The assignee is told it was removed.')) void run(() => tasksApi.cancel(task.id), 'Task cancelled');
+              }}><XCircle className="h-4 w-4 mr-1" />Cancel task</Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

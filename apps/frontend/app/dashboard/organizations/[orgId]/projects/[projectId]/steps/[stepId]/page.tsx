@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { useProjectStore } from '@/store/project-store';
 import { EducationalStepBody } from '@/lib/steps-content';
-import { projectsApi, documentsApi, TaskAssignment } from '@/lib/api';
+import { projectsApi, documentsApi, TaskAssignment, TaskType } from '@/lib/api';
+import { TASK_TYPE_COLORS, TASK_TYPE_LABELS, formatDay, fullName, isOpen } from '@/lib/tasks';
 import RequirementsStep from '@/components/requirements/requirements-step';
 import RiskRegisterStep from '@/components/risk-register/risk-register-step';
 import SoaStep from '@/components/soa/soa-step';
@@ -41,37 +42,6 @@ const DOC_STATUS_COLORS: Record<string, string> = {
   PUBLISHED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
 };
 
-const TASK_TYPE_LABELS: Record<string, string> = {
-  WORK_ON_DOCUMENT: 'Write document', REVIEW_DOCUMENT: 'Review document',
-  APPROVE_DOCUMENT: 'Approve document', AWARENESS_TASK: 'Awareness',
-  TRAINING_TASK: 'Training', HR_REQUEST: 'HR request',
-  FINANCE_REQUEST: 'Finance request', TECHNOLOGY_REQUEST: 'Technology request',
-  RISK_REVIEW: 'Review of risks', IMPLEMENT_CONTROL: 'Implement control',
-  CORRECTIVE_ACTION: 'Corrective action', INTERNAL_AUDIT: 'Internal audit', MANAGEMENT_REVIEW_ACTION: 'Management review action',
-  MANAGEMENT_REVIEW_DUE: 'Management review due', OBJECTIVES_REVIEW: 'Review of objectives', DOCUMENT_REVIEW: 'Review of document',
-  INCIDENTS_REVIEW: 'Review of incidents', TRAININGS_REVIEW: 'Review of trainings',
-};
-
-const TASK_TYPE_COLORS: Record<string, string> = {
-  WORK_ON_DOCUMENT: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  REVIEW_DOCUMENT: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  APPROVE_DOCUMENT: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  AWARENESS_TASK: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-  TRAINING_TASK: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  HR_REQUEST: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400',
-  FINANCE_REQUEST: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
-  RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-  IMPLEMENT_CONTROL: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
-  CORRECTIVE_ACTION: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
-  INTERNAL_AUDIT: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
-  MANAGEMENT_REVIEW_ACTION: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
-  MANAGEMENT_REVIEW_DUE: 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400',
-  OBJECTIVES_REVIEW: 'bg-lime-100 text-lime-800 dark:bg-lime-900/30 dark:text-lime-400',
-  DOCUMENT_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-  INCIDENTS_REVIEW: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  TRAININGS_REVIEW: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-};
 
 const RISK_REGISTER_KEY = 'iso27001.p2s2.risk-register';
 const SOA_KEY = 'iso27001.p2s3.statement-of-applicability';
@@ -100,7 +70,8 @@ export default function StepDetailPage() {
   const [completionData, setCompletionData] = useState<Record<string, unknown>>({});
   const [savingSection, setSavingSection] = useState<string | null>(null);
   const [showAssignDialog, setShowAssignDialog] = useState(false);
-  const [assignType, setAssignType] = useState('WORK_ON_DOCUMENT');
+  const [assignType, setAssignType] = useState<TaskType>('WORK_ON_DOCUMENT');
+  const [assignDeadline, setAssignDeadline] = useState('');
   const [assignUserId, setAssignUserId] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
@@ -193,10 +164,10 @@ export default function StepDetailPage() {
     setIsAssigning(true);
     try {
       await projectsApi.assignTask(projectId, stepId, {
-        assigned_to: assignUserId, type: assignType, notes: assignNotes || undefined,
+        assigned_to: assignUserId, type: assignType, notes: assignNotes || undefined, deadline: assignDeadline || undefined,
       });
       toast.success('Task assigned');
-      setShowAssignDialog(false); setAssignUserId(''); setAssignNotes('');
+      setShowAssignDialog(false); setAssignUserId(''); setAssignNotes(''); setAssignDeadline('');
       await loadTasks();
     } catch (err) { toast.error(getErrorMessage(err, 'Failed to assign task')); }
     finally { setIsAssigning(false); }
@@ -247,13 +218,8 @@ export default function StepDetailPage() {
   };
 
   // Count active requests for the badge
-  const activeRequests = [
-    completionData.needs_awareness,
-    completionData.needs_training,
-    completionData.needs_technology,
-    completionData.needs_hr,
-    completionData.needs_finance,
-  ].filter(Boolean).length;
+  const documentTasks = stepTasks.filter((t) => DOCUMENT_TASK_TYPES.includes(t.type));
+  const activeRequests = stepTasks.filter((t) => RESOURCE_REQUESTS.some((r) => r.type === t.type) && isOpen(t)).length;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -421,44 +387,47 @@ export default function StepDetailPage() {
               <CardDescription>Assign team members to work on, review, or approve this document.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {stepTasks.length > 0 && (
+              {documentTasks.length > 0 && (
                 <div className="space-y-2">
-                  {stepTasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-3 text-sm rounded-lg border px-3 py-2">
+                  {documentTasks.map((task) => (
+                    <div key={task.id} className="flex flex-wrap items-center gap-3 text-sm rounded-lg border px-3 py-2">
                       <Badge className={TASK_TYPE_COLORS[task.type]}>{TASK_TYPE_LABELS[task.type]}</Badge>
-                      <span className="flex-1">{task.assignee?.first_name} {task.assignee?.last_name}</span>
-                      {task.assigner && <span className="text-xs text-muted-foreground">by {task.assigner.first_name}</span>}
-                      <Badge variant={task.status === 'COMPLETED' ? 'default' : 'secondary'}>{task.status}</Badge>
+                      <span className="flex-1">{fullName(task.assignee)}</span>
+                      {task.deadline && isOpen(task) && <span className="text-xs text-muted-foreground">due {formatDay(task.deadline)}</span>}
+                      <span className="text-xs text-muted-foreground">by {task.assigner.first_name}</span>
+                      <Badge variant={task.status === 'COMPLETED' ? 'default' : 'secondary'}>{task.status === 'COMPLETED' ? 'Done' : task.status === 'CANCELLED' ? 'Cancelled' : 'To do'}</Badge>
                     </div>
                   ))}
                 </div>
               )}
-              {!showAssignDialog ? (
+              {canEditStep && (!showAssignDialog ? (
                 <Button variant="outline" size="sm" onClick={() => setShowAssignDialog(true)}><UserPlus className="h-4 w-4 mr-2" />Assign someone</Button>
               ) : (
                 <div className="rounded-lg border p-4 space-y-3">
                   <div className="flex items-center justify-between"><p className="text-sm font-medium">New assignment</p><button onClick={() => setShowAssignDialog(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button></div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div><label className="text-xs text-muted-foreground mb-1 block">Type</label><select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={assignType} onChange={(e) => setAssignType(e.target.value)}><option value="WORK_ON_DOCUMENT">Write document</option><option value="REVIEW_DOCUMENT">Review document</option><option value="APPROVE_DOCUMENT">Approve document</option></select></div>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Task</label><select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={assignType} onChange={(e) => setAssignType(e.target.value as TaskType)}><option value="WORK_ON_DOCUMENT">Work on document</option><option value="REVIEW_DOCUMENT">Review document</option><option value="APPROVE_DOCUMENT">Approve document</option></select></div>
                     <div><label className="text-xs text-muted-foreground mb-1 block">Assign to</label><select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={assignUserId} onChange={(e) => setAssignUserId(e.target.value)}><option value="">Select member...</option>{members.map((m) => (<option key={m.user_id} value={m.user_id}>{m.user.first_name} {m.user.last_name}{m.privilege === 'PROJECT_LEAD' ? ' (Lead)' : ''}</option>))}</select></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Deadline</label><Input type="date" value={assignDeadline} onChange={(e) => setAssignDeadline(e.target.value)} /></div>
                   </div>
-                  <div><label className="text-xs text-muted-foreground mb-1 block">Notes (optional)</label><Input placeholder="Any instructions for the assignee..." value={assignNotes} onChange={(e) => setAssignNotes(e.target.value)} /></div>
+                  <div><label className="text-xs text-muted-foreground mb-1 block">Instructions (optional)</label><Input placeholder="What exactly should be done..." value={assignNotes} onChange={(e) => setAssignNotes(e.target.value)} /></div>
+                  {!assignDeadline && doc?.deadline && <p className="text-xs text-muted-foreground">Without a date, the document deadline ({formatDay(doc.deadline)}) is used.</p>}
                   <Button size="sm" onClick={handleAssign} disabled={isAssigning}>{isAssigning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}Assign</Button>
                 </div>
-              )}
+              ))}
             </CardContent>
           </Card>
         )}
       </>)}
 
       {/* Awareness and training with suggested materials (steps configured in step-materials.ts) */}
-      {!isDone && awarenessMaterials && (
+      {!isDone && step.type !== 'EDUCATIONAL' && (
         <>
           <AwarenessPanel
             projectId={projectId}
             stepId={step.id}
             stepTitle={step.title}
-            materials={awarenessMaterials}
+            materials={awarenessMaterials ?? []}
             members={members}
             sent={completionData.awareness as Parameters<typeof AwarenessPanel>[0]['sent']}
             canEdit={canEditStep}
@@ -486,89 +455,29 @@ export default function StepDetailPage() {
               {showRequests ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
               <span className="text-sm font-medium">Additional requests</span>
               {activeRequests > 0 && (
-                <Badge variant="secondary" className="text-xs">{activeRequests} active</Badge>
+                <Badge variant="secondary" className="text-xs">{activeRequests} open</Badge>
               )}
             </div>
             <span className="text-xs text-muted-foreground">Optional</span>
           </button>
           {showRequests && (
             <CardContent className="pt-0 space-y-4 border-t border-border/60">
-              <p className="text-xs text-muted-foreground pt-4">If you need extra resources for this step, flag them here. These are optional and do not block step completion.</p>
+              <p className="text-xs text-muted-foreground pt-4">If this step needs extra resources (clause 7.1), send a request: top management receives it as a task. Requests are optional and do not block step completion.</p>
 
-              {/* Awareness */}
-              {!awarenessMaterials && <RequestRow
-                label="Do your people need awareness for this step?"
-                description="Relevant people will be notified to review the related materials."
-                value={completionData.needs_awareness as boolean | undefined}
-                onToggle={(v) => saveCompletionData({ needs_awareness: v }, 'Awareness')}
-                saving={savingSection === 'Awareness'}
-              />}
-
-              {/* Training */}
-              {!awarenessMaterials && <RequestRow
-                label="Do your people need training for this step?"
-                description="A training request will be created for top management."
-                value={completionData.needs_training as boolean | undefined}
-                onToggle={(v) => saveCompletionData({ needs_training: v }, 'Training')}
-                saving={savingSection === 'Training'}
-              />}
-
-              {/* Technology */}
-              <RequestRow
-                label="Do you need extra technology for this step?"
-                description="A request will be sent to top management for approval."
-                value={completionData.needs_technology as boolean | undefined}
-                onToggle={(v) => saveCompletionData({ needs_technology: v }, 'Technology')}
-                saving={savingSection === 'Technology'}
-              >
-                {Boolean(completionData.needs_technology) && (
-                  <Textarea
-                    placeholder="Describe the technology needed..."
-                    className="text-sm mt-2"
-                    value={(completionData.technology_notes as string) ?? ''}
-                    onChange={(e) => setCompletionData((d) => ({ ...d, technology_notes: e.target.value }))}
-                    onBlur={() => saveCompletionData({ needs_technology: true, technology_notes: completionData.technology_notes }, 'Technology')}
-                  />
-                )}
-              </RequestRow>
-
-              {/* HR */}
-              <RequestRow
-                label="Do you need extra human resources for this step?"
-                description="A request will be sent to top management."
-                value={completionData.needs_hr as boolean | undefined}
-                onToggle={(v) => saveCompletionData({ needs_hr: v }, 'Human Resources')}
-                saving={savingSection === 'Human Resources'}
-              >
-                {Boolean(completionData.needs_hr) && (
-                  <Textarea
-                    placeholder="Describe the human resources needed..."
-                    className="text-sm mt-2"
-                    value={(completionData.hr_notes as string) ?? ''}
-                    onChange={(e) => setCompletionData((d) => ({ ...d, hr_notes: e.target.value }))}
-                    onBlur={() => saveCompletionData({ needs_hr: true, hr_notes: completionData.hr_notes }, 'Human Resources')}
-                  />
-                )}
-              </RequestRow>
-
-              {/* Finance */}
-              <RequestRow
-                label="Do you need extra budget for this step?"
-                description="A financial request will be sent to top management."
-                value={completionData.needs_finance as boolean | undefined}
-                onToggle={(v) => saveCompletionData({ needs_finance: v }, 'Finance')}
-                saving={savingSection === 'Finance'}
-              >
-                {Boolean(completionData.needs_finance) && (
-                  <Textarea
-                    placeholder="Describe the budget needed..."
-                    className="text-sm mt-2"
-                    value={(completionData.finance_notes as string) ?? ''}
-                    onChange={(e) => setCompletionData((d) => ({ ...d, finance_notes: e.target.value }))}
-                    onBlur={() => saveCompletionData({ needs_finance: true, finance_notes: completionData.finance_notes }, 'Finance')}
-                  />
-                )}
-              </RequestRow>
+              {RESOURCE_REQUESTS.map((r) => (
+                <ResourceRequest
+                  key={r.kind}
+                  label={r.label}
+                  placeholder={r.placeholder}
+                  canSend={canEditStep}
+                  sent={stepTasks.filter((t) => t.type === r.type)}
+                  onSend={async (notes) => {
+                    const { sent_to } = await projectsApi.sendRequest(projectId, stepId, { kind: r.kind, notes });
+                    toast.success(`Request sent to ${sent_to} ${sent_to > 1 ? 'people' : 'person'} in top management`);
+                    await loadTasks();
+                  }}
+                />
+              ))}
             </CardContent>
           )}
         </Card>
@@ -619,49 +528,51 @@ export default function StepDetailPage() {
   );
 }
 
-/* ─── RequestRow sub-component ─── */
-function RequestRow({
-  label,
-  description,
-  value,
-  onToggle,
-  saving,
-  children,
-}: {
+const DOCUMENT_TASK_TYPES: TaskType[] = ['WORK_ON_DOCUMENT', 'REVIEW_DOCUMENT', 'APPROVE_DOCUMENT'];
+
+const RESOURCE_REQUESTS = [
+  { kind: 'technology', type: 'TECHNOLOGY_REQUEST', label: 'Technology', placeholder: 'Which tool, license or equipment is needed, and why...' },
+  { kind: 'hr', type: 'HR_REQUEST', label: 'Human resources', placeholder: 'Which people or skills are needed, and for how long...' },
+  { kind: 'finance', type: 'FINANCE_REQUEST', label: 'Budget', placeholder: 'How much is needed and for what...' },
+] as const;
+
+/** One resource request: what was already sent, and a form to send a new one to top management. */
+function ResourceRequest({ label, placeholder, sent, canSend, onSend }: {
   label: string;
-  description: string;
-  value: boolean | undefined;
-  onToggle: (v: boolean) => void;
-  saving: boolean;
-  children?: React.ReactNode;
+  placeholder: string;
+  sent: TaskAssignment[];
+  canSend: boolean;
+  onSend: (notes: string) => Promise<void>;
 }) {
+  const [notes, setNotes] = useState('');
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    setBusy(true);
+    try {
+      await onSend(notes.trim());
+      setNotes('');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Failed to send the request'));
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <div className="rounded-lg border p-3 space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium">{label}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-        <div className="flex gap-2 shrink-0">
-          <Button
-            size="sm"
-            variant={value === true ? 'default' : 'outline'}
-            onClick={() => onToggle(true)}
-            disabled={saving}
-          >
-            Yes
-          </Button>
-          <Button
-            size="sm"
-            variant={value === false ? 'default' : 'outline'}
-            onClick={() => onToggle(false)}
-            disabled={saving}
-          >
-            No
+      <p className="text-sm font-medium">{label}</p>
+      {sent.map((t) => (
+        <p key={t.id} className="text-xs text-muted-foreground">
+          Sent {formatDay(t.created_at)} to {fullName(t.assignee)} · {t.status === 'COMPLETED' ? 'answered' : 'open'}
+        </p>
+      ))}
+      {canSend && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+          <Textarea rows={2} className="text-sm" placeholder={placeholder} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Button size="sm" variant="outline" disabled={busy || !notes.trim()} onClick={send}>
+            {busy && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}Send request
           </Button>
         </div>
-      </div>
-      {children}
+      )}
     </div>
   );
 }

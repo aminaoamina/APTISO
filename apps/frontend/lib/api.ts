@@ -285,6 +285,14 @@ export interface CreateRequirementData {
   law_regulation_name?: string;
 }
 
+export type TaskType =
+  | 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK'
+  | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL'
+  | 'CORRECTIVE_ACTION' | 'INTERNAL_AUDIT' | 'MANAGEMENT_REVIEW_ACTION' | 'MANAGEMENT_REVIEW_DUE'
+  | 'OBJECTIVES_REVIEW' | 'DOCUMENT_REVIEW' | 'INCIDENTS_REVIEW' | 'TRAININGS_REVIEW';
+
+interface Person { id: string; first_name: string; last_name: string; email?: string }
+
 export interface TaskAssignment {
   id: string;
   project_id: string;
@@ -292,30 +300,32 @@ export interface TaskAssignment {
   document_instance_id: string | null;
   assigned_to: string;
   assigned_by: string;
-  type: 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK' | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL' | 'CORRECTIVE_ACTION' | 'INTERNAL_AUDIT' | 'MANAGEMENT_REVIEW_ACTION'
-    | 'MANAGEMENT_REVIEW_DUE' | 'OBJECTIVES_REVIEW' | 'DOCUMENT_REVIEW' | 'INCIDENTS_REVIEW' | 'TRAININGS_REVIEW';
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+  type: TaskType;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   deadline: string | null;
   completed_at: string | null;
   notes: string | null;
+  completion_notes: string | null;
   created_at: string;
-  project?: { id: string; name: string; organization_id: string };
-  step?: { id: string; title: string; key: string } | null;
-  assignee?: { id: string; email: string; first_name: string; last_name: string };
-  assigner?: { id: string; first_name: string; last_name: string };
+  project: { id: string; name: string; organization_id: string };
+  step: { id: string; title: string; key: string } | null;
+  document: { id: string; title: string } | null;
+  assignee: Person;
+  assigner: Person;
 }
 
-export interface OrganizationNotification {
+/** The task fields a notification carries, enough to describe it and link to it. */
+export type NotificationTask = Pick<TaskAssignment, 'id' | 'type' | 'status' | 'deadline' | 'notes' | 'project_id' | 'step_id' | 'document_instance_id' | 'project' | 'step' | 'document'>;
+
+export interface AppNotification {
   id: string;
-  type: 'ORGANIZATION_JOIN_REQUEST';
+  type: 'ORGANIZATION_JOIN_REQUEST' | 'TASK_ASSIGNED' | 'TASK_COMPLETED' | 'TASK_DUE_SOON' | 'TASK_CANCELLED';
+  read_at: string | null;
   created_at: string;
+  actor: Person | null;
   organization: { id: string; name: string } | null;
-  join_request: {
-    id: string;
-    role: string;
-    status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
-    created_at: string;
-  } | null;
+  join_request: { id: string; role: string; status: 'PENDING' | 'ACCEPTED' | 'REJECTED' } | null;
+  task_assignment: NotificationTask | null;
 }
 
 export interface OrganizationJoinRequest {
@@ -378,11 +388,6 @@ export const organizationsApi = {
 
   updateMemberRole: async (orgId: string, memberId: string, role: string): Promise<OrganizationMember> => {
     const response = await apiClient.put(`/organizations/${orgId}/members/${memberId}/role`, { role });
-    return response.data;
-  },
-
-  notifications: async (): Promise<OrganizationNotification[]> => {
-    const response = await apiClient.get('/organizations/notifications');
     return response.data;
   },
 
@@ -522,7 +527,7 @@ export const projectsApi = {
   assignTask: async (
     projectId: string,
     stepId: string,
-    data: { assigned_to: string; type: string; notes?: string },
+    data: { assigned_to: string; type: TaskType; notes?: string; deadline?: string },
   ): Promise<TaskAssignment> => {
     const response = await apiClient.post(
       `/projects/${projectId}/steps/${stepId}/assign`,
@@ -533,6 +538,15 @@ export const projectsApi = {
 
   getProjectTasks: async (projectId: string): Promise<TaskAssignment[]> => {
     const response = await apiClient.get(`/projects/${projectId}/tasks`);
+    return response.data;
+  },
+
+  sendRequest: async (
+    projectId: string,
+    stepId: string,
+    data: { kind: 'hr' | 'finance' | 'technology'; notes: string },
+  ): Promise<{ sent_to: number }> => {
+    const response = await apiClient.post(`/projects/${projectId}/steps/${stepId}/requests`, data);
     return response.data;
   },
 };
@@ -1051,15 +1065,24 @@ export const policiesApi = {
 // ============================================================
 
 export const tasksApi = {
-  getMyTasks: async (): Promise<TaskAssignment[]> => {
-    const response = await apiClient.get('/tasks/mine');
-    return response.data;
-  },
+  mine: async (): Promise<TaskAssignment[]> => (await apiClient.get('/tasks/mine')).data,
 
-  completeTask: async (taskId: string): Promise<TaskAssignment> => {
-    const response = await apiClient.put(`/tasks/${taskId}/complete`);
-    return response.data;
-  },
+  team: async (): Promise<TaskAssignment[]> => (await apiClient.get('/tasks/team')).data,
+
+  complete: async (taskId: string, notes?: string): Promise<TaskAssignment> =>
+    (await apiClient.put(`/tasks/${taskId}/complete`, { notes })).data,
+
+  update: async (taskId: string, data: { assigned_to?: string; deadline?: string | null }): Promise<TaskAssignment> =>
+    (await apiClient.patch(`/tasks/${taskId}`, data)).data,
+
+  cancel: async (taskId: string): Promise<TaskAssignment> => (await apiClient.post(`/tasks/${taskId}/cancel`)).data,
+};
+
+export const notificationsApi = {
+  list: async (): Promise<{ items: AppNotification[]; unread_count: number }> => (await apiClient.get('/notifications')).data,
+
+  markRead: async (ids?: string[]): Promise<{ unread_count: number }> =>
+    (await apiClient.post('/notifications/read', { ids })).data,
 };
 
 // ============================================================

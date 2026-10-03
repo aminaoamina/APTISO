@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { AuditAction, Prisma, ReviewDecisionType, ReviewFrequency, TaskType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
-import { TaskService } from '../common/services/task.service';
+import { TasksService } from '../tasks/tasks.service';
 import { ProjectAccess, ProjectAccessService } from '../common/services/project-access.service';
 import { StepDocumentService, formatDate, latest } from '../common/services/step-document.service';
 import { heading, paragraph, table, text, ProseMirrorNode } from '../documents/templates/doc-control.template';
@@ -57,7 +57,7 @@ export class ManagementReviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly tasks: TaskService,
+    private readonly tasks: TasksService,
     private readonly access: ProjectAccessService,
     private readonly documents: StepDocumentService,
     private readonly improvement: ImprovementService,

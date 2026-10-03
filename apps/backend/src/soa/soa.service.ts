@@ -17,7 +17,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { StepDocumentService } from '../common/services/step-document.service';
-import { TaskService } from '../common/services/task.service';
+import { TasksService } from '../tasks/tasks.service';
 import {
   ProseMirrorNode,
   heading,
@@ -85,7 +85,7 @@ export class SoaService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly tasks: TaskService,
+    private readonly tasks: TasksService,
     private readonly stepDocuments: StepDocumentService,
   ) {}
 

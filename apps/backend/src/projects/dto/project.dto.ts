@@ -16,7 +16,7 @@ import {
   IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProjectStatus, TaskType } from '@prisma/client';
+import { ProjectStatus } from '@prisma/client';
 
 export class CreateProjectDto {
   @ApiProperty({ example: 'ISO 27001 Implementation' })
@@ -101,23 +101,6 @@ export class UpdateStepMetadataDto {
   @IsOptional()
   @IsObject()
   metadata_json?: Record<string, unknown>;
-}
-
-export class AssignTaskDto {
-  @ApiProperty({ description: 'User ID of the person being assigned' })
-  @IsUUID()
-  @IsNotEmpty()
-  assigned_to!: string;
-
-  @ApiProperty({ enum: TaskType, description: 'Type of assignment' })
-  @IsEnum(TaskType)
-  @IsNotEmpty()
-  type!: TaskType;
-
-  @ApiPropertyOptional({ description: 'Optional notes for the assignment' })
-  @IsOptional()
-  @IsString()
-  notes?: string;
 }
 
 export class AwarenessMaterialDto {

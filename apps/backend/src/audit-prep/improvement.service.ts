@@ -10,7 +10,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
-import { TaskService } from '../common/services/task.service';
+import { TasksService } from '../tasks/tasks.service';
 import { ProjectAccess, ProjectAccessService } from '../common/services/project-access.service';
 import {
   CreateActionDto,
@@ -49,7 +49,7 @@ export class ImprovementService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly tasks: TaskService,
+    private readonly tasks: TasksService,
     private readonly access: ProjectAccessService,
   ) {}
 
@@ -232,9 +232,18 @@ export class ImprovementService {
     });
     if (dto.status === 'DONE' && action.task_id) {
       await this.prisma.taskAssignment.updateMany({
-        where: { id: action.task_id, status: { not: 'COMPLETED' } },
+        where: { id: action.task_id, status: { in: ['PENDING', 'IN_PROGRESS'] } },
         data: { status: 'COMPLETED', completed_at: new Date() },
       });
+    } else {
+      // The task follows its action: new responsible person, due date or description.
+      await this.tasks.syncLinked(action.task_id, {
+        assignedTo: dto.responsible_id,
+        deadline: dto.due_date === undefined ? undefined : dto.due_date ? new Date(dto.due_date) : null,
+        notes: dto.description === undefined ? undefined
+          : `Corrective action for NC-${String(nc.number).padStart(3, '0')} "${nc.title}":
+${dto.description.trim()}`,
+      }, userId);
     }
     await this.log(userId, 'corrective_action', actionId, { action: 'update', fields: Object.keys(dto) });
     return this.getRegisters(projectId, userId);
@@ -245,6 +254,7 @@ export class ImprovementService {
     if (!nc.actions.some(a => a.id === actionId)) throw new NotFoundException('Corrective action not found');
     if (nc.status === 'RESOLVED') throw new BadRequestException('Reopen the nonconformity first');
     await this.prisma.correctiveAction.delete({ where: { id: actionId } });
+    await this.tasks.cancelLinked(nc.actions.find(a => a.id === actionId)!.task_id, userId);
     await this.refreshStatus(id);
     await this.log(userId, 'corrective_action', actionId, { action: 'delete', nonconformity: id });
     return this.getRegisters(projectId, userId);

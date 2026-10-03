@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuditLogService } from '../common/services/audit-log.service';
-import { TaskService } from '../common/services/task.service';
+import { TasksModule } from '../tasks/tasks.module';
 import { ProjectAccessService } from '../common/services/project-access.service';
 import { StepDocumentService } from '../common/services/step-document.service';
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
@@ -13,10 +13,10 @@ import { ManagementReviewService } from './management-review.service';
 
 /** Phase 4: Preparation for External Audit. */
 @Module({
+  imports: [TasksModule],
   controllers: [AuditPrepController],
   providers: [
     AuditLogService,
-    TaskService,
     ProjectAccessService,
     StepDocumentService,
     ProjectRoleGuard,

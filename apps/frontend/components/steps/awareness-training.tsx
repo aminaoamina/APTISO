@@ -72,8 +72,10 @@ export function AwarenessPanel({
       <CardHeader>
         <CardTitle className="text-base">Awareness</CardTitle>
         <CardDescription>
-          To make your people aware of the need to complete &quot;{stepTitle}&quot;, we suggest the following materials.
-          Each person receives a task with the selected materials.
+          {materials.length
+            ? <>To make your people aware of the need to complete &quot;{stepTitle}&quot;, we suggest the following materials.</>
+            : <>Add what your people should read for &quot;{stepTitle}&quot;, for example the document of this step or a policy link.</>}
+          {' '}Each person receives a task with the selected materials (clause 7.3).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

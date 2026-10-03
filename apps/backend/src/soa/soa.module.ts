@@ -3,12 +3,13 @@ import { SoaService } from './soa.service';
 import { SoaController } from './soa.controller';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { StepDocumentService } from '../common/services/step-document.service';
-import { TaskService } from '../common/services/task.service';
+import { TasksModule } from '../tasks/tasks.module';
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 
 @Module({
+  imports: [TasksModule],
   controllers: [SoaController],
-  providers: [SoaService, AuditLogService, TaskService, StepDocumentService, ProjectRoleGuard],
+  providers: [SoaService, AuditLogService, StepDocumentService, ProjectRoleGuard],
   exports: [SoaService],
 })
 export class SoaModule {}

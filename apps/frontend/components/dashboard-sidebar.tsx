@@ -26,6 +26,8 @@ import { Logo } from '@/components/logo';
 import { useAuthStore } from '@/store/auth-store';
 import { useOrgStore } from '@/store/org-store';
 import { useProjectStore } from '@/store/project-store';
+import { useInboxStore } from '@/store/inbox-store';
+import { isOpen, isOverdue } from '@/lib/tasks';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -39,6 +41,8 @@ interface NavItem {
   href?: string;
   icon: React.ComponentType<{ className?: string }>;
   soon?: boolean;
+  /** Counter shown on the right, red when something is late. */
+  badge?: { count: number; alert?: boolean };
 }
 
 function NavSectionTitle({ children }: { children: React.ReactNode }) {
@@ -71,6 +75,14 @@ function NavRow({
     >
       <Icon className="h-[18px] w-[18px] shrink-0" />
       <span>{item.label}</span>
+      {!!item.badge?.count && (
+        <span
+          className="ml-auto min-w-[20px] rounded-full px-1.5 text-center text-[11px] font-semibold leading-5 text-white"
+          style={{ background: item.badge.alert ? 'var(--danger)' : 'var(--brand-orange)' }}
+        >
+          {item.badge.count}
+        </span>
+      )}
     </Link>
   );
 }
@@ -93,6 +105,9 @@ export function DashboardSidebar() {
   const orgId = orgMatch?.[1];
   const projectId = projectMatch?.[1];
   const inProjectContext = Boolean(projectId);
+  const myTasks = useInboxStore((s) => s.myTasks);
+  const openTasks = myTasks.filter(isOpen);
+  const tasksBadge = { count: openTasks.length, alert: openTasks.some(isOverdue) };
   const isLead =
     currentProject?.members?.some(
       (m) => m.user_id === user?.id && m.privilege === 'PROJECT_LEAD',
@@ -237,7 +252,14 @@ export function DashboardSidebar() {
                 isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/steps`)}
               />
               <NavRow item={{ label: 'Audit & Evidence', icon: Files, soon: true }} />
-              <NavRow item={{ label: 'Maintenance', icon: RefreshCcw, soon: true }} />
+              <NavRow
+                item={{
+                  label: 'Maintenance',
+                  href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}/maintenance` : undefined,
+                  icon: RefreshCcw,
+                }}
+                isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/maintenance`)}
+              />
             </div>
 
             <NavSectionTitle>Collaboration</NavSectionTitle>
@@ -260,6 +282,7 @@ export function DashboardSidebar() {
                   label: 'My tasks',
                   href: '/dashboard/tasks',
                   icon: ListTodo,
+                  badge: tasksBadge,
                 }}
                 isActive={pathname === '/dashboard/tasks'}
               />
@@ -314,7 +337,9 @@ export function DashboardSidebar() {
         <NavSectionTitle>Personal</NavSectionTitle>
         <div className="flex flex-col gap-1 px-3">
           <NavRow item={{ label: 'My dashboard', href: '/dashboard', icon: Home }} isActive={pathname === '/dashboard'} />
-          <NavRow item={{ label: 'My tasks', icon: ListTodo, soon: true }} />
+          {!inProjectContext && (
+            <NavRow item={{ label: 'My tasks', href: '/dashboard/tasks', icon: ListTodo, badge: tasksBadge }} isActive={pathname === '/dashboard/tasks'} />
+          )}
           <NavRow
             item={{ label: 'Manage organizations', href: '/dashboard/organizations', icon: Settings2 }}
             isActive={pathname === '/dashboard/organizations'}

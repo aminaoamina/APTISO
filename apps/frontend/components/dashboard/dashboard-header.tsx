@@ -1,64 +1,28 @@
 'use client';
 
-import { Search, Bell, Check, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Search } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useAuthStore } from '@/store/auth-store';
 import { useOrgStore } from '@/store/org-store';
-import { organizationsApi, OrganizationNotification } from '@/lib/api';
-import { toast } from 'sonner';
-import { playNotificationSound, playPopupSound } from '@/lib/notification-sounds';
+import { useProjectStore } from '@/store/project-store';
+import { NotificationBell } from './notification-bell';
+
+const PROJECT_ROLE_LABELS = { PROJECT_LEAD: 'Project lead', PROJECT_MEMBER: 'Project member', PROJECT_AUDITOR: 'Auditor' } as const;
+const ORG_ROLE_LABELS = { ORG_OWNER: 'Owner', ORG_ADMIN: 'Admin', ORG_MEMBER: 'Member' } as const;
 
 export function DashboardHeader() {
   const { user } = useAuthStore();
-  const loadOrganizations = useOrgStore((state) => state.loadOrganizations);
-  const [notifications, setNotifications] = useState<OrganizationNotification[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
-  const previousPendingCount = useRef<number | null>(null);
-
-  const loadNotifications = async () => {
-    try {
-      const nextNotifications = await organizationsApi.notifications();
-      const pendingCount = nextNotifications.filter(
-        (notification) => notification.join_request?.status === 'PENDING',
-      ).length;
-      if (
-        previousPendingCount.current !== null &&
-        pendingCount > previousPendingCount.current
-      ) {
-        playNotificationSound();
-      }
-      previousPendingCount.current = pendingCount;
-      setNotifications(nextNotifications);
-    } catch {
-      setNotifications([]);
-    }
-  };
-
-  useEffect(() => {
-    loadNotifications();
-    const interval = window.setInterval(loadNotifications, 15000);
-    const handleFocus = () => loadNotifications();
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      window.clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [user?.id]);
-
-  const respond = async (requestId: string, accept: boolean) => {
-    try {
-      await organizationsApi.respondToJoinRequest(requestId, accept);
-      playPopupSound();
-      toast.success(accept ? 'You joined the organization' : 'Join request rejected');
-      await Promise.all([loadNotifications(), loadOrganizations()]);
-    } catch {
-      playPopupSound();
-      toast.error('Unable to respond to the join request');
-    }
-  };
+  const pathname = usePathname();
+  const currentOrg = useOrgStore((s) => s.currentOrg);
+  const currentProject = useProjectStore((s) => s.currentProject);
+  // The role that applies to the page being viewed: in a project, then in the organization.
+  const inProject = !!currentProject && pathname.includes(`/projects/${currentProject.id}`);
+  const inOrg = !!currentOrg && pathname.includes(`/organizations/${currentOrg.id}`);
+  const projectRole = inProject && currentProject.members?.find((m) => m.user_id === user?.id)?.privilege;
+  const orgRole = inOrg && currentOrg.members?.find((m) => m.user_id === user?.id)?.role;
+  const roleLabel = projectRole ? PROJECT_ROLE_LABELS[projectRole] : orgRole ? ORG_ROLE_LABELS[orgRole] : null;
 
   const getInitials = (firstName?: string, lastName?: string) => {
     if (!firstName) return '??';
@@ -80,36 +44,7 @@ export function DashboardHeader() {
       <div className="flex items-center gap-3.5">
         <ThemeToggle glass />
 
-        {/* Notifications */}
-        <div className="relative">
-        <button className="theme-toggle relative" aria-label="Notifications" onClick={() => setIsOpen((open) => !open)}>
-          <Bell className="h-[19px] w-[19px]" />
-          {notifications.some((notification) => notification.join_request?.status === 'PENDING') && (
-            <span className="absolute top-2.5 right-2.5 w-[7px] h-[7px] rounded-full" style={{ background: 'var(--danger)' }} />
-          )}
-        </button>
-        {isOpen && (
-          <div className="absolute right-0 top-12 z-50 w-80 rounded-lg border bg-background p-3 shadow-lg">
-            <h2 className="mb-2 text-sm font-semibold">Notifications</h2>
-            {notifications.length === 0 ? (
-              <p className="py-4 text-sm text-muted-foreground">No notifications</p>
-            ) : notifications.map((notification) => {
-              const request = notification.join_request;
-              return (
-                <div key={notification.id} className="border-b py-3 last:border-0">
-                  <p className="text-sm">You were invited to join <strong>{notification.organization?.name}</strong>.</p>
-                  {request?.status === 'PENDING' && (
-                    <div className="mt-2 flex gap-2">
-                      <button className="flex items-center gap-1 text-sm text-primary" onClick={() => respond(request.id, true)}><Check className="h-3.5 w-3.5" /> Accept</button>
-                      <button className="flex items-center gap-1 text-sm text-destructive" onClick={() => respond(request.id, false)}><X className="h-3.5 w-3.5" /> Reject</button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-        </div>
+        <NotificationBell />
 
         {/* User avatar + name → navigates to profile */}
         <Link
@@ -126,9 +61,7 @@ export function DashboardHeader() {
             <div className="text-[13.5px] font-semibold transition-colors duration-200 group-hover:text-[var(--brand-orange)]">
               {user?.first_name} {user?.last_name}
             </div>
-            <div className="text-[11px] text-dim">
-              Member
-            </div>
+            {roleLabel && <div className="text-[11px] text-dim">{roleLabel}</div>}
           </div>
         </Link>
       </div>

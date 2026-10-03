@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { AuditAction, ReviewFrequency, TaskType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
-import { TaskService } from '../common/services/task.service';
+import { TasksService } from '../tasks/tasks.service';
 import { ProjectAccessService } from '../common/services/project-access.service';
 import { FREQUENCY_MONTHS, P4, RISK_REGISTER_KEY, checklist } from '../audit-prep/keys';
 import { UpdateMaintenanceDto } from './maintenance.dto';
@@ -67,7 +67,7 @@ export class MaintenanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly tasks: TaskService,
+    private readonly tasks: TasksService,
     private readonly access: ProjectAccessService,
   ) {}
 
@@ -198,17 +198,19 @@ export class MaintenanceService {
       if (!d.next || d.next > horizon || d.suppressReminder) continue;
       const open = tasks.some(t => t.type === d.type && t.status !== 'COMPLETED' && (d.key === null || t.activity_key === d.key));
       if (open) continue;
-      const task = await this.tasks.create({
+      await this.tasks.create({
         projectId,
         organizationId: project.organization_id,
         stepId: null,
+        // A document review task opens the document itself.
+        documentId: d.key?.startsWith('document:') ? d.key.slice('document:'.length) : null,
+        activityKey: d.key,
         assignedTo: d.assignee,
         assignedBy: lead,
         type: d.type,
         notes: d.notes,
         deadline: d.next,
       });
-      await this.prisma.taskAssignment.update({ where: { id: task.id }, data: { activity_key: d.key } });
       tasks.push({ type: d.type, status: 'PENDING', activity_key: d.key, completed_at: null, deadline: d.next });
       created++;
     }

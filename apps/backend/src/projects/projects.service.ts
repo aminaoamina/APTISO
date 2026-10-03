@@ -16,7 +16,7 @@ import { InternalAuditService } from '../audit-prep/internal-audit.service';
 import { ManagementReviewService } from '../audit-prep/management-review.service';
 import { P4 } from '../audit-prep/keys';
 import { MaintenanceService, MAINTENANCE_STEP_KEY } from '../maintenance/maintenance.service';
-import { NewTask, TaskService } from '../common/services/task.service';
+import { TasksService } from '../tasks/tasks.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
@@ -32,7 +32,6 @@ import {
   StepType,
   StepStatus,
   TaskType,
-  NotificationType,
   Prisma,
 } from '@prisma/client';
 
@@ -280,7 +279,7 @@ export class ProjectsService {
     private readonly auditLog: AuditLogService,
     private readonly riskRegister: RiskRegisterService,
     private readonly soa: SoaService,
-    private readonly tasks: TaskService,
+    private readonly tasks: TasksService,
     private readonly policies: PoliciesService,
     private readonly trainings: TrainingsService,
     private readonly objectives: ObjectivesService,
@@ -649,7 +648,7 @@ export class ProjectsService {
     });
 
     if (step.key === RISK_REGISTER_STEP_KEY) {
-      await this.scheduleRiskReview(projectId, stepId, userId);
+      await this.tasks.scheduleRiskReview(projectId, stepId, userId);
     }
     // Finishing the SoA adds the required policies to Phase 3 (Security Documentation).
     if (step.key === SOA_STEP_KEY) {
@@ -955,74 +954,6 @@ export class ProjectsService {
     });
   }
 
-  async assignTask(
-    projectId: string,
-    stepId: string | undefined,
-    dto: { assigned_to: string; type: TaskType; notes?: string },
-    userId: string,
-    userRole: ProjectRole,
-    ipAddress?: string,
-    userAgent?: string,
-  ) {
-    if (
-      userRole !== ProjectRole.PROJECT_LEAD &&
-      userRole !== ProjectRole.PROJECT_AUDITOR
-    ) {
-      throw new ForbiddenException('Only leads and auditors can assign tasks');
-    }
-
-    // Verify the project exists
-    const project = await this.prisma.complianceProject.findUnique({
-      where: { id: projectId },
-    });
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
-
-    // Verify assignee is a project member
-    const assigneeMembership = await this.prisma.projectMember.findUnique({
-      where: { project_id_user_id: { project_id: projectId, user_id: dto.assigned_to } },
-    });
-    if (!assigneeMembership) {
-      throw new ForbiddenException('Assignee must be a project member');
-    }
-
-    // If step provided, verify it belongs to this project and get document deadline
-    let stepDeadline: Date | undefined;
-    if (stepId) {
-      const step = await this.prisma.projectStep.findUnique({
-        where: { id: stepId },
-        include: {
-          phase: { select: { project_id: true } },
-          document_instance: { select: { deadline: true } },
-        },
-      });
-      if (!step || step.phase.project_id !== projectId) {
-        throw new NotFoundException('Step not found');
-      }
-      stepDeadline = step.document_instance?.deadline ?? undefined;
-    }
-
-    return this.createTask(
-      {
-        projectId,
-        organizationId: project.organization_id,
-        stepId: stepId ?? null,
-        assignedTo: dto.assigned_to,
-        assignedBy: userId,
-        type: dto.type,
-        notes: dto.notes ?? null,
-        deadline: stepDeadline ?? null,
-      },
-      ipAddress,
-      userAgent,
-    );
-  }
-
-  private createTask(t: NewTask, ipAddress?: string, userAgent?: string) {
-    return this.tasks.create(t, ipAddress, userAgent);
-  }
-
   // ─── Awareness and training for a step (clauses 7.2 and 7.3) ──
 
   /** "Send materials": one awareness task per person, listing the materials. */
@@ -1043,7 +974,7 @@ export class ProjectsService {
       ...dto.materials.map(m => `- ${m.title}${m.url ? ` (${m.url})` : ''}`),
     ].join('\n');
     for (const assignee of new Set(dto.user_ids)) {
-      await this.createTask(
+      await this.tasks.create(
         { projectId, organizationId, stepId, assignedTo: assignee, assignedBy: userId,
           type: TaskType.AWARENESS_TASK, notes, deadline: null },
         ipAddress,
@@ -1081,7 +1012,7 @@ export class ProjectsService {
         `Required knowledge and skills: ${r.skills}`,
         r.training ? `Training: ${r.training}` : null,
       ].filter(Boolean).join('\n');
-      await this.createTask(
+      await this.tasks.create(
         { projectId, organizationId, stepId, assignedTo: r.user_id, assignedBy: userId,
           type: TaskType.TRAINING_TASK, notes, deadline: null },
         ipAddress,
@@ -1096,44 +1027,6 @@ export class ProjectsService {
         confirmed_at: new Date().toISOString(),
       },
       needs_training: dto.rows.length > 0,
-    });
-  }
-
-  /**
-   * Methodology 3.4: risk owners review the risks at least once a year. When
-   * the register is completed, the project lead gets a "Review of risks" task
-   * due in one year; completing it schedules the next one (see completeTask).
-   */
-  private async scheduleRiskReview(projectId: string, stepId: string, completedBy: string) {
-    const existing = await this.prisma.taskAssignment.findFirst({
-      where: { step_id: stepId, type: TaskType.RISK_REVIEW, status: { not: 'COMPLETED' } },
-    });
-    if (existing) return;
-
-    const [project, lead] = await Promise.all([
-      this.prisma.complianceProject.findUnique({ where: { id: projectId }, select: { organization_id: true } }),
-      this.prisma.projectMember.findFirst({
-        where: { project_id: projectId, privilege: ProjectRole.PROJECT_LEAD },
-        orderBy: { joined_at: 'asc' },
-        select: { user_id: true },
-      }),
-    ]);
-    if (!project) return;
-
-    const due = new Date();
-    due.setFullYear(due.getFullYear() + 1);
-    await this.createTask({
-      projectId,
-      organizationId: project.organization_id,
-      stepId,
-      assignedTo: lead?.user_id ?? completedBy,
-      assignedBy: completedBy,
-      type: TaskType.RISK_REVIEW,
-      notes:
-        'Annual review of risks (Risk Assessment and Treatment Methodology, section 3.4): with the risk owners, ' +
-        'review existing risks, add newly identified ones, update the risk register and refresh the Risk Assessment ' +
-        'and Treatment Report. Review earlier after significant organizational, technology or business changes.',
-      deadline: due,
     });
   }
 
@@ -1165,103 +1058,5 @@ export class ProjectsService {
       where: { id: stepId },
       data: { completion_data: { ...current, ...updates } as Prisma.InputJsonValue },
     });
-  }
-
-  async getMyTasks(userId: string) {
-    return this.prisma.taskAssignment.findMany({
-      where: { assigned_to: userId },
-      include: {
-        project: { select: { id: true, name: true, organization_id: true } },
-        step: { select: { id: true, title: true, key: true } },
-        assigner: { select: { id: true, first_name: true, last_name: true } },
-      },
-      orderBy: { created_at: 'desc' },
-    });
-  }
-
-  async getProjectTasks(projectId: string, userId: string) {
-    // Verify membership
-    const membership = await this.prisma.projectMember.findUnique({
-      where: { project_id_user_id: { project_id: projectId, user_id: userId } },
-    });
-    if (!membership) {
-      throw new ForbiddenException('You are not a member of this project');
-    }
-
-    return this.prisma.taskAssignment.findMany({
-      where: { project_id: projectId },
-      include: {
-        assignee: { select: { id: true, email: true, first_name: true, last_name: true } },
-        assigner: { select: { id: true, first_name: true, last_name: true } },
-        step: { select: { id: true, title: true, key: true } },
-      },
-      orderBy: { created_at: 'desc' },
-    });
-  }
-
-  async completeTask(
-    taskId: string,
-    userId: string,
-    ipAddress?: string,
-    userAgent?: string,
-  ) {
-    const task = await this.prisma.taskAssignment.findUnique({
-      where: { id: taskId },
-    });
-
-    if (!task) {
-      throw new NotFoundException('Task not found');
-    }
-
-    if (task.assigned_to !== userId) {
-      throw new ForbiddenException('Only the assignee can complete this task');
-    }
-
-    if (task.status === 'COMPLETED') {
-      throw new BadRequestException('Task is already completed');
-    }
-
-    const updated = await this.prisma.taskAssignment.update({
-      where: { id: taskId },
-      data: { status: 'COMPLETED', completed_at: new Date() },
-      include: {
-        assignee: { select: { id: true, email: true, first_name: true, last_name: true } },
-        assigner: { select: { id: true, first_name: true, last_name: true } },
-      },
-    });
-
-    // The yearly risk review repeats: completing one schedules the next.
-    if (task.type === TaskType.RISK_REVIEW && task.step_id) {
-      await this.scheduleRiskReview(task.project_id, task.step_id, userId);
-    }
-    // Completing the task of a corrective action or a management review action completes the action itself.
-    if (task.type === TaskType.CORRECTIVE_ACTION) {
-      await this.prisma.correctiveAction.updateMany({ where: { task_id: task.id, status: { not: 'DONE' } }, data: { status: 'DONE', completed_at: new Date() } });
-    }
-    if (task.type === TaskType.MANAGEMENT_REVIEW_ACTION) {
-      await this.prisma.managementReviewDecision.updateMany({ where: { task_id: task.id, status: { not: 'DONE' } }, data: { status: 'DONE', completed_at: new Date() } });
-    }
-
-    // Notify the assigner that the task is complete
-    await this.prisma.notification.create({
-      data: {
-        user_id: task.assigned_by,
-        project_id: task.project_id,
-        task_assignment_id: task.id,
-        type: NotificationType.TASK_COMPLETED,
-      },
-    });
-
-    await this.auditLog.log({
-      userId,
-      action: AuditAction.TASK_COMPLETED,
-      entityType: 'task_assignment',
-      entityId: taskId,
-      details: { projectId: task.project_id, type: task.type, assignedTo: task.assigned_to },
-      ipAddress,
-      userAgent,
-    });
-
-    return updated;
   }
 }

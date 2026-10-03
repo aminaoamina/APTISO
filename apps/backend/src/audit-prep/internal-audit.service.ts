@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { AuditAction, AuditResult, FindingSource, Prisma, TaskType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
-import { TaskService } from '../common/services/task.service';
+import { TasksService } from '../tasks/tasks.service';
 import { ProjectAccessService } from '../common/services/project-access.service';
 import { StepDocumentService, formatDate, latest } from '../common/services/step-document.service';
 import { heading, paragraph, table, text, bulletList, ProseMirrorNode } from '../documents/templates/doc-control.template';
@@ -35,7 +35,7 @@ export class InternalAuditService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
-    private readonly tasks: TaskService,
+    private readonly tasks: TasksService,
     private readonly access: ProjectAccessService,
     private readonly documents: StepDocumentService,
     private readonly improvement: ImprovementService,
@@ -133,6 +133,10 @@ export class InternalAuditService {
         ...(dto.conclusion !== undefined && { conclusion: dto.conclusion.trim() || null }),
       },
     });
+    await this.tasks.syncLinked(audit.task_id, {
+      assignedTo: dto.lead_auditor_id,
+      deadline: dto.end_date === undefined ? undefined : new Date(dto.end_date),
+    }, userId);
     await this.log(userId, auditId, { action: 'update_audit', fields: Object.keys(dto) });
     return this.get(stepId, userId);
   }

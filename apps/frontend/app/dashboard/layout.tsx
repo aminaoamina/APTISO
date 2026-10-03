@@ -8,6 +8,7 @@ import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { DashboardHeader } from '@/components/dashboard';
 import { AmbientBackground } from '@/components/ambient-background';
 import { useOrgStore } from '@/store/org-store';
+import { useInboxStore } from '@/store/inbox-store';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -23,6 +24,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         router.replace('/login');
       });
   }, [loadUser, router]);
+
+  // Notifications and my tasks stay fresh on every dashboard page.
+  useEffect(() => {
+    if (!checking) return useInboxStore.getState().startPolling();
+  }, [checking]);
 
   useEffect(() => {
     const match = pathname.match(/^\/dashboard\/organizations\/([^/]+)(?:\/|$)/);
