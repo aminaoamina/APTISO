@@ -25,7 +25,6 @@ interface ProjectState {
     target_date?: string;
   }) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
-  updatePhase: (phaseId: string, status: string) => Promise<void>;
   completeStep: (stepId: string) => Promise<ProjectStep>;
   addMember: (email: string, privilege: string, custom_role?: string) => Promise<void>;
   removeMember: (memberId: string) => Promise<void>;
@@ -92,49 +91,14 @@ export const useProjectStore = create<ProjectState>()(
       }));
     },
 
-    updatePhase: async (phaseId, status) => {
-      const project = get().currentProject;
-      if (!project) return;
-      const updated = await projectsApi.updatePhase(project.id, phaseId, status);
-      set((state) => ({
-        phases: state.phases.map((p) => (p.id === phaseId ? { ...p, ...updated } : p)),
-      }));
-    },
-
     completeStep: async (stepId) => {
       const project = get().currentProject;
       if (!project) throw new Error('No project selected');
-      const result = await projectsApi.completeStep(project.id, stepId);
-      const patchPhases = (phases?: ProjectPhase[]): ProjectPhase[] | undefined =>
-        phases?.map((phase) =>
-          phase.id === result.step.phase_id
-            ? {
-                ...phase,
-                ...(result.phase
-                  ? {
-                      status: result.phase.status,
-                      started_at: result.phase.started_at,
-                      completed_at: result.phase.completed_at,
-                    }
-                  : {}),
-                steps: phase.steps?.map((s) =>
-                  s.id === stepId ? { ...s, ...result.step } : s,
-                ),
-              }
-            : phase,
-        );
-
-      set((state) => ({
-        phases: patchPhases(state.phases) ?? state.phases,
-        currentProject: state.currentProject
-          ? {
-              ...state.currentProject,
-              status: result.project_status ?? state.currentProject.status,
-              phases: patchPhases(state.currentProject.phases),
-            }
-          : state.currentProject,
-      }));
-      return result.step;
+      const step = await projectsApi.completeStep(project.id, stepId);
+      // Completing a step can finish its phase or add steps (the SoA adds Phase 3 policies): reload everything.
+      const refreshed = await projectsApi.getOne(project.id);
+      set({ currentProject: refreshed, phases: refreshed.phases || [] });
+      return step;
     },
 
     addMember: async (email, privilege, custom_role) => {

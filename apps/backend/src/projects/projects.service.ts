@@ -15,12 +15,12 @@ import { ObjectivesService } from '../audit-prep/objectives.service';
 import { InternalAuditService } from '../audit-prep/internal-audit.service';
 import { ManagementReviewService } from '../audit-prep/management-review.service';
 import { P4 } from '../audit-prep/keys';
+import { withProgress } from './project-progress';
 import { MaintenanceService, MAINTENANCE_STEP_KEY } from '../maintenance/maintenance.service';
 import { TasksService } from '../tasks/tasks.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
-  UpdatePhaseDto,
   SendAwarenessDto,
   ConfirmTrainingDto,
 } from './dto/project.dto';
@@ -366,7 +366,7 @@ export class ProjectsService {
       userAgent,
     });
 
-    return project;
+    return withProgress(this.prisma, project);
   }
 
   /**
@@ -397,13 +397,13 @@ export class ProjectsService {
       throw new NotFoundException('Organization not found');
     }
 
-    return this.prisma.complianceProject.findMany({
+    const projects = await this.prisma.complianceProject.findMany({
       where: { organization_id: orgId },
       include: {
         compliance_framework: { select: FRAMEWORK_SELECT },
         phases: {
           orderBy: { order: 'asc' },
-          select: { id: true, order: true, status: true },
+          select: { id: true, order: true, name: true, steps: { select: { id: true, key: true, status: true, completion_data: true } } },
         },
         _count: {
           select: { members: true, phases: true },
@@ -411,6 +411,11 @@ export class ProjectsService {
       },
       orderBy: { created_at: 'desc' },
     });
+    // The list only needs each phase's progress, not its steps.
+    return Promise.all(projects.map(async (project) => {
+      const withSteps = await withProgress(this.prisma, project);
+      return { ...withSteps, phases: withSteps.phases.map(({ steps: _steps, ...phase }) => phase) };
+    }));
   }
 
   async findOne(projectId: string, userId: string) {
@@ -456,7 +461,7 @@ export class ProjectsService {
       throw new NotFoundException('Project not found');
     }
 
-    return project;
+    return withProgress(this.prisma, project);
   }
 
   async update(
@@ -546,58 +551,6 @@ export class ProjectsService {
     return { message: 'Project deleted successfully' };
   }
 
-  async updatePhase(
-    projectId: string,
-    phaseId: string,
-    dto: UpdatePhaseDto,
-    userId: string,
-    userRole: ProjectRole,
-    ipAddress?: string,
-    userAgent?: string,
-  ) {
-    if (
-      userRole !== ProjectRole.PROJECT_LEAD &&
-      userRole !== ProjectRole.PROJECT_AUDITOR
-    ) {
-      throw new ForbiddenException('Only leads and auditors can update phases');
-    }
-
-    const phase = await this.prisma.projectPhase.findUnique({
-      where: { id: phaseId },
-    });
-
-    if (!phase || phase.project_id !== projectId) {
-      throw new NotFoundException('Phase not found');
-    }
-
-    const updateData: any = { status: dto.status };
-
-    if (dto.status === 'IN_PROGRESS' && !phase.started_at) {
-      updateData.started_at = new Date();
-    }
-
-    if (dto.status === 'COMPLETED' && !phase.completed_at) {
-      updateData.completed_at = new Date();
-    }
-
-    const updated = await this.prisma.projectPhase.update({
-      where: { id: phaseId },
-      data: updateData,
-    });
-
-    await this.auditLog.log({
-      userId,
-      action: AuditAction.PHASE_UPDATED,
-      entityType: 'project_phase',
-      entityId: phaseId,
-      details: { projectId, phaseName: phase.name, oldStatus: phase.status, newStatus: dto.status },
-      ipAddress,
-      userAgent,
-    });
-
-    return updated;
-  }
-
   async completeStep(
     projectId: string,
     stepId: string,
@@ -660,61 +613,12 @@ export class ProjectsService {
       await this.maintenance.runForProject(projectId);
     }
 
-    // Derive the phase state from its steps: starting a step starts the
-    // phase; finishing the last step finishes it.
-    const phaseWithSteps = await this.prisma.projectPhase.findUnique({
-      where: { id: step.phase_id },
-      include: { steps: { select: { status: true } } },
-    });
-
-    let phaseStatus = phaseWithSteps?.status;
-    if (phaseWithSteps) {
-      const allStepsDone =
-        phaseWithSteps.steps.length > 0 &&
-        phaseWithSteps.steps.every((s) => s.status === StepStatus.COMPLETED);
-      const nextPhaseData: {
-        status?: typeof phaseStatus;
-        started_at?: Date;
-        completed_at?: Date;
-      } = {};
-      if (phaseWithSteps.status === 'NOT_STARTED') {
-        nextPhaseData.status = allStepsDone ? 'COMPLETED' : 'IN_PROGRESS';
-        nextPhaseData.started_at = new Date();
-      } else if (
-        phaseWithSteps.status === 'IN_PROGRESS' &&
-        allStepsDone
-      ) {
-        nextPhaseData.status = 'COMPLETED';
-      }
-      if (nextPhaseData.status === 'COMPLETED') {
-        nextPhaseData.completed_at = new Date();
-      }
-
-      if (Object.keys(nextPhaseData).length > 0) {
-        await this.prisma.projectPhase.update({
-          where: { id: step.phase_id },
-          data: nextPhaseData,
-        });
-        phaseStatus = nextPhaseData.status;
-      }
-    }
-
     // Starting real implementation work moves the project out of planning.
     await this.prisma.complianceProject.updateMany({
       where: { id: projectId, status: 'PLANNING' },
       data: { status: 'IN_PROGRESS' },
     });
 
-    const [finalPhase, finalProject] = await Promise.all([
-      this.prisma.projectPhase.findUnique({
-        where: { id: step.phase_id },
-        select: { id: true, status: true, started_at: true, completed_at: true },
-      }),
-      this.prisma.complianceProject.findUnique({
-        where: { id: projectId },
-        select: { id: true, status: true },
-      }),
-    ]);
 
     await this.auditLog.log({
       userId,
@@ -726,17 +630,12 @@ export class ProjectsService {
         phaseName: step.phase.name,
         stepKey: step.key,
         stepTitle: step.title,
-        phaseStatus,
       },
       ipAddress,
       userAgent,
     });
 
-    return {
-      step: updated,
-      phase: finalPhase,
-      project_status: finalProject?.status ?? null,
-    };
+    return updated;
   }
 
   async addProjectMember(

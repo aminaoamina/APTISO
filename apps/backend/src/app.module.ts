@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { ProjectsModule } from './projects/projects.module';
+import { RequestsModule } from './requests/requests.module';
 import { FrameworksModule } from './frameworks/frameworks.module';
 import { DocumentsModule } from './documents/documents.module';
 import { RequirementsModule } from './requirements/requirements.module';
@@ -38,6 +39,7 @@ import { AuditLogService } from './common/services/audit-log.service';
     AuthModule,
     OrganizationsModule,
     ProjectsModule,
+    RequestsModule,
     FrameworksModule,
     DocumentsModule,
     RequirementsModule,

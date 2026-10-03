@@ -67,12 +67,18 @@ export class ProjectRoleGuard implements CanActivate {
   }
 
   /**
-   * Routes nested under a step, risk, requirement, SoA control or document do not carry
+   * Routes nested under a step, risk, requirement, SoA control, document or request do not carry
    * :projectId, so resolve the owning project from whichever id is present.
    * Without this the guard silently skipped membership and role checks.
    */
   private async resolveProjectId(params: Record<string, string>): Promise<string | null> {
     if (params.projectId) return params.projectId;
+
+    if (params.requestId) {
+      const request = await this.prisma.resourceRequest.findUnique({ where: { id: params.requestId }, select: { project_id: true } });
+      if (!request) throw new NotFoundException('Request not found');
+      return request.project_id;
+    }
 
     let stepId: string | null | undefined = params.stepId;
 

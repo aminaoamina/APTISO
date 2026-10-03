@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { useProjectStore } from '@/store/project-store';
 import { EducationalStepBody } from '@/lib/steps-content';
-import { projectsApi, documentsApi, TaskAssignment, TaskType } from '@/lib/api';
+import { projectsApi, documentsApi, requestsApi, ResourceRequest, ResourceRequestKind, TaskAssignment, TaskType } from '@/lib/api';
+import { REQUEST_KIND_LABELS, REQUEST_STATUS } from '@/lib/requests';
 import { TASK_TYPE_COLORS, TASK_TYPE_LABELS, formatDay, fullName, isOpen } from '@/lib/tasks';
 import RequirementsStep from '@/components/requirements/requirements-step';
 import RiskRegisterStep from '@/components/risk-register/risk-register-step';
@@ -78,6 +79,7 @@ export default function StepDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
   const [stepTasks, setStepTasks] = useState<TaskAssignment[]>([]);
+  const [stepRequests, setStepRequests] = useState<ResourceRequest[]>([]);
   const [showRequests, setShowRequests] = useState(false);
   const [registerCompletion, setRegisterCompletion] = useState<RiskRegisterCompletion | null>(null);
   const currentUserId = useAuthStore((s) => s.user?.id);
@@ -105,6 +107,15 @@ export default function StepDetailPage() {
   }, [projectId, stepId]);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
+
+  const loadRequests = useCallback(async () => {
+    try {
+      const { items } = await requestsApi.list(projectId);
+      setStepRequests(items.filter((r) => r.step_id === stepId));
+    } catch { /* silent */ }
+  }, [projectId, stepId]);
+
+  useEffect(() => { loadRequests(); }, [loadRequests]);
 
   if (isLoading || !currentProject) {
     return (<div className="flex items-center justify-center py-16"><Spinner className="h-6 w-6" /></div>);
@@ -219,7 +230,7 @@ export default function StepDetailPage() {
 
   // Count active requests for the badge
   const documentTasks = stepTasks.filter((t) => DOCUMENT_TASK_TYPES.includes(t.type));
-  const activeRequests = stepTasks.filter((t) => RESOURCE_REQUESTS.some((r) => r.type === t.type) && isOpen(t)).length;
+  const activeRequests = stepRequests.filter((r) => r.status === 'PENDING').length;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -455,26 +466,26 @@ export default function StepDetailPage() {
               {showRequests ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
               <span className="text-sm font-medium">Additional requests</span>
               {activeRequests > 0 && (
-                <Badge variant="secondary" className="text-xs">{activeRequests} open</Badge>
+                <Badge variant="secondary" className="text-xs">{activeRequests} waiting</Badge>
               )}
             </div>
             <span className="text-xs text-muted-foreground">Optional</span>
           </button>
           {showRequests && (
             <CardContent className="pt-0 space-y-4 border-t border-border/60">
-              <p className="text-xs text-muted-foreground pt-4">If this step needs extra resources (clause 7.1), send a request: top management receives it as a task. Requests are optional and do not block step completion.</p>
+              <p className="text-xs text-muted-foreground pt-4">If this step needs extra resources (clause 7.1), send a request: top management approves or rejects it on the Requests page. Requests are optional and do not block step completion.</p>
 
               {RESOURCE_REQUESTS.map((r) => (
-                <ResourceRequest
+                <ResourceRequestRow
                   key={r.kind}
-                  label={r.label}
+                  label={REQUEST_KIND_LABELS[r.kind]}
                   placeholder={r.placeholder}
                   canSend={canEditStep}
-                  sent={stepTasks.filter((t) => t.type === r.type)}
-                  onSend={async (notes) => {
-                    const { sent_to } = await projectsApi.sendRequest(projectId, stepId, { kind: r.kind, notes });
-                    toast.success(`Request sent to ${sent_to} ${sent_to > 1 ? 'people' : 'person'} in top management`);
-                    await loadTasks();
+                  sent={stepRequests.filter((x) => x.kind === r.kind)}
+                  onSend={async (description) => {
+                    await requestsApi.send(projectId, stepId, { kind: r.kind, description });
+                    toast.success('Request sent to top management');
+                    await loadRequests();
                   }}
                 />
               ))}
@@ -530,19 +541,19 @@ export default function StepDetailPage() {
 
 const DOCUMENT_TASK_TYPES: TaskType[] = ['WORK_ON_DOCUMENT', 'REVIEW_DOCUMENT', 'APPROVE_DOCUMENT'];
 
-const RESOURCE_REQUESTS = [
-  { kind: 'technology', type: 'TECHNOLOGY_REQUEST', label: 'Technology', placeholder: 'Which tool, license or equipment is needed, and why...' },
-  { kind: 'hr', type: 'HR_REQUEST', label: 'Human resources', placeholder: 'Which people or skills are needed, and for how long...' },
-  { kind: 'finance', type: 'FINANCE_REQUEST', label: 'Budget', placeholder: 'How much is needed and for what...' },
-] as const;
+const RESOURCE_REQUESTS: { kind: ResourceRequestKind; placeholder: string }[] = [
+  { kind: 'TECHNOLOGY', placeholder: 'Which tool, license or equipment is needed, and why...' },
+  { kind: 'HR', placeholder: 'Which people or skills are needed, and for how long...' },
+  { kind: 'FINANCE', placeholder: 'How much is needed and for what...' },
+];
 
-/** One resource request: what was already sent, and a form to send a new one to top management. */
-function ResourceRequest({ label, placeholder, sent, canSend, onSend }: {
+/** One kind of resource request: the requests already sent with their decision, and a form to send a new one. */
+function ResourceRequestRow({ label, placeholder, sent, canSend, onSend }: {
   label: string;
   placeholder: string;
-  sent: TaskAssignment[];
+  sent: ResourceRequest[];
   canSend: boolean;
-  onSend: (notes: string) => Promise<void>;
+  onSend: (description: string) => Promise<void>;
 }) {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
@@ -560,10 +571,20 @@ function ResourceRequest({ label, placeholder, sent, canSend, onSend }: {
   return (
     <div className="rounded-lg border p-3 space-y-2">
       <p className="text-sm font-medium">{label}</p>
-      {sent.map((t) => (
-        <p key={t.id} className="text-xs text-muted-foreground">
-          Sent {formatDay(t.created_at)} to {fullName(t.assignee)} · {t.status === 'COMPLETED' ? 'answered' : 'open'}
-        </p>
+      {sent.map((r) => (
+        <div key={r.id} className="rounded-md bg-muted/40 px-3 py-2 text-xs space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge className={REQUEST_STATUS[r.status].className}>{REQUEST_STATUS[r.status].label}</Badge>
+            <span className="text-muted-foreground">Sent {formatDay(r.created_at)} by {fullName(r.requester)}</span>
+          </div>
+          <p className="whitespace-pre-line">{r.description}</p>
+          {r.decider && r.decided_at && (
+            <p className="text-muted-foreground">
+              {r.status === 'APPROVED' ? 'Approved' : 'Rejected'} by {fullName(r.decider)} on {formatDay(r.decided_at)}
+              {r.decision_comment && `: ${r.decision_comment}`}
+            </p>
+          )}
+        </div>
       ))}
       {canSend && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start">

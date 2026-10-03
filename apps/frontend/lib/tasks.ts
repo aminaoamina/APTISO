@@ -6,9 +6,6 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   APPROVE_DOCUMENT: 'Approve document',
   AWARENESS_TASK: 'Awareness',
   TRAINING_TASK: 'Training',
-  HR_REQUEST: 'HR request',
-  FINANCE_REQUEST: 'Finance request',
-  TECHNOLOGY_REQUEST: 'Technology request',
   RISK_REVIEW: 'Review of risks',
   IMPLEMENT_CONTROL: 'Implement control',
   CORRECTIVE_ACTION: 'Corrective action',
@@ -27,9 +24,6 @@ export const TASK_TYPE_COLORS: Record<TaskType, string> = {
   APPROVE_DOCUMENT: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
   AWARENESS_TASK: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   TRAINING_TASK: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
-  HR_REQUEST: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400',
-  FINANCE_REQUEST: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
-  TECHNOLOGY_REQUEST: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   RISK_REVIEW: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
   IMPLEMENT_CONTROL: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400',
   CORRECTIVE_ACTION: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400',
@@ -45,7 +39,6 @@ export const TASK_TYPE_COLORS: Record<TaskType, string> = {
 /** Tasks people assign by hand from a step; all others are managed from their register (same list as the server). */
 export const MANUAL_TASK_TYPES: TaskType[] = [
   'WORK_ON_DOCUMENT', 'REVIEW_DOCUMENT', 'APPROVE_DOCUMENT', 'AWARENESS_TASK', 'TRAINING_TASK',
-  'HR_REQUEST', 'FINANCE_REQUEST', 'TECHNOLOGY_REQUEST',
 ];
 
 /** Recurring maintenance activities without a step of their own. */

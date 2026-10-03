@@ -3,6 +3,7 @@ import { NotificationType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { MailService } from '../mail/mail.service';
 import { TASK_TYPE_LABELS } from '../tasks/task-labels';
+import { REQUEST_KIND_LABELS } from '../requests/request-labels';
 
 export interface NewNotification {
   userId: string;
@@ -13,13 +14,57 @@ export interface NewNotification {
   projectId?: string | null;
   taskId?: string | null;
   joinRequestId?: string | null;
+  requestId?: string | null;
 }
 
-/** Notification types that ask the recipient to act are also sent by email. */
-const EMAILED = new Set<NotificationType>([NotificationType.TASK_ASSIGNED, NotificationType.TASK_DUE_SOON]);
+/** Notification types that ask the recipient to act, or answer them, are also sent by e-mail. */
+const EMAILED = new Set<NotificationType>([
+  NotificationType.TASK_ASSIGNED,
+  NotificationType.TASK_DUE_SOON,
+  NotificationType.REQUEST_RECEIVED,
+  NotificationType.REQUEST_DECIDED,
+]);
 
 const PERSON = { select: { id: true, first_name: true, last_name: true } } as const;
+const PROJECT = { select: { id: true, name: true, organization_id: true } } as const;
 const LIST_LIMIT = 30;
+
+const NOTIFICATION_INCLUDE = {
+  actor: PERSON,
+  user: { select: { email: true, first_name: true } },
+  organization: { select: { id: true, name: true } },
+  join_request: { select: { id: true, role: true, status: true } },
+  task_assignment: {
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      deadline: true,
+      notes: true,
+      project_id: true,
+      step_id: true,
+      document_instance_id: true,
+      project: PROJECT,
+      step: { select: { id: true, title: true, key: true } },
+      document: { select: { id: true, title: true } },
+    },
+  },
+  resource_request: {
+    select: {
+      id: true,
+      kind: true,
+      status: true,
+      description: true,
+      decision_comment: true,
+      project_id: true,
+      step_id: true,
+      project: PROJECT,
+      step: { select: { id: true, title: true } },
+    },
+  },
+} satisfies Prisma.NotificationInclude;
+
+type FullNotification = Prisma.NotificationGetPayload<{ include: typeof NOTIFICATION_INCLUDE }>;
 
 /**
  * The single entry point for notifications: every feature calls notify(), and
@@ -48,11 +93,13 @@ export class NotificationsService {
         project_id: n.projectId ?? null,
         task_assignment_id: n.taskId ?? null,
         join_request_id: n.joinRequestId ?? null,
+        resource_request_id: n.requestId ?? null,
       },
+      include: NOTIFICATION_INCLUDE,
     });
-    if (n.taskId && EMAILED.has(n.type) && !ownAction) {
+    if (EMAILED.has(n.type) && !ownAction) {
       // E-mail is best effort: a mail server problem must never block the action that triggered it.
-      this.emailTask(n.taskId, n.type).catch((e: Error) => this.logger.warn(`Task e-mail not sent: ${e.message}`));
+      this.email(notification).catch((e: Error) => this.logger.warn(`Notification e-mail not sent: ${e.message}`));
     }
     return notification;
   }
@@ -64,30 +111,11 @@ export class NotificationsService {
         where: { user_id: userId },
         orderBy: { created_at: 'desc' },
         take: LIST_LIMIT,
-        include: {
-          actor: PERSON,
-          organization: { select: { id: true, name: true } },
-          join_request: { select: { id: true, role: true, status: true } },
-          task_assignment: {
-            select: {
-              id: true,
-              type: true,
-              status: true,
-              deadline: true,
-              notes: true,
-              project_id: true,
-              step_id: true,
-              document_instance_id: true,
-              project: { select: { id: true, name: true, organization_id: true } },
-              step: { select: { id: true, title: true, key: true } },
-              document: { select: { id: true, title: true } },
-            },
-          },
-        },
+        include: NOTIFICATION_INCLUDE,
       }),
       this.prisma.notification.count({ where: { user_id: userId, read_at: null } }),
     ]);
-    return { items, unread_count };
+    return { items: items.map(({ user: _user, ...n }) => n), unread_count };
   }
 
   /** Marks the given notifications (or all of them) as read. */
@@ -97,38 +125,64 @@ export class NotificationsService {
     return { unread_count: await this.prisma.notification.count({ where: { user_id: userId, read_at: null } }) };
   }
 
-  private async emailTask(taskId: string, type: NotificationType) {
-    const task = await this.prisma.taskAssignment.findUnique({
-      where: { id: taskId },
-      include: {
-        assignee: { select: { email: true, first_name: true, last_name: true } },
-        assigner: { select: { first_name: true, last_name: true } },
-        project: { select: { name: true } },
-        step: { select: { title: true } },
-        document: { select: { title: true } },
-      },
-    });
-    if (!task) return;
-    const label = TASK_TYPE_LABELS[task.type];
-    const dueSoon = type === NotificationType.TASK_DUE_SOON;
-    const details = [
-      { label: 'Task', value: label },
-      { label: 'Project', value: task.project.name },
-      task.document && { label: 'Document', value: task.document.title },
-      !task.document && task.step && { label: 'Step', value: task.step.title },
-      task.deadline && { label: 'Deadline', value: task.deadline.toLocaleDateString('en-GB') },
-      task.notes && { label: 'Details', value: task.notes },
-    ].filter((d): d is { label: string; value: string } => !!d);
+  private async email(n: FullNotification) {
+    const actor = n.actor ? `${n.actor.first_name} ${n.actor.last_name}`.trim() : 'Someone';
+    const date = (d: Date) => d.toLocaleDateString('en-GB');
+    const keep = (d: ({ label: string; value: string } | null | false | '' | undefined)[]) =>
+      d.filter((x): x is { label: string; value: string } => !!x);
 
-    await this.mail.sendTaskEmail(task.assignee.email, {
-      subject: dueSoon ? `Reminder: "${label}" is due soon` : `New task: ${label}`,
-      heading: dueSoon ? 'A task is due soon' : 'You have a new task',
-      recipientName: task.assignee.first_name,
-      message: dueSoon
-        ? 'this task assigned to you is due soon.'
-        : `${task.assigner.first_name} ${task.assigner.last_name} assigned you a task in APTISO.`,
-      details,
-      taskId: task.id,
-    });
+    const task = n.task_assignment;
+    const request = n.resource_request;
+    let mail: Omit<Parameters<MailService['sendNotificationEmail']>[1], 'recipientName'> | null = null;
+
+    if (task && (n.type === NotificationType.TASK_ASSIGNED || n.type === NotificationType.TASK_DUE_SOON)) {
+      const label = TASK_TYPE_LABELS[task.type];
+      const dueSoon = n.type === NotificationType.TASK_DUE_SOON;
+      mail = {
+        subject: dueSoon ? `Reminder: "${label}" is due soon` : `New task: ${label}`,
+        heading: dueSoon ? 'A task is due soon' : 'You have a new task',
+        message: dueSoon ? 'this task assigned to you is due soon.' : `${actor} assigned you a task in APTISO.`,
+        details: keep([
+          { label: 'Task', value: label },
+          { label: 'Project', value: task.project.name },
+          task.document && { label: 'Document', value: task.document.title },
+          !task.document && task.step && { label: 'Step', value: task.step.title },
+          task.deadline && { label: 'Deadline', value: date(task.deadline) },
+          task.notes && { label: 'Details', value: task.notes },
+        ]),
+        path: `/dashboard/tasks?task=${task.id}`,
+        linkLabel: 'Open my tasks',
+      };
+    } else if (request && n.type === NotificationType.REQUEST_RECEIVED) {
+      const label = REQUEST_KIND_LABELS[request.kind];
+      mail = {
+        subject: `Request for ${label.toLowerCase()}: ${request.step.title}`,
+        heading: 'A request needs your decision',
+        message: `${actor} asks for ${label.toLowerCase()} for a step of the ISMS project. Please approve or reject it.`,
+        details: [
+          { label: 'Project', value: request.project.name },
+          { label: 'Step', value: request.step.title },
+          { label: 'Request', value: request.description },
+        ],
+        path: `/dashboard/organizations/${request.project.organization_id}/projects/${request.project_id}/requests`,
+        linkLabel: 'Open requests',
+      };
+    } else if (request && n.type === NotificationType.REQUEST_DECIDED) {
+      const label = REQUEST_KIND_LABELS[request.kind];
+      const approved = request.status === 'APPROVED';
+      mail = {
+        subject: `Your request for ${label.toLowerCase()} was ${approved ? 'approved' : 'rejected'}`,
+        heading: approved ? 'Your request was approved' : 'Your request was rejected',
+        message: `${actor} ${approved ? 'approved' : 'rejected'} your request for ${label.toLowerCase()}.`,
+        details: keep([
+          { label: 'Step', value: request.step.title },
+          { label: 'Request', value: request.description },
+          request.decision_comment && { label: 'Comment', value: request.decision_comment },
+        ]),
+        path: `/dashboard/organizations/${request.project.organization_id}/projects/${request.project_id}/steps/${request.step_id}`,
+        linkLabel: 'Open the step',
+      };
+    }
+    if (mail) await this.mail.sendNotificationEmail(n.user.email, { ...mail, recipientName: n.user.first_name });
   }
 }

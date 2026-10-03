@@ -20,7 +20,6 @@ import { ProjectsService } from './projects.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
-  UpdatePhaseDto,
   UpdateStepCompletionDataDto,
   UpdateStepMetadataDto,
   SendAwarenessDto,
@@ -113,24 +112,6 @@ export class ProjectDetailController {
   ) {
     return this.projectsService.remove(
       projectId, userId, userRole, ipAddress, userAgent,
-    );
-  }
-
-  @Put(':projectId/phases/:phaseId')
-  @ApiOperation({ summary: 'Update phase status' })
-  @UseGuards(ProjectRoleGuard)
-  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_AUDITOR)
-  async updatePhase(
-    @Param('projectId') projectId: string,
-    @Param('phaseId') phaseId: string,
-    @CurrentUser('id') userId: string,
-    @CurrentUser('projectRole') userRole: ProjectRole,
-    @Body() dto: UpdatePhaseDto,
-    @Ip() ipAddress: string,
-    @Headers('user-agent') userAgent: string,
-  ) {
-    return this.projectsService.updatePhase(
-      projectId, phaseId, dto, userId, userRole, ipAddress, userAgent,
     );
   }
 

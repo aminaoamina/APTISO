@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { AppNotification, organizationsApi } from '@/lib/api';
 import { TASK_TYPE_LABELS, taskHref, taskSubject, fullName, formatDay } from '@/lib/tasks';
 import { playPopupSound } from '@/lib/notification-sounds';
+import { REQUEST_KIND_LABELS, requestsHref } from '@/lib/requests';
 import { useInboxStore } from '@/store/inbox-store';
 import { useOrgStore } from '@/store/org-store';
 import { getErrorMessage } from '@/lib/utils';
@@ -16,6 +17,8 @@ function message(n: AppNotification) {
   const actor = fullName(n.actor) || 'Someone';
   const task = n.task_assignment;
   const what = task ? `${TASK_TYPE_LABELS[task.type]}: ${taskSubject(task)}` : '';
+  const request = n.resource_request;
+  const asked = request ? `${REQUEST_KIND_LABELS[request.kind].toLowerCase()} for "${request.step.title}"` : '';
   switch (n.type) {
     case 'ORGANIZATION_JOIN_REQUEST':
       return `${actor} invited you to join ${n.organization?.name ?? 'an organization'}.`;
@@ -27,7 +30,20 @@ function message(n: AppNotification) {
       return `Due ${task?.deadline ? formatDay(task.deadline) : 'soon'}: ${what}.`;
     case 'TASK_CANCELLED':
       return `${actor} removed this task from your list: ${what}.`;
+    case 'REQUEST_RECEIVED':
+      return `${actor} requests ${asked}. Approve or reject it.`;
+    case 'REQUEST_DECIDED':
+      return `${actor} ${request?.status === 'APPROVED' ? 'approved' : 'rejected'} your request for ${asked}${request?.decision_comment ? `: ${request.decision_comment}` : '.'}`;
   }
+}
+
+/** Where a notification leads; null when there is nothing to open. */
+function href(n: AppNotification) {
+  if (n.task_assignment && n.type !== 'TASK_CANCELLED') return taskHref(n.task_assignment);
+  const request = n.resource_request;
+  if (request && n.type === 'REQUEST_RECEIVED') return requestsHref(request);
+  if (request) return `/dashboard/organizations/${request.project.organization_id}/projects/${request.project_id}/steps/${request.step_id}`;
+  return null;
 }
 
 function timeAgo(iso: string) {
@@ -58,10 +74,10 @@ export function NotificationBell() {
 
   const open = (n: AppNotification) => {
     if (!n.read_at) void markRead([n.id]);
-    // A cancelled task is no longer on the list; the others open where the work is done.
-    if (n.task_assignment && n.type !== 'TASK_CANCELLED') {
+    const target = href(n);
+    if (target) {
       setIsOpen(false);
-      router.push(taskHref(n.task_assignment));
+      router.push(target);
     }
   };
 
@@ -108,7 +124,7 @@ export function NotificationBell() {
           ) : (
             notifications.map((n) => {
               const request = n.join_request;
-              const clickable = !!n.task_assignment && n.type !== 'TASK_CANCELLED';
+              const clickable = !!href(n);
               return (
                 <div
                   key={n.id}
@@ -122,7 +138,7 @@ export function NotificationBell() {
                   <div className="min-w-0 flex-1">
                     <p className="text-sm">{message(n)}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {n.task_assignment?.project.name ?? n.organization?.name} · {timeAgo(n.created_at)}
+                      {n.task_assignment?.project.name ?? n.resource_request?.project.name ?? n.organization?.name} · {timeAgo(n.created_at)}
                     </p>
                     {request?.status === 'PENDING' && (
                       <div className="mt-2 flex gap-3">

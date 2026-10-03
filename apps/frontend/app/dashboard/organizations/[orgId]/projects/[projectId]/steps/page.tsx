@@ -9,6 +9,7 @@ import {
   BookOpen,
   CheckCircle2,
   Circle,
+  CircleDashed,
   ShieldCheck,
 } from 'lucide-react';
 import { useProjectStore } from '@/store/project-store';
@@ -20,18 +21,8 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
-
-const phaseStatusColors: Record<string, string> = {
-  NOT_STARTED: 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-400',
-  IN_PROGRESS: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  COMPLETED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-};
-
-const phaseStatusLabels: Record<string, string> = {
-  NOT_STARTED: 'Not Started',
-  IN_PROGRESS: 'In Progress',
-  COMPLETED: 'Completed',
-};
+import { Progress as ProgressBar } from '@/components/ui/progress';
+import { PROGRESS_BADGE, PROGRESS_LABELS, phaseCounts } from '@/lib/progress';
 
 export default function ImplementationStepsPage() {
   const params = useParams();
@@ -78,7 +69,7 @@ export default function ImplementationStepsPage() {
       {/* Phases with steps */}
       {phases.map((phase) => {
         const steps = phase.steps ?? [];
-        const completed = steps.filter((s) => s.status === 'COMPLETED').length;
+        const { completed } = phaseCounts(steps);
 
         return (
           <Card key={phase.id}>
@@ -92,14 +83,15 @@ export default function ImplementationStepsPage() {
                     <p className="text-muted-foreground text-xs mt-0.5">{phase.description}</p>
                   )}
                 </div>
-                <Badge className={phaseStatusColors[phase.status]}>
-                  {phaseStatusLabels[phase.status]}
+                <Badge className={PROGRESS_BADGE[phase.progress]}>
+                  {PROGRESS_LABELS[phase.progress]}
                 </Badge>
               </div>
               {steps.length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {completed} / {steps.length} steps completed
-                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <ProgressBar value={(completed / steps.length) * 100} className="h-1.5 flex-1" />
+                  <span className="text-xs text-muted-foreground shrink-0">{completed} / {steps.length} steps completed</span>
+                </div>
               )}
             </CardHeader>
             <CardContent className="pt-0">
@@ -128,13 +120,18 @@ export default function ImplementationStepsPage() {
                         className="w-full flex items-center gap-3 px-2 py-3 text-left hover:bg-muted/40 rounded-md transition-colors"
                       >
                         {isDone ? (
-                          <CheckCircle2 className="h-5 w-5 shrink-0 text-green-500" />
+                          <CheckCircle2 className="h-5 w-5 shrink-0 text-green-500" aria-label="Completed" />
+                        ) : step.progress === 'IN_PROGRESS' ? (
+                          <CircleDashed className="h-5 w-5 shrink-0 text-blue-500" aria-label="In progress" />
                         ) : (
-                          <Circle className="h-5 w-5 shrink-0 text-muted-foreground/40" />
+                          <Circle className="h-5 w-5 shrink-0 text-muted-foreground/40" aria-label="Not started" />
                         )}
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm truncate ${isDone ? 'text-muted-foreground line-through' : 'font-medium'}`}>
                             Step {step.order}: {step.title}
+                            {step.progress === 'IN_PROGRESS' && (
+                              <Badge className={`ml-2 text-[10px] font-normal ${PROGRESS_BADGE.IN_PROGRESS}`}>In progress</Badge>
+                            )}
                             {step.metadata_json?.required === false && (
                               <Badge variant="outline" className="ml-2 text-[10px] font-normal no-underline">No longer required</Badge>
                             )}

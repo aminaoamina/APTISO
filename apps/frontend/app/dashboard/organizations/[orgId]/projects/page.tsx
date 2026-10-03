@@ -18,7 +18,7 @@ import { useOrgStore } from '@/store/org-store';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { frameworksApi } from '@/lib/api';
-import type { ComplianceFramework, ComplianceProject } from '@/lib/api';
+import type { ComplianceFramework } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,13 +78,6 @@ const statusLabels: Record<string, string> = {
   CERTIFIED: 'Certified',
   ON_HOLD: 'On Hold',
 };
-
-function getPhaseProgress(project: ComplianceProject): number {
-  const phases = project.phases || [];
-  if (phases.length === 0) return 0;
-  const completed = phases.filter((p) => p.status === 'COMPLETED').length;
-  return Math.round((completed / phases.length) * 100);
-}
 
 export default function ProjectsPage() {
   const params = useParams();
@@ -182,7 +175,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => {
-            const progress = getPhaseProgress(project);
+            const progress = project.progress?.percent ?? 0;
             return (
               <Card
                 key={project.id}
@@ -212,7 +205,9 @@ export default function ProjectsPage() {
                   )}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">Phase Progress</span>
+                      <span className="text-muted-foreground">
+                        Progress · {project.progress?.completed_steps ?? 0} / {project.progress?.total_steps ?? 0} steps
+                      </span>
                       <span className="font-medium">{progress}%</span>
                     </div>
                     <Progress value={progress} className="h-1.5" />

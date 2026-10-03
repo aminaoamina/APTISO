@@ -1,11 +1,11 @@
 import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { AuditAction, IsoRole, NotificationType, Prisma, ProjectRole, TaskStatus, TaskType } from '@prisma/client';
+import { AuditAction, NotificationType, Prisma, ProjectRole, TaskStatus, TaskType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { DOCUMENT_TASK_TYPES, MANUAL_TASK_TYPES } from './task-labels';
-import { AssignTaskDto, SendRequestDto, UpdateTaskDto } from './dto/task.dto';
+import { AssignTaskDto, UpdateTaskDto } from './dto/task.dto';
 
 export interface NewTask {
   projectId: string;
@@ -34,12 +34,6 @@ export const TASK_INCLUDE = {
   assignee: PERSON,
   assigner: PERSON,
 } satisfies Prisma.TaskAssignmentInclude;
-
-const REQUESTS: Record<SendRequestDto['kind'], { type: TaskType; label: string }> = {
-  hr: { type: TaskType.HR_REQUEST, label: 'Additional human resources' },
-  finance: { type: TaskType.FINANCE_REQUEST, label: 'Additional budget' },
-  technology: { type: TaskType.TECHNOLOGY_REQUEST, label: 'Technology' },
-};
 
 /**
  * Tasks of every module: created here so each one notifies its assignee and
@@ -136,31 +130,6 @@ export class TasksService {
       notes: dto.notes?.trim() || null,
       deadline: dto.deadline ? new Date(dto.deadline) : step.document_instance?.deadline ?? null,
     }, ipAddress, userAgent);
-  }
-
-  /** "Additional requests" of a step go to top management (or the project lead when nobody has that role). */
-  async sendRequest(projectId: string, stepId: string, dto: SendRequestDto, userId: string, ipAddress?: string, userAgent?: string) {
-    const step = await this.stepOf(projectId, stepId);
-    const members = await this.prisma.projectMember.findMany({
-      where: { project_id: projectId },
-      select: { user_id: true, privilege: true, iso_roles: { select: { iso_role: true } } },
-    });
-    const topManagement = members.filter(m => m.iso_roles.some(r => r.iso_role === IsoRole.TOP_MANAGEMENT)).map(m => m.user_id);
-    const recipients = topManagement.length ? topManagement : members.filter(m => m.privilege === ProjectRole.PROJECT_LEAD).map(m => m.user_id);
-    const request = REQUESTS[dto.kind];
-    for (const recipient of recipients) {
-      await this.create({
-        projectId,
-        organizationId: step.phase.project.organization_id,
-        stepId,
-        assignedTo: recipient,
-        assignedBy: userId,
-        type: request.type,
-        notes: `${request.label} requested for "${step.title}":\n${dto.notes.trim()}`,
-        deadline: null,
-      }, ipAddress, userAgent);
-    }
-    return { sent_to: recipients.length };
   }
 
   // ─── Working on a task ───────────────────────────────────────

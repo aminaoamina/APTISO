@@ -21,6 +21,7 @@ import {
   Presentation,
   UserCog,
   BookOpen,
+  Inbox,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { useAuthStore } from '@/store/auth-store';
@@ -108,6 +109,8 @@ export function DashboardSidebar() {
   const myTasks = useInboxStore((s) => s.myTasks);
   const openTasks = myTasks.filter(isOpen);
   const tasksBadge = { count: openTasks.length, alert: openTasks.some(isOverdue) };
+  const awaitingRequests = useInboxStore((s) => s.awaitingRequests);
+  const requestsBadge = { count: awaitingRequests.filter((r) => r.project_id === projectId).length };
   const isLead =
     currentProject?.members?.some(
       (m) => m.user_id === user?.id && m.privilege === 'PROJECT_LEAD',
@@ -252,6 +255,15 @@ export function DashboardSidebar() {
                 isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/steps`)}
               />
               <NavRow item={{ label: 'Audit & Evidence', icon: Files, soon: true }} />
+              <NavRow
+                item={{
+                  label: 'Requests',
+                  href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}/requests` : undefined,
+                  icon: Inbox,
+                  badge: requestsBadge,
+                }}
+                isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/requests`)}
+              />
               <NavRow
                 item={{
                   label: 'Maintenance',

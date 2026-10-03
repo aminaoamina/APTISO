@@ -83,13 +83,6 @@ export class UpdateProjectDto {
   target_date?: string;
 }
 
-export class UpdatePhaseDto {
-  @ApiProperty({ enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'] })
-  @IsEnum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'] as const)
-  @IsNotEmpty()
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
-}
-
 export class UpdateStepCompletionDataDto {
   @ApiProperty({ description: 'Completion data JSON — gate answer + question responses' })
   @IsObject()

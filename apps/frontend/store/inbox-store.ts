@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { AppNotification, notificationsApi, TaskAssignment, tasksApi } from '@/lib/api';
+import { AppNotification, notificationsApi, requestsApi, TaskAssignment, tasksApi } from '@/lib/api';
 import { playNotificationSound } from '@/lib/notification-sounds';
 
 const REFRESH_MS = 30_000;
@@ -8,6 +8,8 @@ interface InboxState {
   notifications: AppNotification[];
   unreadCount: number;
   myTasks: TaskAssignment[];
+  /** Pending requests waiting for my decision, in every project. */
+  awaitingRequests: { id: string; project_id: string }[];
   loaded: boolean;
   refresh: () => Promise<void>;
   markRead: (ids?: string[]) => Promise<void>;
@@ -23,14 +25,15 @@ export const useInboxStore = create<InboxState>()((set, get) => ({
   notifications: [],
   unreadCount: 0,
   myTasks: [],
+  awaitingRequests: [],
   loaded: false,
 
   refresh: async () => {
     try {
-      const [inbox, myTasks] = await Promise.all([notificationsApi.list(), tasksApi.mine()]);
+      const [inbox, myTasks, awaitingRequests] = await Promise.all([notificationsApi.list(), tasksApi.mine(), requestsApi.awaitingMe()]);
       const { loaded, unreadCount } = get();
       if (loaded && inbox.unread_count > unreadCount) playNotificationSound();
-      set({ notifications: inbox.items, unreadCount: inbox.unread_count, myTasks, loaded: true });
+      set({ notifications: inbox.items, unreadCount: inbox.unread_count, myTasks, awaitingRequests, loaded: true });
     } catch {
       // Offline or signed out: keep what is shown; the next refresh retries.
     }
@@ -45,7 +48,7 @@ export const useInboxStore = create<InboxState>()((set, get) => ({
 
   startPolling: () => {
     // A new session starts from an empty inbox, so the first load never plays the sound.
-    set({ notifications: [], unreadCount: 0, myTasks: [], loaded: false });
+    set({ notifications: [], unreadCount: 0, myTasks: [], awaitingRequests: [], loaded: false });
     const refresh = () => void get().refresh();
     refresh();
     const timer = window.setInterval(refresh, REFRESH_MS);

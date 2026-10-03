@@ -6,9 +6,6 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   APPROVE_DOCUMENT: 'Approve document',
   AWARENESS_TASK: 'Awareness',
   TRAINING_TASK: 'Training',
-  HR_REQUEST: 'HR request',
-  FINANCE_REQUEST: 'Finance request',
-  TECHNOLOGY_REQUEST: 'Technology request',
   RISK_REVIEW: 'Review of risks',
   IMPLEMENT_CONTROL: 'Implement control',
   CORRECTIVE_ACTION: 'Corrective action',
@@ -32,9 +29,6 @@ export const MANUAL_TASK_TYPES: TaskType[] = [
   TaskType.APPROVE_DOCUMENT,
   TaskType.AWARENESS_TASK,
   TaskType.TRAINING_TASK,
-  TaskType.HR_REQUEST,
-  TaskType.FINANCE_REQUEST,
-  TaskType.TECHNOLOGY_REQUEST,
 ];
 
 /** Task types about the step's document: the task links straight to it. */

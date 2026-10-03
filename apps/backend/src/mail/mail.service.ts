@@ -122,23 +122,26 @@ export class MailService implements IMailService {
     this.logger.log(`Organization join request email sent to ${email}`);
   }
 
-  /** Task assigned or due soon: what to do, where, by when, with a link to the task list. */
-  async sendTaskEmail(email: string, data: {
+  /** A notification that asks the recipient to act: what, where, and a button to open it. */
+  async sendNotificationEmail(email: string, data: {
     subject: string;
     heading: string;
     recipientName: string;
     message: string;
     details: { label: string; value: string }[];
-    taskId: string;
+    /** Path in the web app, e.g. /dashboard/tasks?task=… */
+    path: string;
+    linkLabel: string;
   }): Promise<void> {
     const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+    const { path, ...context } = data;
     await this.sendEmail({
       to: email,
       subject: data.subject,
-      template: 'task-notification.hbs',
-      context: { ...data, link: `${frontendUrl}/dashboard/tasks?task=${data.taskId}` },
+      template: 'notification.hbs',
+      context: { ...context, link: `${frontendUrl}${path}` },
     });
-    this.logger.log(`Task email sent to ${email}`);
+    this.logger.log(`Notification e-mail sent to ${email}`);
   }
 
   private async sendEmail(emailTemplate: EmailTemplate): Promise<void> {

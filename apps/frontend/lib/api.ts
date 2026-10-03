@@ -64,7 +64,12 @@ export interface ComplianceProject {
   members?: ProjectMember[];
   phases?: ProjectPhase[];
   _count?: { members: number; phases: number };
+  /** Completed steps over all steps of the project. */
+  progress?: { completed_steps: number; in_progress_steps: number; total_steps: number; percent: number };
 }
+
+/** Derived by the server from the work done: a document, register records, tasks… */
+export type Progress = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
 
 export interface ProjectMember {
   id: string;
@@ -83,15 +88,14 @@ export interface ProjectPhase {
   name: string;
   description: string | null;
   order: number;
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
-  started_at: string | null;
-  completed_at: string | null;
+  progress: Progress;
   steps?: ProjectStep[];
 }
 
 export interface ProjectStep {
   id: string;
   phase_id: string;
+  progress: Progress;
   key: string;
   title: string;
   purpose: string | null;
@@ -287,7 +291,7 @@ export interface CreateRequirementData {
 
 export type TaskType =
   | 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK'
-  | 'HR_REQUEST' | 'FINANCE_REQUEST' | 'TECHNOLOGY_REQUEST' | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL'
+  | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL'
   | 'CORRECTIVE_ACTION' | 'INTERNAL_AUDIT' | 'MANAGEMENT_REVIEW_ACTION' | 'MANAGEMENT_REVIEW_DUE'
   | 'OBJECTIVES_REVIEW' | 'DOCUMENT_REVIEW' | 'INCIDENTS_REVIEW' | 'TRAININGS_REVIEW';
 
@@ -319,13 +323,36 @@ export type NotificationTask = Pick<TaskAssignment, 'id' | 'type' | 'status' | '
 
 export interface AppNotification {
   id: string;
-  type: 'ORGANIZATION_JOIN_REQUEST' | 'TASK_ASSIGNED' | 'TASK_COMPLETED' | 'TASK_DUE_SOON' | 'TASK_CANCELLED';
+  type: 'ORGANIZATION_JOIN_REQUEST' | 'TASK_ASSIGNED' | 'TASK_COMPLETED' | 'TASK_DUE_SOON' | 'TASK_CANCELLED'
+    | 'REQUEST_RECEIVED' | 'REQUEST_DECIDED';
   read_at: string | null;
   created_at: string;
   actor: Person | null;
   organization: { id: string; name: string } | null;
   join_request: { id: string; role: string; status: 'PENDING' | 'ACCEPTED' | 'REJECTED' } | null;
   task_assignment: NotificationTask | null;
+  resource_request: (Pick<ResourceRequest, 'id' | 'kind' | 'status' | 'description' | 'decision_comment' | 'project_id' | 'step_id' | 'project'> & {
+    step: { id: string; title: string };
+  }) | null;
+}
+
+export type ResourceRequestKind = 'HR' | 'FINANCE' | 'TECHNOLOGY';
+
+/** A request for extra resources for a step (clause 7.1), decided by top management. */
+export interface ResourceRequest {
+  id: string;
+  project_id: string;
+  step_id: string;
+  kind: ResourceRequestKind;
+  description: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  decided_at: string | null;
+  decision_comment: string | null;
+  created_at: string;
+  project: { id: string; name: string; organization_id: string };
+  step: { id: string; title: string; phase: { name: string } };
+  requester: Person;
+  decider: Person | null;
 }
 
 export interface OrganizationJoinRequest {
@@ -446,11 +473,6 @@ export const projectsApi = {
     return response.data;
   },
 
-  updatePhase: async (projectId: string, phaseId: string, status: string): Promise<ProjectPhase> => {
-    const response = await apiClient.put(`/projects/${projectId}/phases/${phaseId}`, { status });
-    return response.data;
-  },
-
   addMember: async (projectId: string, data: {
     email: string;
     privilege: string;
@@ -473,11 +495,7 @@ export const projectsApi = {
   completeStep: async (
     projectId: string,
     stepId: string,
-  ): Promise<{
-    step: ProjectStep;
-    phase?: Pick<ProjectPhase, 'id' | 'status' | 'started_at' | 'completed_at'> | null;
-    project_status?: ComplianceProject['status'] | null;
-  }> => {
+  ): Promise<ProjectStep> => {
     const response = await apiClient.put(`/projects/${projectId}/steps/${stepId}/complete`);
     return response.data;
   },
@@ -538,15 +556,6 @@ export const projectsApi = {
 
   getProjectTasks: async (projectId: string): Promise<TaskAssignment[]> => {
     const response = await apiClient.get(`/projects/${projectId}/tasks`);
-    return response.data;
-  },
-
-  sendRequest: async (
-    projectId: string,
-    stepId: string,
-    data: { kind: 'hr' | 'finance' | 'technology'; notes: string },
-  ): Promise<{ sent_to: number }> => {
-    const response = await apiClient.post(`/projects/${projectId}/steps/${stepId}/requests`, data);
     return response.data;
   },
 };
@@ -1076,6 +1085,19 @@ export const tasksApi = {
     (await apiClient.patch(`/tasks/${taskId}`, data)).data,
 
   cancel: async (taskId: string): Promise<TaskAssignment> => (await apiClient.post(`/tasks/${taskId}/cancel`)).data,
+};
+
+export const requestsApi = {
+  list: async (projectId: string): Promise<{ items: ResourceRequest[]; can_decide: boolean }> =>
+    (await apiClient.get(`/projects/${projectId}/requests`)).data,
+
+  send: async (projectId: string, stepId: string, data: { kind: ResourceRequestKind; description: string }): Promise<ResourceRequest> =>
+    (await apiClient.post(`/projects/${projectId}/steps/${stepId}/requests`, data)).data,
+
+  decide: async (requestId: string, data: { decision: 'APPROVED' | 'REJECTED'; comment?: string }): Promise<ResourceRequest> =>
+    (await apiClient.post(`/requests/${requestId}/decide`, data)).data,
+
+  awaitingMe: async (): Promise<{ id: string; project_id: string }[]> => (await apiClient.get('/requests/awaiting-me')).data,
 };
 
 export const notificationsApi = {

@@ -4,7 +4,7 @@ import { ProjectRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ProjectRoles } from '../common/decorators/project-role.decorator';
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
-import { AssignTaskDto, CompleteTaskDto, SendRequestDto, UpdateTaskDto } from './dto/task.dto';
+import { AssignTaskDto, CompleteTaskDto, UpdateTaskDto } from './dto/task.dto';
 import { TasksService } from './tasks.service';
 
 @ApiTags('Tasks')
@@ -80,20 +80,5 @@ export class TasksController {
     @Headers('user-agent') userAgent: string,
   ) {
     return this.tasks.assign(projectId, stepId, dto, userId, ipAddress, userAgent);
-  }
-
-  @Post('projects/:projectId/steps/:stepId/requests')
-  @ApiOperation({ summary: 'Send an additional resources request to top management' })
-  @UseGuards(ProjectRoleGuard)
-  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
-  sendRequest(
-    @Param('projectId') projectId: string,
-    @Param('stepId') stepId: string,
-    @CurrentUser('id') userId: string,
-    @Body() dto: SendRequestDto,
-    @Ip() ipAddress: string,
-    @Headers('user-agent') userAgent: string,
-  ) {
-    return this.tasks.sendRequest(projectId, stepId, dto, userId, ipAddress, userAgent);
   }
 }

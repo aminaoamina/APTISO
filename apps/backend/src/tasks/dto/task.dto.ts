@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskType } from '@prisma/client';
-import { IsDateString, IsEnum, IsIn, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 
 export class AssignTaskDto {
   @ApiProperty({ description: 'User ID of the person being assigned' })
@@ -41,16 +41,4 @@ export class CompleteTaskDto {
   @IsString()
   @MaxLength(2000)
   notes?: string;
-}
-
-export class SendRequestDto {
-  @ApiProperty({ enum: ['hr', 'finance', 'technology'] })
-  @IsIn(['hr', 'finance', 'technology'])
-  kind!: 'hr' | 'finance' | 'technology';
-
-  @ApiProperty({ description: 'What is needed and why' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(2000)
-  notes!: string;
 }

@@ -48,6 +48,8 @@ import {
 } from '@/components/ui/form';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/utils';
+import { PROGRESS_BADGE, PROGRESS_DOT, PROGRESS_LABELS, phaseCounts } from '@/lib/progress';
+import { Progress as ProgressBar } from '@/components/ui/progress';
 
 const statusBadgeColors: Record<string, string> = {
   PLANNING: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
@@ -61,18 +63,6 @@ const statusLabels: Record<string, string> = {
   IN_PROGRESS: 'In Progress',
   CERTIFIED: 'Certified',
   ON_HOLD: 'On Hold',
-};
-
-const phaseStatusColors: Record<string, string> = {
-  NOT_STARTED: 'text-muted-foreground',
-  IN_PROGRESS: 'text-blue-500',
-  COMPLETED: 'text-green-500',
-};
-
-const phaseStatusDotColors: Record<string, string> = {
-  NOT_STARTED: 'bg-muted-foreground/30',
-  IN_PROGRESS: 'bg-blue-500',
-  COMPLETED: 'bg-green-500',
 };
 
 const editProjectSchema = z
@@ -184,8 +174,9 @@ export default function ProjectDetailPage() {
   const leadAuditor = members.find((m) => m.privilege === 'PROJECT_LEAD')?.user;
   const framework = currentProject.compliance_framework;
 
-  const completedPhases = phases.filter((p) => p.status === 'COMPLETED').length;
-  const currentPhase = phases.find((p) => p.status === 'IN_PROGRESS');
+  const progress = currentProject.progress;
+  const phasesInProgress = phases.filter((p) => p.progress === 'IN_PROGRESS');
+  const completedPhases = phases.filter((p) => p.progress === 'COMPLETED').length;
 
   return (
     <div className="space-y-6">
@@ -316,6 +307,36 @@ export default function ProjectDetailPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1">
+              <CheckCircle2 className="h-4 w-4" /> Overall progress
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-2xl font-bold">{progress?.percent ?? 0}%</div>
+            <ProgressBar value={progress?.percent ?? 0} className="h-1.5" />
+            <p className="text-xs text-muted-foreground">
+              {progress?.completed_steps ?? 0} of {progress?.total_steps ?? 0} steps completed
+              {progress?.in_progress_steps ? `, ${progress.in_progress_steps} in progress` : ''}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription className="flex items-center gap-1">
+              <Layers className="h-4 w-4" /> Phases
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1">
+            <div className="text-2xl font-bold">{completedPhases} / {phases.length} completed</div>
+            <p className="text-xs text-muted-foreground">
+              {phasesInProgress.length
+                ? `In progress: ${phasesInProgress.map((p) => `Phase ${p.order}`).join(', ')}`
+                : completedPhases === phases.length && phases.length > 0 ? 'All phases completed' : 'Not started yet'}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription className="flex items-center gap-1">
               <Users className="h-4 w-4" /> Members
             </CardDescription>
           </CardHeader>
@@ -323,34 +344,12 @@ export default function ProjectDetailPage() {
             <div className="text-2xl font-bold">{members.length}</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-1">
-              <CheckCircle2 className="h-4 w-4" /> Phases Completed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {completedPhases} / {phases.length || 7}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-1">
-              <Layers className="h-4 w-4" /> Current Phase
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold truncate">
-              {currentPhase?.name ||
-                (completedPhases === phases.length && phases.length > 0
-                  ? 'Completed'
-                  : 'Not started')}
-            </div>
-          </CardContent>
-        </Card>
       </div>
+      {phases.some((p) => p.order === 3 && !p.steps?.length) && (
+        <p className="text-xs text-muted-foreground -mt-3">
+          Phase 3 policies are added as steps when the Statement of Applicability is finished, so the total number of steps grows at that point.
+        </p>
+      )}
 
       {/* Phases timeline */}
       <Card>
@@ -369,23 +368,17 @@ export default function ProjectDetailPage() {
                       <div className="absolute left-[11px] top-6 h-full w-px bg-border" />
                     )}
                     <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center">
-                      <div
-                        className={`h-3 w-3 rounded-full ${phaseStatusDotColors[phase.status]}`}
-                      />
+                      <div className={`h-3 w-3 rounded-full ${PROGRESS_DOT[phase.progress]}`} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{phase.name}</p>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs ${phaseStatusColors[phase.status]}`}
-                        >
-                          {phase.status === 'NOT_STARTED'
-                            ? 'Not Started'
-                            : phase.status === 'IN_PROGRESS'
-                            ? 'In Progress'
-                            : 'Completed'}
-                        </Badge>
+                        <p className="text-sm font-medium">Phase {phase.order}: {phase.name}</p>
+                        <Badge className={`text-xs ${PROGRESS_BADGE[phase.progress]}`}>{PROGRESS_LABELS[phase.progress]}</Badge>
+                        {!!phase.steps?.length && (
+                          <span className="text-xs text-muted-foreground">
+                            {phaseCounts(phase.steps).completed} / {phase.steps.length} steps
+                          </span>
+                        )}
                       </div>
                       {phase.description && (
                         <p className="text-xs text-muted-foreground mt-0.5">

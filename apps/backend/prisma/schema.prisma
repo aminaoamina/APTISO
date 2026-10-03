@@ -64,6 +64,8 @@ enum NotificationType {
   TASK_COMPLETED
   TASK_DUE_SOON
   TASK_CANCELLED
+  REQUEST_RECEIVED
+  REQUEST_DECIDED
 }
 
 enum ProjectStatus {
@@ -71,12 +73,6 @@ enum ProjectStatus {
   IN_PROGRESS
   CERTIFIED
   ON_HOLD
-}
-
-enum ProjectPhaseStatus {
-  NOT_STARTED
-  IN_PROGRESS
-  COMPLETED
 }
 
 enum VerificationStatus {
@@ -163,6 +159,8 @@ model User {
   organization_join_requests_created OrganizationJoinRequest[] @relation("JoinRequestsCreated")
   notifications                      Notification[]
   notifications_triggered            Notification[]            @relation("NotificationActor")
+  resource_requests_made             ResourceRequest[]         @relation("ResourceRequester")
+  resource_requests_decided          ResourceRequest[]         @relation("ResourceDecider")
   documents_created                  DocumentInstance[]        @relation("DocumentsCreated")
   doc_last_edited                    DocumentInstance[]        @relation("DocLastEdited")
   doc_owner                          DocumentInstance[]        @relation("DocOwner")
@@ -324,6 +322,7 @@ model ComplianceProject {
   member_add_requests  MemberAddRequest[]
   task_assignments     TaskAssignment[]
   notifications        Notification[]
+  resource_requests    ResourceRequest[]
   nonconformities      Nonconformity[]
   incidents            Incident[]
   trainings            Training[]
@@ -419,6 +418,7 @@ model Notification {
   user_id            String           @db.Uuid
   organization_id    String?          @db.Uuid
   join_request_id    String?          @db.Uuid
+  resource_request_id String?         @db.Uuid
   task_assignment_id String?          @db.Uuid
   project_id         String?          @db.Uuid
   /// Who triggered the notification (assigner, assignee, inviter); null for system reminders.
@@ -432,6 +432,7 @@ model Notification {
   organization    Organization?            @relation(fields: [organization_id], references: [id], onDelete: Cascade)
   join_request    OrganizationJoinRequest? @relation(fields: [join_request_id], references: [id], onDelete: Cascade)
   task_assignment TaskAssignment?          @relation(fields: [task_assignment_id], references: [id], onDelete: Cascade)
+  resource_request ResourceRequest?        @relation(fields: [resource_request_id], references: [id], onDelete: Cascade)
   project         ComplianceProject?       @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@index([user_id, read_at])
@@ -444,9 +445,6 @@ model ProjectPhase {
   name         String             @db.VarChar(150)
   description  String?            @db.Text
   order        Int
-  status       ProjectPhaseStatus @default(NOT_STARTED)
-  started_at   DateTime?          @db.Timestamp(6)
-  completed_at DateTime?          @db.Timestamp(6)
   created_at   DateTime           @default(now()) @db.Timestamp(6)
   updated_at   DateTime           @updatedAt @db.Timestamp(6)
 
@@ -547,9 +545,6 @@ enum TaskType {
   APPROVE_DOCUMENT
   AWARENESS_TASK
   TRAINING_TASK
-  HR_REQUEST
-  FINANCE_REQUEST
-  TECHNOLOGY_REQUEST
   RISK_REVIEW
   IMPLEMENT_CONTROL
   CORRECTIVE_ACTION
@@ -587,6 +582,7 @@ model ProjectStep {
   phase             ProjectPhase      @relation(fields: [phase_id], references: [id], onDelete: Cascade)
   document_instance DocumentInstance?
   task_assignments  TaskAssignment[]
+  resource_requests ResourceRequest[]
   requirements      Requirement[]
   risk_assets       RiskAsset[]
   risk_vulnerabilities RiskVulnerability[]
@@ -734,6 +730,49 @@ model TaskAssignment {
   @@index([project_id])
   @@index([step_id])
   @@map("task_assignments")
+}
+
+// ============================================================
+// RESOURCE REQUESTS (clause 7.1)
+// ============================================================
+
+enum ResourceRequestKind {
+  HR
+  FINANCE
+  TECHNOLOGY
+}
+
+enum ResourceRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Extra resources asked for a step; top management approves or rejects them.
+model ResourceRequest {
+  id               String                @id @default(uuid()) @db.Uuid
+  project_id       String                @db.Uuid
+  step_id          String                @db.Uuid
+  kind             ResourceRequestKind
+  description      String                @db.Text
+  status           ResourceRequestStatus @default(PENDING)
+  requested_by     String                @db.Uuid
+  decided_by       String?               @db.Uuid
+  decided_at       DateTime?             @db.Timestamp(6)
+  decision_comment String?               @db.Text
+  created_at       DateTime              @default(now()) @db.Timestamp(6)
+  updated_at       DateTime              @updatedAt @db.Timestamp(6)
+
+  project   ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  step      ProjectStep       @relation(fields: [step_id], references: [id], onDelete: Cascade)
+  requester User              @relation("ResourceRequester", fields: [requested_by], references: [id], onDelete: Cascade)
+  decider   User?             @relation("ResourceDecider", fields: [decided_by], references: [id], onDelete: SetNull)
+
+  notifications Notification[]
+
+  @@index([project_id, status])
+  @@index([step_id])
+  @@map("resource_requests")
 }
 
 // ============================================================
