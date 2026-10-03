@@ -357,10 +357,14 @@ export default function StepDetailPage() {
               {doc ? (
                 <>
                   <Button onClick={() => router.push(editorHref!)} disabled={!editorHref}><FileText className="h-4 w-4 mr-2" />Open document</Button>
-                  <Button variant="destructive" size="sm" onClick={handleDeleteDocument} disabled={isDeleting}>
-                    {isDeleting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
-                    {isPolicyStep ? 'Delete & regenerate draft' : 'Delete & restart wizard'}
-                  </Button>
+                  {doc._count?.versions ? (
+                    <span className="text-xs text-muted-foreground">In the library. Edit the document and submit a new version to update it.</span>
+                  ) : canEditStep && (
+                    <Button variant="destructive" size="sm" onClick={handleDeleteDocument} disabled={isDeleting}>
+                      {isDeleting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+                      {isPolicyStep ? 'Delete & regenerate draft' : 'Delete & restart wizard'}
+                    </Button>
+                  )}
                 </>
               ) : (
                 isPolicyStep ? (

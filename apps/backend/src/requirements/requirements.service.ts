@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -6,6 +7,7 @@ import {
 import { AuditAction, ProjectRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
+import { StepDocumentService, formatDate } from '../common/services/step-document.service';
 import { CreateRequirementDto, UpdateRequirementDto } from './dto/requirement.dto';
 import {
   ProseMirrorNode,
@@ -38,6 +40,7 @@ export class RequirementsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
+    private readonly stepDocuments: StepDocumentService,
   ) {}
 
   async list(stepId: string, userId: string) {
@@ -206,50 +209,17 @@ export class RequirementsService {
     });
 
     if (requirements.length === 0) {
-      throw new ForbiddenException('Add at least one requirement before creating a report');
+      throw new BadRequestException('Add at least one requirement before creating a report');
     }
 
-    const template = await this.prisma.documentTemplate.findUnique({
-      where: { code: 'LEGAL-REGISTER' },
-    });
-    if (!template) throw new NotFoundException('LEGAL-REGISTER template not found');
-
-    const content = this.buildRegisterContent(requirements as RequirementRecord[]);
-
-    const existing = await this.prisma.documentInstance.findUnique({
-      where: { step_id: stepId },
-    });
-
-    let doc;
-
-    if (existing) {
-      doc = await this.prisma.documentInstance.update({
-        where: { id: existing.id },
-        data: {
-          content: content as never,
-          last_edited_by: userId,
-        },
-      });
-    } else {
-      doc = await this.prisma.documentInstance.create({
-        data: {
-          template_id: template.id,
-          step_id: stepId,
-          title: 'Register of Legal, Contractual, and Other Requirements',
-          status: 'DRAFT',
-          version: '0.1',
-          content: content as never,
-          created_by: userId,
-          last_edited_by: userId,
-        },
-      });
-    }
-
-    await this.auditLog.log({
+    const doc = await this.stepDocuments.upsert({
+      stepId,
+      templateCode: 'LEGAL-REGISTER',
+      templateName: 'Register of Legal, Contractual, and Other Requirements',
+      templateDescription: 'Register of the requirements of interested parties (ISO/IEC 27001 clause 4.2, control A.5.31).',
+      title: 'Register of Legal, Contractual, and Other Requirements',
+      content: this.buildRegisterContent(requirements as RequirementRecord[]),
       userId,
-      action: AuditAction.DOCUMENT_UPDATED,
-      entityType: 'document_instance',
-      entityId: doc.id,
       details: { requirement_count: requirements.length },
       ipAddress,
       userAgent,
@@ -267,8 +237,6 @@ export class RequirementsService {
   // ─── ProseMirror content builder ───────────────────────────────
 
   private buildRegisterContent(requirements: RequirementRecord[]): ProseMirrorNode {
-    const now = new Date();
-    const ds = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
     const TYPE_LABELS: Record<string, string> = {
       CONTRACTUAL: 'Contractual',
@@ -284,7 +252,7 @@ export class RequirementsService {
     const content: ProseMirrorNode[] = [
       heading(1, 'Register of Legal, Regulatory and Contractual Requirements'),
       paragraph({ ...text(`Total requirements: ${requirements.length}`), marks: [{ type: 'bold' }] }),
-      paragraph(text(`Generated: ${ds}`)),
+      paragraph(text(`Generated: ${formatDate(new Date())}`)),
     ];
 
     let sectionNum = 1;
@@ -295,7 +263,10 @@ export class RequirementsService {
       const label = TYPE_LABELS[typeKey] ?? typeKey;
       content.push(heading(2, `${sectionNum}. ${label} Requirements`));
 
-      const headers = ['#', 'Description', 'Interested Party', 'Related Area', 'Document', 'Responsible', 'Status'];
+      const legal = typeKey === 'LEGAL_REGULATORY';
+      const headers = legal
+        ? ['#', 'Law / regulation', 'Description', 'Interested Party', 'Valid from', 'Jurisdiction', 'Responsible', 'Status']
+        : ['#', 'Description', 'Interested Party', 'Related Area', 'Document', 'Responsible', 'Status'];
       const tableRows: ProseMirrorNode[][][] = [
         headers.map(h => [text(h)]),
       ];
@@ -304,15 +275,27 @@ export class RequirementsService {
         const responsible = r.responsible_person
           ? `${r.responsible_person.first_name} ${r.responsible_person.last_name}`
           : '—';
-        tableRows.push([
-          [text(String(i + 1))],
-          [text(r.description || '—')],
-          [text(r.interested_party || '—')],
-          [text(r.related_area || '—')],
-          [text(r.document_stipulating || '—')],
-          [text(responsible)],
-          [text(r.status === 'COMPLIANT' ? 'Compliant' : 'Non-Compliant')],
-        ]);
+        const status = r.status === 'COMPLIANT' ? 'Compliant' : 'Non-Compliant';
+        tableRows.push(legal
+          ? [
+              [text(String(i + 1))],
+              [text(r.law_regulation_name || '—')],
+              [text(r.description || '—')],
+              [text(r.interested_party || '—')],
+              [text(r.valid_from ? formatDate(r.valid_from) : '—')],
+              [text([r.country, r.state].filter(Boolean).join(', ') || '—')],
+              [text(responsible)],
+              [text(status)],
+            ]
+          : [
+              [text(String(i + 1))],
+              [text(r.description || '—')],
+              [text(r.interested_party || '—')],
+              [text(r.related_area || '—')],
+              [text([r.document_stipulating, r.date_of_document && formatDate(r.date_of_document)].filter(Boolean).join(', ') || '—')],
+              [text(responsible)],
+              [text(status)],
+            ]);
       });
 
       content.push(table(tableRows));

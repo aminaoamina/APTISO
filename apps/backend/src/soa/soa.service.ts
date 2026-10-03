@@ -16,6 +16,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
+import { StepDocumentService } from '../common/services/step-document.service';
 import { TaskService } from '../common/services/task.service';
 import {
   ProseMirrorNode,
@@ -85,6 +86,7 @@ export class SoaService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
     private readonly tasks: TaskService,
+    private readonly stepDocuments: StepDocumentService,
   ) {}
 
   async onModuleInit() {
@@ -393,36 +395,22 @@ export class SoaService implements OnModuleInit {
     const rows = await this.getRows(stepId);
     if (rows.length === 0) throw new BadRequestException('Complete the SoA setup first');
 
-    const template = await this.prisma.documentTemplate.findUnique({ where: { code: REPORT_TEMPLATE_CODE } });
-    if (!template) throw new NotFoundException(`${REPORT_TEMPLATE_CODE} template not found`);
-
     const [approvals, org, context] = await Promise.all([
       this.getApprovals(access),
       this.prisma.organization.findUnique({ where: { id: access.organizationId }, select: { name: true } }),
       this.getContext(access),
     ]);
-    const content = this.buildDocument(rows, approvals, org?.name ?? 'Organization', context.riskCount);
-
-    const existing = await this.prisma.documentInstance.findUnique({ where: { step_id: stepId } });
-    const doc = existing
-      ? await this.prisma.documentInstance.update({
-          where: { id: existing.id },
-          data: { content: content as never, last_edited_by: userId },
-        })
-      : await this.prisma.documentInstance.create({
-          data: {
-            template_id: template.id,
-            step_id: stepId,
-            title: 'Statement of Applicability and Risk Treatment Plan',
-            status: 'DRAFT',
-            version: '0.1',
-            content: content as never,
-            created_by: userId,
-            last_edited_by: userId,
-          },
-        });
-
-    await this.log(userId, stepId, { action: 'soa_create_document', document: doc.id }, ipAddress, userAgent);
+    const doc = await this.stepDocuments.upsert({
+      stepId,
+      templateCode: REPORT_TEMPLATE_CODE,
+      templateName: 'Statement of Applicability and Risk Treatment Plan',
+      templateDescription: 'Statement of Applicability and Risk Treatment Plan (ISO/IEC 27001 clauses 6.1.3 d, 6.1.3 e, 6.2 and 8.3).',
+      title: 'Statement of Applicability and Risk Treatment Plan',
+      content: this.buildDocument(rows, approvals, org?.name ?? 'Organization', context.riskCount),
+      userId,
+      ipAddress,
+      userAgent,
+    });
     return [doc];
   }
 

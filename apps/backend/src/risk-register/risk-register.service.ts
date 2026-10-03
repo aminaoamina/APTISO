@@ -8,6 +8,7 @@ import {
 import { AuditAction, Prisma, ProjectRole, TreatmentOption } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
+import { StepDocumentService } from '../common/services/step-document.service';
 import {
   ProseMirrorNode,
   text,
@@ -77,6 +78,7 @@ export class RiskRegisterService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
+    private readonly stepDocuments: StepDocumentService,
   ) {}
 
   onModuleInit() {
@@ -725,36 +727,22 @@ export class RiskRegisterService implements OnModuleInit {
       throw new BadRequestException('Add at least one risk before generating the report');
     }
 
-    const template = await this.prisma.documentTemplate.findUnique({ where: { code: REPORT_TEMPLATE_CODE } });
-    if (!template) throw new NotFoundException(`${REPORT_TEMPLATE_CODE} template not found`);
-
     const [orgName, methodology] = await Promise.all([
       this.getOrganizationName(stepId),
       this.getMethodologyReference(stepId),
     ]);
-    const content = this.buildReportContent(risks, orgName, methodology);
-
-    // document_instances.step_id is unique: one report per register.
-    const existing = await this.prisma.documentInstance.findUnique({ where: { step_id: stepId } });
-    const doc = existing
-      ? await this.prisma.documentInstance.update({
-          where: { id: existing.id },
-          data: { content: content as never, last_edited_by: userId },
-        })
-      : await this.prisma.documentInstance.create({
-          data: {
-            template_id: template.id,
-            step_id: stepId,
-            title: 'Risk Assessment and Treatment Report',
-            status: 'DRAFT',
-            version: '0.1',
-            content: content as never,
-            created_by: userId,
-            last_edited_by: userId,
-          },
-        });
-
-    await this.log(userId, 'document_instance', doc.id, { action: 'create_risk_report', risk_count: risks.length }, ipAddress, userAgent);
+    const doc = await this.stepDocuments.upsert({
+      stepId,
+      templateCode: REPORT_TEMPLATE_CODE,
+      templateName: 'Risk Assessment and Treatment Report',
+      templateDescription: 'Report of the information security risk assessment and treatment results (ISO/IEC 27001 clauses 6.1, 8.2, 8.3).',
+      title: 'Risk Assessment and Treatment Report',
+      content: this.buildReportContent(risks, orgName, methodology),
+      userId,
+      details: { risk_count: risks.length },
+      ipAddress,
+      userAgent,
+    });
     return [doc];
   }
 

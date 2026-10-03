@@ -138,6 +138,8 @@ export interface ProjectStep {
     owner?: { id: string; first_name: string; last_name: string; email: string } | null;
     reviewer?: { id: string; first_name: string; last_name: string; email: string } | null;
     approver?: { id: string; first_name: string; last_name: string; email: string } | null;
+    /** How many versions are in the library. */
+    _count?: { versions: number };
   } | null;
 }
 
@@ -201,17 +203,47 @@ export interface DocumentInstance {
     title: string;
     phase: { project_id: string; name: string };
   };
+  /** Published versions, newest first. */
   versions?: DocumentVersion[];
 }
 
 export interface DocumentVersion {
-  id: string;
-  document_id: string;
   version: string;
   published_at: string;
-  published_by: string;
   notes?: string | null;
   publisher?: { id: string; first_name: string; last_name: string };
+}
+
+/** A library entry: a document with at least one published version. */
+export interface LibraryDocument {
+  id: string;
+  title: string;
+  status: DocumentInstance['status'];
+  version: string;
+  template: { code: string; name: string };
+  owner: { id: string; first_name: string; last_name: string } | null;
+  approver: { id: string; first_name: string; last_name: string } | null;
+  step: {
+    id: string;
+    title: string;
+    order: number;
+    phase: { name: string; order: number; project: { id: string; name: string } };
+  };
+  versions: DocumentVersion[];
+}
+
+/** Saves a downloaded file under the name sent by the server. */
+function saveBlob(data: BlobPart, type: string, disposition: string | undefined, fallback: string) {
+  const encoded = disposition?.match(/filename\*=UTF-8''([^;]+)/)?.[1];
+  const plain = disposition?.match(/filename="([^"]+)"/)?.[1];
+  const url = URL.createObjectURL(new Blob([data], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = encoded ? decodeURIComponent(encoded) : plain ?? fallback;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export interface Requirement {
@@ -559,28 +591,18 @@ export const documentsApi = {
     }, {
       responseType: 'blob',
     });
-    const blob = new Blob([response.data], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const disposition = response.headers['content-disposition'] as string | undefined;
-    const match = disposition?.match(/filename="([^"]+)"/);
-    a.download = match?.[1] ?? 'document.docx';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    saveBlob(response.data, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      response.headers['content-disposition'], 'document.docx');
   },
 
-  publish: async (documentId: string, notes?: string): Promise<{ version: string; pdfUrl: string }> => {
+  downloadPdf: async (documentId: string, version: string): Promise<void> => {
+    const response = await apiClient.get(`/documents/${documentId}/library/${encodeURIComponent(version)}/pdf`, { responseType: 'blob' });
+    saveBlob(response.data, 'application/pdf', response.headers['content-disposition'], 'document.pdf');
+  },
+
+  publish: async (documentId: string, notes?: string): Promise<{ version: string }> => {
     const response = await apiClient.post(`/documents/${documentId}/publish`, { notes });
     return response.data;
-  },
-
-  unpublish: async (documentId: string): Promise<void> => {
-    await apiClient.post(`/documents/${documentId}/unpublish`);
   },
 
   delete: async (documentId: string): Promise<{ message: string }> => {
@@ -588,12 +610,7 @@ export const documentsApi = {
     return response.data;
   },
 
-  getVersions: async (documentId: string): Promise<DocumentVersion[]> => {
-    const response = await apiClient.get(`/documents/${documentId}/versions`);
-    return response.data;
-  },
-
-  getLibrary: async (orgId: string): Promise<DocumentInstance[]> => {
+  getLibrary: async (orgId: string): Promise<LibraryDocument[]> => {
     const response = await apiClient.get(`/organizations/${orgId}/library`);
     return response.data;
   },

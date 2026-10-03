@@ -266,6 +266,7 @@ const STEP_INCLUDE = {
       owner: { select: { id: true, first_name: true, last_name: true, email: true } },
       reviewer: { select: { id: true, first_name: true, last_name: true, email: true } },
       approver: { select: { id: true, first_name: true, last_name: true, email: true } },
+      _count: { select: { versions: true } },
     },
   },
 } as const;
