@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
+import { EvidencePanel } from '@/components/evidence/evidence-panel';
 import { Spinner } from '@/components/ui/spinner';
 import {
   BlurField, Counters, DocumentCard, PeoplePicker, ReadOnlyNotice, StepComponentProps, dateValue, docHref, fmtDate, nameOf, useRegister,
@@ -103,7 +104,7 @@ export default function TrainingPlan({ stepId, orgId, projectId, onCompletionCha
           {state.trainings.length === 0 && !adding && (
             <p className="text-sm text-muted-foreground py-6 text-center">No trainings. You can add a new training by clicking the New training button.</p>
           )}
-          {state.trainings.map(t => <TrainingRow key={t.id} t={t} state={state} stepId={stepId} run={run} />)}
+          {state.trainings.map(t => <TrainingRow projectId={projectId} key={t.id} t={t} state={state} stepId={stepId} run={run} />)}
         </CardContent>
       </Card>
 
@@ -114,8 +115,8 @@ export default function TrainingPlan({ stepId, orgId, projectId, onCompletionCha
   );
 }
 
-function TrainingRow({ t, state, stepId, run }: {
-  t: Training; state: TrainingsState; stepId: string; run: (fn: () => Promise<TrainingsState>, s?: string) => Promise<boolean>;
+function TrainingRow({ t, state, stepId, projectId, run }: {
+  t: Training; state: TrainingsState; stepId: string; projectId: string; run: (fn: () => Promise<TrainingsState>, s?: string) => Promise<boolean>;
 }) {
   const { permissions, members } = state;
   const canEdit = permissions.canEdit && t.status !== 'CANCELLED';
@@ -164,6 +165,10 @@ function TrainingRow({ t, state, stepId, run }: {
           <div><Label className="text-xs">Effectiveness evaluation (clause 7.2 c)</Label>
             <BlurField multiline value={t.effectiveness} disabled={!canEdit} placeholder="e.g. quiz results, observed behaviour"
               onSave={(v) => save({ effectiveness: v })} /></div>
+          <div className="sm:col-span-2">
+            <EvidencePanel projectId={projectId} target={{ type: 'TRAINING', id: t.id }} canEdit={canEdit}
+              hint="Attach the signed attendance list, certificates or quiz results (clause 7.2)." />
+          </div>
         </div>
       )}
     </div>

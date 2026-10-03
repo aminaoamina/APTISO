@@ -197,6 +197,14 @@ export class TasksService {
     if (task && OPEN.includes(task.status)) await this.applyChanges(task, changes, actorId);
   }
 
+  /** The work of the task was done elsewhere (e.g. the evidence was renewed): it closes as completed. */
+  async completeLinked(taskId: string, notes: string) {
+    await this.prisma.taskAssignment.updateMany({
+      where: { id: taskId, status: { in: OPEN } },
+      data: { status: TaskStatus.COMPLETED, completed_at: new Date(), completion_notes: notes },
+    });
+  }
+
   /** The register record was removed: its open task is cancelled. */
   async cancelLinked(taskId: string | null, actorId: string) {
     if (!taskId) return;

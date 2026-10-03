@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
+import { EvidencePanel } from '@/components/evidence/evidence-panel';
 import { Spinner } from '@/components/ui/spinner';
 import {
   BlurField, Counters, DocumentCard, PersonSelect, ReadOnlyNotice, StepComponentProps, docHref, fmtDate, nameOf, useRegister,
@@ -84,7 +85,7 @@ export default function InternalAudit({ stepId, orgId, projectId, onCompletionCh
             <p className="text-sm text-muted-foreground py-6 text-center">There are no scheduled audits. To add an entry, click the button above.</p>
           )}
           {state.audits.map(a => (
-            <AuditPanel key={a.id} audit={a} state={state} stepId={stepId} run={run} open={open === a.id} onToggle={() => setOpen(open === a.id ? null : a.id)} />
+            <AuditPanel projectId={projectId} key={a.id} audit={a} state={state} stepId={stepId} run={run} open={open === a.id} onToggle={() => setOpen(open === a.id ? null : a.id)} />
           ))}
         </CardContent>
       </Card>
@@ -96,8 +97,8 @@ export default function InternalAudit({ stepId, orgId, projectId, onCompletionCh
   );
 }
 
-function AuditPanel({ audit: a, state, stepId, run, open, onToggle }: {
-  audit: Audit; state: AuditsState; stepId: string; run: Run; open: boolean; onToggle: () => void;
+function AuditPanel({ audit: a, state, stepId, projectId, run, open, onToggle }: {
+  audit: Audit; state: AuditsState; stepId: string; projectId: string; run: Run; open: boolean; onToggle: () => void;
 }) {
   const { permissions, members } = state;
   const [filter, setFilter] = useState<'all' | 'open' | 'findings'>('all');
@@ -142,7 +143,7 @@ function AuditPanel({ audit: a, state, stepId, run, open, onToggle }: {
                 </NativeSelect>
               </div>
               <div className="space-y-1.5 max-h-[32rem] overflow-y-auto pr-1">
-                {items.map(i => <ChecklistItem key={i.id} item={i} editable={editable} onSave={(d) => run(() => auditsApi.updateItem(stepId, a.id, i.id, d))} />)}
+                {items.map(i => <ChecklistItem key={i.id} item={i} projectId={projectId} editable={editable} onSave={(d) => run(() => auditsApi.updateItem(stepId, a.id, i.id, d))} />)}
               </div>
             </>
           )}
@@ -174,7 +175,7 @@ function AuditPanel({ audit: a, state, stepId, run, open, onToggle }: {
   );
 }
 
-function ChecklistItem({ item: i, editable, onSave }: { item: AuditItem; editable: boolean; onSave: (d: Record<string, unknown>) => Promise<boolean> }) {
+function ChecklistItem({ item: i, projectId, editable, onSave }: { item: AuditItem; projectId: string; editable: boolean; onSave: (d: Record<string, unknown>) => Promise<boolean> }) {
   const [open, setOpen] = useState(false);
   const [evidence, setEvidence] = useState(i.evidence ?? '');
   // A finding picked before its evidence is typed waits here and is saved with the evidence.
@@ -217,6 +218,8 @@ function ChecklistItem({ item: i, editable, onSave }: { item: AuditItem; editabl
             onBlur={saveEvidence} />
           {pending && <p className="text-xs text-amber-700 dark:text-amber-400">Describe the evidence to record this finding.</p>}
           {i.result && !pending && <Badge className={RESULTS[i.result][1]}>{RESULTS[i.result][0]}</Badge>}
+          <EvidencePanel projectId={projectId} target={{ type: 'AUDIT_ITEM', id: i.id }} canEdit={editable}
+            hint="Attach what you sampled: the records, screenshots or interview notes behind the result." />
         </div>
       )}
     </div>

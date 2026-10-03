@@ -561,6 +561,7 @@ enum TaskType {
   DOCUMENT_REVIEW
   INCIDENTS_REVIEW
   TRAININGS_REVIEW
+  EVIDENCE_RENEWAL
 }
 
 enum TaskStatus {
@@ -801,11 +802,15 @@ enum EvidenceKind {
   NOTE
 }
 
-/// What a piece of evidence proves: an ISO clause (target_id = "9.2"), an SoA control row or a task.
+/// What a piece of evidence proves: an ISO clause (target_id = "9.2"), an SoA control row, a task, or a register record.
 enum EvidenceTargetType {
   CLAUSE
   SOA_CONTROL
   TASK
+  NONCONFORMITY
+  INCIDENT
+  TRAINING
+  AUDIT_ITEM
 }
 
 /// Proof that a requirement is met. Evidence is a record: it is never erased,

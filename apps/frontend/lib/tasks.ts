@@ -16,6 +16,7 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   DOCUMENT_REVIEW: 'Review of document',
   INCIDENTS_REVIEW: 'Review of incidents',
   TRAININGS_REVIEW: 'Review of trainings',
+  EVIDENCE_RENEWAL: 'Renew evidence',
 };
 
 export const TASK_TYPE_COLORS: Record<TaskType, string> = {
@@ -34,6 +35,7 @@ export const TASK_TYPE_COLORS: Record<TaskType, string> = {
   DOCUMENT_REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   INCIDENTS_REVIEW: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   TRAININGS_REVIEW: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  EVIDENCE_RENEWAL: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
 };
 
 /** Tasks people assign by hand from a step; all others are managed from their register (same list as the server). */
@@ -49,6 +51,7 @@ export function taskHref(task: NotificationTask) {
   const project = `/dashboard/organizations/${task.project.organization_id}/projects/${task.project_id}`;
   if (task.document_instance_id) return `${project}/documents/${task.document_instance_id}`;
   if (task.type === 'CORRECTIVE_ACTION') return `${project}/registers`;
+  if (task.type === 'EVIDENCE_RENEWAL') return `${project}/audit`;
   if (task.step_id) return `${project}/steps/${task.step_id}`;
   if (MAINTENANCE_TYPES.includes(task.type)) return `${project}/maintenance`;
   return project;

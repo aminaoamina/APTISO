@@ -1,5 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { AuditAction, EvidenceKind, EvidenceTargetType, Prisma, TaskType } from '@prisma/client';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { AuditAction, EvidenceKind, EvidenceTargetType, Prisma, ProjectRole, TaskStatus, TaskType } from '@prisma/client';
 import { createHash, randomUUID } from 'crypto';
 import { extname } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +9,7 @@ import { ISO_REQUIREMENTS } from '../audit-prep/iso-requirements';
 import { FileStorage } from './file-storage';
 import { CreateEvidenceDto, EvidenceTargetDto, UpdateEvidenceDto } from './evidence.dto';
 import { TASK_TYPE_LABELS } from '../tasks/task-labels';
+import { TasksService } from '../tasks/tasks.service';
 
 export const MAX_EVIDENCE_BYTES = 25 * 1024 * 1024;
 
@@ -32,6 +34,11 @@ const FILE_TYPES: Record<string, string> = {
 };
 export const EVIDENCE_EXTENSIONS = Object.keys(FILE_TYPES);
 
+/** Evidence expiring within this many days gets a renewal task. */
+const RENEWAL_DAYS = 30;
+const DAY = 24 * 60 * 60 * 1000;
+const renewalKey = (evidenceId: string) => `evidence:${evidenceId}`;
+
 const CLAUSES = new Set(ISO_REQUIREMENTS.map(r => r.ref));
 const PERSON = { select: { id: true, first_name: true, last_name: true } } as const;
 
@@ -53,10 +60,13 @@ type UploadedFile = { originalname: string; buffer: Buffer; size: number };
  */
 @Injectable()
 export class EvidenceService {
+  private readonly logger = new Logger(EvidenceService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: FileStorage,
     private readonly auditLog: AuditLogService,
+    private readonly tasks: TasksService,
   ) {}
 
   async create(projectId: string, dto: CreateEvidenceDto, file: UploadedFile | undefined, userId: string, ipAddress?: string, userAgent?: string) {
@@ -115,6 +125,9 @@ export class EvidenceService {
         ...(dto.valid_until !== undefined && { valid_until: dto.valid_until ? new Date(dto.valid_until) : null }),
       },
     });
+    if (dto.valid_until !== undefined && (!dto.valid_until || new Date(dto.valid_until).getTime() > Date.now() + RENEWAL_DAYS * DAY)) {
+      await this.closeRenewal(evidenceId, `Validity extended to ${dto.valid_until ?? 'no expiry'}`);
+    }
     await this.log(userId, evidenceId, { action: 'evidence_updated', fields: Object.keys(dto) });
     return { message: 'Updated' };
   }
@@ -126,6 +139,7 @@ export class EvidenceService {
     if (!file) throw new BadRequestException('Choose the new file');
     const stored = await this.store(evidence.project_id, file);
     await this.prisma.evidenceFile.create({ data: { ...stored, evidence_id: evidenceId, uploaded_by: userId } });
+    await this.closeRenewal(evidenceId, 'New version uploaded');
     await this.log(userId, evidenceId, { action: 'evidence_file_replaced', sha256: stored.sha256 }, ipAddress, userAgent);
     return { message: 'File replaced' };
   }
@@ -137,8 +151,58 @@ export class EvidenceService {
       where: { id: evidenceId },
       data: { deleted_at: new Date(), deleted_by: userId, delete_reason: reason.trim() },
     });
+    await this.closeRenewal(evidenceId, `Evidence withdrawn: ${reason.trim()}`);
     await this.log(userId, evidenceId, { action: 'evidence_withdrawn', reason }, ipAddress, userAgent);
     return { message: 'Withdrawn' };
+  }
+
+  /**
+   * Every morning: evidence that expires within 30 days (or has expired) gets
+   * one "Renew evidence" task, for whoever added it, or the project lead when
+   * that person left the project.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_7AM)
+  async createRenewalTasks() {
+    const due = await this.prisma.evidence.findMany({
+      where: { deleted_at: null, valid_until: { lte: new Date(Date.now() + RENEWAL_DAYS * DAY) } },
+      select: {
+        id: true, title: true, valid_until: true, created_by: true, project_id: true,
+        project: { select: { organization_id: true, members: { select: { user_id: true, privilege: true } } } },
+      },
+    });
+    let created = 0;
+    for (const e of due) {
+      const open = await this.prisma.taskAssignment.count({
+        where: { project_id: e.project_id, activity_key: renewalKey(e.id), status: { in: [TaskStatus.PENDING, TaskStatus.IN_PROGRESS] } },
+      });
+      if (open) continue;
+      const members = e.project.members;
+      const lead = members.find(m => m.privilege === ProjectRole.PROJECT_LEAD)?.user_id;
+      const owner = members.some(m => m.user_id === e.created_by && m.privilege !== ProjectRole.PROJECT_AUDITOR) ? e.created_by : lead;
+      if (!owner) continue;
+      await this.tasks.create({
+        projectId: e.project_id,
+        organizationId: e.project.organization_id,
+        stepId: null,
+        activityKey: renewalKey(e.id),
+        assignedTo: owner,
+        assignedBy: lead ?? owner,
+        type: TaskType.EVIDENCE_RENEWAL,
+        notes: `"${e.title}" is valid until ${e.valid_until!.toISOString().slice(0, 10)}. Upload a new version or extend its validity in Audit & Evidence, so the requirements it proves stay covered.`,
+        deadline: e.valid_until,
+      });
+      created++;
+    }
+    if (created) this.logger.log(`Created ${created} evidence renewal task(s)`);
+    return created;
+  }
+
+  private async closeRenewal(evidenceId: string, notes: string) {
+    const task = await this.prisma.taskAssignment.findFirst({
+      where: { activity_key: renewalKey(evidenceId), status: { in: [TaskStatus.PENDING, TaskStatus.IN_PROGRESS] } },
+      select: { id: true },
+    });
+    if (task) await this.tasks.completeLinked(task.id, notes);
   }
 
   /** Links existing evidence to one more requirement (the same proof often covers several). */
@@ -200,6 +264,8 @@ export class EvidenceService {
     for (const t of targets) {
       if (t.type === EvidenceTargetType.CLAUSE) {
         if (!CLAUSES.has(t.id)) throw new BadRequestException(`Unknown ISO 27001 clause "${t.id}"`);
+      } else if (t.type === EvidenceTargetType.NONCONFORMITY || t.type === EvidenceTargetType.INCIDENT || t.type === EvidenceTargetType.TRAINING || t.type === EvidenceTargetType.AUDIT_ITEM) {
+        if (!(await this.recordInProject(projectId, t))) throw new BadRequestException('This record is not in the project');
       } else if (t.type === EvidenceTargetType.SOA_CONTROL) {
         const row = await this.prisma.soaControl.findFirst({ where: { id: t.id, step: { phase: { project_id: projectId } } }, select: { id: true } });
         if (!row) throw new BadRequestException('This control is not in the project\'s Statement of Applicability');
@@ -216,15 +282,34 @@ export class EvidenceService {
     return [...resolved.values()];
   }
 
+  private recordInProject(projectId: string, t: EvidenceTargetDto) {
+    const id = t.id;
+    switch (t.type) {
+      case EvidenceTargetType.NONCONFORMITY: return this.prisma.nonconformity.count({ where: { id, project_id: projectId } });
+      case EvidenceTargetType.INCIDENT: return this.prisma.incident.count({ where: { id, project_id: projectId } });
+      case EvidenceTargetType.TRAINING: return this.prisma.training.count({ where: { id, project_id: projectId } });
+      default: return this.prisma.auditChecklistItem.count({ where: { id, audit: { project_id: projectId } } });
+    }
+  }
+
   private async linkLabels(links: { target_type: EvidenceTargetType; target_id: string }[]) {
     const ids = (type: EvidenceTargetType) => [...new Set(links.filter(l => l.target_type === type).map(l => l.target_id))];
-    const [rows, tasks] = await Promise.all([
+    const [rows, tasks, ncs, incidents, trainings, items] = await Promise.all([
       this.prisma.soaControl.findMany({ where: { id: { in: ids(EvidenceTargetType.SOA_CONTROL) } }, select: { id: true, control: { select: { code: true, title: true } } } }),
       this.prisma.taskAssignment.findMany({ where: { id: { in: ids(EvidenceTargetType.TASK) } }, select: { id: true, type: true, notes: true, step: { select: { title: true } } } }),
+      this.prisma.nonconformity.findMany({ where: { id: { in: ids(EvidenceTargetType.NONCONFORMITY) } }, select: { id: true, number: true, title: true } }),
+      this.prisma.incident.findMany({ where: { id: { in: ids(EvidenceTargetType.INCIDENT) } }, select: { id: true, number: true, title: true } }),
+      this.prisma.training.findMany({ where: { id: { in: ids(EvidenceTargetType.TRAINING) } }, select: { id: true, title: true } }),
+      this.prisma.auditChecklistItem.findMany({ where: { id: { in: ids(EvidenceTargetType.AUDIT_ITEM) } }, select: { id: true, ref: true, audit: { select: { title: true } } } }),
     ]);
     const labels = new Map<string, string>();
     for (const r of ISO_REQUIREMENTS) labels.set(`${EvidenceTargetType.CLAUSE}:${r.ref}`, `Clause ${r.ref} ${r.requirement}`);
     for (const r of rows) labels.set(`${EvidenceTargetType.SOA_CONTROL}:${r.id}`, `${r.control.code} ${r.control.title}`);
+    const num = (n: number) => String(n).padStart(3, '0');
+    for (const n of ncs) labels.set(`${EvidenceTargetType.NONCONFORMITY}:${n.id}`, `NC-${num(n.number)} ${n.title}`);
+    for (const i of incidents) labels.set(`${EvidenceTargetType.INCIDENT}:${i.id}`, `INC-${num(i.number)} ${i.title}`);
+    for (const t of trainings) labels.set(`${EvidenceTargetType.TRAINING}:${t.id}`, `Training: ${t.title}`);
+    for (const i of items) labels.set(`${EvidenceTargetType.AUDIT_ITEM}:${i.id}`, `${i.audit.title}, ${i.ref}`);
     for (const t of tasks) {
       labels.set(`${EvidenceTargetType.TASK}:${t.id}`, `Task: ${TASK_TYPE_LABELS[t.type]} – ${t.step?.title ?? t.notes?.split('\n')[0] ?? ''}`);
     }

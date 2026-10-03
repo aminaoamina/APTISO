@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
+import { EvidencePanel } from '@/components/evidence/evidence-panel';
 import { Spinner } from '@/components/ui/spinner';
 import { BlurField, Counters, PersonSelect, ReadOnlyNotice, fmtDate, nameOf, useRegister } from './shared';
 
@@ -211,6 +212,9 @@ function NonconformityRow({ nc, members, canEdit, projectId, run, open, onToggle
             )}
           </div>
 
+          <EvidencePanel projectId={projectId} target={{ type: 'NONCONFORMITY', id: nc.id }} canEdit={canEdit}
+            hint="Attach proof of the correction and of the corrective actions, e.g. the fixed setting, the new procedure, a re-test (clause 10.2)." />
+
           {nc.status === 'RESOLVED' && (
             <p className="rounded-md bg-green-50 px-3 py-2 text-green-800 dark:bg-green-900/20 dark:text-green-400">
               Effectiveness review ({nameOf(members, nc.effectiveness_verified_by)}, {fmtDate(nc.effectiveness_verified_at)}): {nc.effectiveness_review}
@@ -352,6 +356,8 @@ function IncidentRow({ inc, members, canEdit, projectId, run, open, onToggle }: 
             <div className="sm:col-span-2"><Label className="text-xs">Lessons learned (A.5.27)</Label>
               <BlurField multiline value={inc.lessons_learned} disabled={!editable} onSave={(v) => save({ lessons_learned: v })} /></div>
           </div>
+          <EvidencePanel projectId={projectId} target={{ type: 'INCIDENT', id: inc.id }} canEdit={canEdit}
+            hint="Attach the collected evidence itself (A.5.28): logs, screenshots, e-mails, reports." />
           <div className="flex flex-wrap items-end gap-2 border-t border-border/60 pt-3">
             <div className="w-44"><Label htmlFor={`st-${inc.id}`} className="text-xs">Status</Label>
               <NativeSelect id={`st-${inc.id}`} value={inc.status} disabled={!canEdit} onChange={(e) => save({ status: e.target.value })}>

@@ -300,7 +300,7 @@ export type TaskType =
   | 'WORK_ON_DOCUMENT' | 'REVIEW_DOCUMENT' | 'APPROVE_DOCUMENT' | 'AWARENESS_TASK' | 'TRAINING_TASK'
   | 'RISK_REVIEW' | 'IMPLEMENT_CONTROL'
   | 'CORRECTIVE_ACTION' | 'INTERNAL_AUDIT' | 'MANAGEMENT_REVIEW_ACTION' | 'MANAGEMENT_REVIEW_DUE'
-  | 'OBJECTIVES_REVIEW' | 'DOCUMENT_REVIEW' | 'INCIDENTS_REVIEW' | 'TRAININGS_REVIEW';
+  | 'OBJECTIVES_REVIEW' | 'DOCUMENT_REVIEW' | 'INCIDENTS_REVIEW' | 'TRAININGS_REVIEW' | 'EVIDENCE_RENEWAL';
 
 interface Person { id: string; first_name: string; last_name: string; email?: string }
 
@@ -1105,7 +1105,7 @@ export const requestsApi = {
   awaitingMe: async (): Promise<{ id: string; project_id: string }[]> => (await apiClient.get('/requests/awaiting-me')).data,
 };
 
-export type EvidenceTargetType = 'CLAUSE' | 'SOA_CONTROL' | 'TASK';
+export type EvidenceTargetType = 'CLAUSE' | 'SOA_CONTROL' | 'TASK' | 'NONCONFORMITY' | 'INCIDENT' | 'TRAINING' | 'AUDIT_ITEM';
 export interface EvidenceTarget { type: EvidenceTargetType; id: string }
 
 /** Proof that a clause, control or task is done: a file, a link or a note. */

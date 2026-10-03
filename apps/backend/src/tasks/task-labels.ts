@@ -16,6 +16,7 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
   DOCUMENT_REVIEW: 'Review of document',
   INCIDENTS_REVIEW: 'Review of incidents',
   TRAININGS_REVIEW: 'Review of trainings',
+  EVIDENCE_RENEWAL: 'Renew evidence',
 };
 
 /**
