@@ -270,6 +270,11 @@ export default function DocumentEditor({
     },
   });
 
+  // Permissions can arrive after the editor (project still loading) or change (document sent for approval).
+  useEffect(() => {
+    editor?.setEditable(editable);
+  }, [editor, editable]);
+
   useEffect(() => {
     if (editor) {
       const t = setTimeout(() => { readyRef.current = true; }, 500);

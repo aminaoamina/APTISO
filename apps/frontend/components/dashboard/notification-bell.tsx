@@ -5,55 +5,11 @@ import { useRouter } from 'next/navigation';
 import { Bell, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppNotification, organizationsApi } from '@/lib/api';
-import { TASK_TYPE_LABELS, taskHref, taskSubject, fullName, formatDay } from '@/lib/tasks';
 import { playPopupSound } from '@/lib/notification-sounds';
-import { REQUEST_KIND_LABELS, requestsHref } from '@/lib/requests';
+import { notificationContext, notificationHref, notificationMessage, timeAgo } from '@/lib/notifications';
 import { useInboxStore } from '@/store/inbox-store';
 import { useOrgStore } from '@/store/org-store';
 import { getErrorMessage } from '@/lib/utils';
-
-/** The sentence shown for each notification type. */
-function message(n: AppNotification) {
-  const actor = fullName(n.actor) || 'Someone';
-  const task = n.task_assignment;
-  const what = task ? `${TASK_TYPE_LABELS[task.type]}: ${taskSubject(task)}` : '';
-  const request = n.resource_request;
-  const asked = request ? `${REQUEST_KIND_LABELS[request.kind].toLowerCase()} for "${request.step.title}"` : '';
-  switch (n.type) {
-    case 'ORGANIZATION_JOIN_REQUEST':
-      return `${actor} invited you to join ${n.organization?.name ?? 'an organization'}.`;
-    case 'TASK_ASSIGNED':
-      return `${actor} assigned you a task. ${what}${task?.deadline ? ` (due ${formatDay(task.deadline)})` : ''}`;
-    case 'TASK_COMPLETED':
-      return `${actor} completed ${what}.`;
-    case 'TASK_DUE_SOON':
-      return `Due ${task?.deadline ? formatDay(task.deadline) : 'soon'}: ${what}.`;
-    case 'TASK_CANCELLED':
-      return `${actor} removed this task from your list: ${what}.`;
-    case 'REQUEST_RECEIVED':
-      return `${actor} requests ${asked}. Approve or reject it.`;
-    case 'REQUEST_DECIDED':
-      return `${actor} ${request?.status === 'APPROVED' ? 'approved' : 'rejected'} your request for ${asked}${request?.decision_comment ? `: ${request.decision_comment}` : '.'}`;
-  }
-}
-
-/** Where a notification leads; null when there is nothing to open. */
-function href(n: AppNotification) {
-  if (n.task_assignment && n.type !== 'TASK_CANCELLED') return taskHref(n.task_assignment);
-  const request = n.resource_request;
-  if (request && n.type === 'REQUEST_RECEIVED') return requestsHref(request);
-  if (request) return `/dashboard/organizations/${request.project.organization_id}/projects/${request.project_id}/steps/${request.step_id}`;
-  return null;
-}
-
-function timeAgo(iso: string) {
-  const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours} h ago`;
-  return formatDay(iso);
-}
 
 export function NotificationBell() {
   const router = useRouter();
@@ -74,7 +30,7 @@ export function NotificationBell() {
 
   const open = (n: AppNotification) => {
     if (!n.read_at) void markRead([n.id]);
-    const target = href(n);
+    const target = notificationHref(n);
     if (target) {
       setIsOpen(false);
       router.push(target);
@@ -124,7 +80,7 @@ export function NotificationBell() {
           ) : (
             notifications.map((n) => {
               const request = n.join_request;
-              const clickable = !!href(n);
+              const clickable = !!notificationHref(n);
               return (
                 <div
                   key={n.id}
@@ -136,9 +92,9 @@ export function NotificationBell() {
                 >
                   <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${n.read_at ? 'bg-transparent' : 'bg-primary'}`} aria-hidden />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm">{message(n)}</p>
+                    <p className="text-sm">{notificationMessage(n)}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      {n.task_assignment?.project.name ?? n.resource_request?.project.name ?? n.organization?.name} · {timeAgo(n.created_at)}
+                      {notificationContext(n)} · {timeAgo(n.created_at)}
                     </p>
                     {request?.status === 'PENDING' && (
                       <div className="mt-2 flex gap-3">

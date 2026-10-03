@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { isDeepStrictEqual } from 'util';
 import { AuditAction, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -41,6 +41,9 @@ export class StepDocumentService {
       create: { code: d.templateCode, name: d.templateName, description: d.templateDescription },
     });
     const existing = await this.prisma.documentInstance.findUnique({ where: { step_id: d.stepId } });
+    if (existing?.status === 'IN_REVIEW' && !sameContent(existing.content, d.content)) {
+      throw new ConflictException('This document is waiting for approval: withdraw it first to update it');
+    }
     const doc = existing
       ? await this.prisma.documentInstance.update({
           where: { id: existing.id },

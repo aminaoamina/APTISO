@@ -25,9 +25,9 @@ logs/
 *.log
 npm-debug.log*
 
-# Docs
-Documents/
-docs/
+# Docs (top-level folders only: a bare name would also hide src/documents/ on Windows)
+/Documents/
+/docs/
 
 # OS / editor
 .DS_Store

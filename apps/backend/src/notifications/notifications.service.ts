@@ -40,6 +40,7 @@ const NOTIFICATION_INCLUDE = {
       type: true,
       status: true,
       deadline: true,
+      completion_notes: true,
       notes: true,
       project_id: true,
       step_id: true,

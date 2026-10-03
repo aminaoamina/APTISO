@@ -131,11 +131,13 @@ export interface ProjectStep {
   } | null;
   document_instance?: {
     id: string;
-    status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED';
+    status: DocumentInstance['status'];
     version: string;
     updated_at: string;
     deadline?: string | null;
     update_interval?: number | null;
+    code?: string | null;
+    confidentiality?: string;
     owner_id?: string | null;
     reviewer_id?: string | null;
     approver_id?: string | null;
@@ -183,7 +185,7 @@ export interface DocumentInstance {
   template_id: string;
   step_id: string | null;
   title: string;
-  status: 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED';
+  status: 'DRAFT' | 'IN_REVIEW' | 'PUBLISHED';
   version: string;
   content: ProseMirrorNode;
   answers: Record<string, string> | null;
@@ -193,6 +195,8 @@ export interface DocumentInstance {
   reviewer_id?: string | null;
   approver_id?: string | null;
   update_interval?: number | null;
+  code?: string | null;
+  confidentiality?: string;
   deadline?: string | null;
   created_at: string;
   updated_at: string;
@@ -202,6 +206,9 @@ export interface DocumentInstance {
   owner?: { id: string; email: string; first_name: string; last_name: string } | null;
   reviewer?: { id: string; email: string; first_name: string; last_name: string } | null;
   approver?: { id: string; email: string; first_name: string; last_name: string } | null;
+  /** While waiting for approval: who sent it. */
+  review_requester?: { id: string; first_name: string; last_name: string } | null;
+  review_notes?: string | null;
   step?: {
     id: string;
     title: string;
@@ -216,6 +223,7 @@ export interface DocumentVersion {
   published_at: string;
   notes?: string | null;
   publisher?: { id: string; first_name: string; last_name: string };
+  approver?: { id: string; first_name: string; last_name: string } | null;
 }
 
 /** A library entry: a document with at least one published version. */
@@ -226,7 +234,6 @@ export interface LibraryDocument {
   version: string;
   template: { code: string; name: string };
   owner: { id: string; first_name: string; last_name: string } | null;
-  approver: { id: string; first_name: string; last_name: string } | null;
   step: {
     id: string;
     title: string;
@@ -319,7 +326,7 @@ export interface TaskAssignment {
 }
 
 /** The task fields a notification carries, enough to describe it and link to it. */
-export type NotificationTask = Pick<TaskAssignment, 'id' | 'type' | 'status' | 'deadline' | 'notes' | 'project_id' | 'step_id' | 'document_instance_id' | 'project' | 'step' | 'document'>;
+export type NotificationTask = Pick<TaskAssignment, 'id' | 'type' | 'status' | 'deadline' | 'notes' | 'completion_notes' | 'project_id' | 'step_id' | 'document_instance_id' | 'project' | 'step' | 'document'>;
 
 export interface AppNotification {
   id: string;
@@ -492,13 +499,11 @@ export const projectsApi = {
     return response.data;
   },
 
-  completeStep: async (
-    projectId: string,
-    stepId: string,
-  ): Promise<ProjectStep> => {
-    const response = await apiClient.put(`/projects/${projectId}/steps/${stepId}/complete`);
-    return response.data;
-  },
+  completeStep: async (projectId: string, stepId: string, skip = false): Promise<ProjectStep> =>
+    (await apiClient.put(`/projects/${projectId}/steps/${stepId}/complete`, { skip })).data,
+
+  reopenStep: async (projectId: string, stepId: string): Promise<ProjectStep> =>
+    (await apiClient.put(`/projects/${projectId}/steps/${stepId}/reopen`)).data,
 
   updateStepCompletionData: async (
     projectId: string,
@@ -508,18 +513,6 @@ export const projectsApi = {
     const response = await apiClient.patch(
       `/projects/${projectId}/steps/${stepId}/completion-data`,
       { completion_data: completionData },
-    );
-    return response.data;
-  },
-
-  updateStepMetadata: async (
-    projectId: string,
-    stepId: string,
-    metadata: Record<string, unknown>,
-  ): Promise<ProjectStep> => {
-    const response = await apiClient.patch(
-      `/projects/${projectId}/steps/${stepId}/metadata`,
-      { metadata_json: metadata },
     );
     return response.data;
   },
@@ -602,6 +595,8 @@ export const documentsApi = {
       reviewer_id?: string | null;
       approver_id?: string | null;
       update_interval?: number | null;
+      code?: string;
+      confidentiality?: string;
     },
   ): Promise<DocumentInstance> => {
     const response = await apiClient.patch(`/documents/${documentId}/assignments`, data);
@@ -623,9 +618,19 @@ export const documentsApi = {
     saveBlob(response.data, 'application/pdf', response.headers['content-disposition'], 'document.pdf');
   },
 
-  publish: async (documentId: string, notes?: string): Promise<{ version: string }> => {
-    const response = await apiClient.post(`/documents/${documentId}/publish`, { notes });
-    return response.data;
+  /** Published directly, or sent to the document approver first. */
+  publish: async (documentId: string, notes?: string): Promise<{ status: 'PUBLISHED' | 'IN_REVIEW'; version?: string }> =>
+    (await apiClient.post(`/documents/${documentId}/publish`, { notes })).data,
+
+  approve: async (documentId: string): Promise<{ version: string }> =>
+    (await apiClient.post(`/documents/${documentId}/approve`)).data,
+
+  requestChanges: async (documentId: string, comment: string): Promise<void> => {
+    await apiClient.post(`/documents/${documentId}/request-changes`, { comment });
+  },
+
+  withdraw: async (documentId: string): Promise<void> => {
+    await apiClient.post(`/documents/${documentId}/withdraw`);
   },
 
   delete: async (documentId: string): Promise<{ message: string }> => {

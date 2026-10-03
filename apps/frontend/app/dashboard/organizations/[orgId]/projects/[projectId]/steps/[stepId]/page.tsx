@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, BookOpen, CheckCircle2, Clock, FileText, Gavel,
-  Loader2, Scale, UserPlus, Users, X, Calendar, CalendarCheck,
+  Loader2, Scale, UserPlus, X, Calendar, CalendarCheck,
   ChevronDown, ChevronRight, SkipForward, Trash2,
 } from 'lucide-react';
 import { useProjectStore } from '@/store/project-store';
@@ -35,13 +35,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/utils';
+import { DOC_STATUS } from '@/lib/documents';
+import { DocumentControl } from '@/components/steps/document-control';
 
-const DOC_STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  IN_REVIEW: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  APPROVED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  PUBLISHED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-};
 
 
 const RISK_REGISTER_KEY = 'iso27001.p2s2.risk-register';
@@ -65,7 +61,7 @@ export default function StepDetailPage() {
   const orgId = params.orgId as string;
   const projectId = params.projectId as string;
   const stepId = params.stepId as string;
-  const { currentProject, phases, isLoading, selectProject, completeStep } = useProjectStore();
+  const { currentProject, phases, isLoading, selectProject, completeStep, reopenStep } = useProjectStore();
 
   const [isCompleting, setIsCompleting] = useState(false);
   const [completionData, setCompletionData] = useState<Record<string, unknown>>({});
@@ -155,7 +151,9 @@ export default function StepDetailPage() {
   // Phase 3 policies are generated from the SoA: "Create document" builds a draft instead of opening a wizard.
   const isPolicyStep = !!meta?.policy_key;
   const hasChecklist = CHECKLIST_STEPS.includes(step.key);
-  const finishBlocked = hasChecklist && !registerCompletion?.ready;
+  // A document step is finished once its document is approved into the library (clause 7.5).
+  const documentMissing = step.type === 'DOCUMENT' && !doc?._count?.versions;
+  const finishBlocked = (hasChecklist && !registerCompletion?.ready) || documentMissing;
   const isMandatory = meta?.mandatory ?? false;
 
   const saveCompletionData = async (updates: Record<string, unknown>, label: string) => {
@@ -192,10 +190,17 @@ export default function StepDetailPage() {
   };
 
   const handleSkipStep = async () => {
-    saveCompletionData({ proceed: false, skipped: true }, 'Skip answer');
     setIsCompleting(true);
-    try { await completeStep(step!.id); toast.success('Step skipped'); }
+    try { await completeStep(step!.id, true); toast.success('Step skipped'); }
     catch (err) { toast.error(getErrorMessage(err, 'Failed to skip step')); }
+    finally { setIsCompleting(false); }
+  };
+
+  const handleReopenStep = async () => {
+    if (!window.confirm('Reopen this step? Its work is kept; the step has to be finished again.')) return;
+    setIsCompleting(true);
+    try { await reopenStep(step!.id); toast.success('Step reopened'); }
+    catch (err) { toast.error(getErrorMessage(err, 'Failed to reopen the step')); }
     finally { setIsCompleting(false); }
   };
 
@@ -246,7 +251,16 @@ export default function StepDetailPage() {
             {step.type === 'REGISTER' ? <FileText className="h-6 w-6 shrink-0 text-primary" /> : step.type === 'DOCUMENT' ? <FileText className="h-6 w-6 shrink-0 text-primary" /> : <BookOpen className="h-6 w-6 shrink-0 text-primary" />}
             Step {step.order}: {step.title}
           </h1>
-          {isDone && <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 shrink-0 mt-1.5">Completed</Badge>}
+          {isDone && (
+            <div className="flex shrink-0 items-center gap-2 mt-1.5">
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                {completionData.skipped ? 'Skipped' : 'Completed'}{step.completed_at && ` on ${formatDay(step.completed_at)}`}
+              </Badge>
+              {myPrivilege === 'PROJECT_LEAD' && (
+                <Button size="sm" variant="outline" onClick={handleReopenStep} disabled={isCompleting}>Reopen</Button>
+              )}
+            </div>
+          )}
         </div>
         {step.purpose && <p className="text-muted-foreground text-sm mt-2 max-w-2xl">{step.purpose}</p>}
       </div>
@@ -314,20 +328,14 @@ export default function StepDetailPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {doc ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Status</span><Badge className={DOC_STATUS_COLORS[doc.status]}>{doc.status.charAt(0) + doc.status.slice(1).toLowerCase()}</Badge></div>
-                  <div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Version</span><span className="font-medium">{doc.version}</span></div>
-                  <div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Last Update</span><span>{new Date(doc.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>
-                  {doc.deadline && (<div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Deadline</span><span className="flex items-center gap-1"><CalendarCheck className="h-3.5 w-3.5" />{new Date(doc.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span></div>)}
-                  {doc.update_interval && (<div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Review Interval</span><span>{doc.update_interval} months</span></div>)}
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+                  <span className="flex items-center gap-2"><span className="text-muted-foreground">Status</span><Badge className={DOC_STATUS[doc.status].className}>{DOC_STATUS[doc.status].label}</Badge></span>
+                  <span><span className="text-muted-foreground">Library version </span><span className="font-medium">{doc._count?.versions ? doc.version : '—'}</span></span>
+                  <span><span className="text-muted-foreground">Last update </span>{formatDay(doc.updated_at)}</span>
+                  {doc.deadline && <span className="flex items-center gap-1"><span className="text-muted-foreground">Deadline </span><CalendarCheck className="h-3.5 w-3.5" />{formatDay(doc.deadline)}</span>}
                 </div>
-                <div className="space-y-3">
-                  {doc.owner && (<div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Owner</span><span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{doc.owner.first_name} {doc.owner.last_name}</span></div>)}
-                  {doc.reviewer && (<div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Reviewer</span><span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{doc.reviewer.first_name} {doc.reviewer.last_name}</span></div>)}
-                  {doc.approver && (<div className="flex items-center gap-3 text-sm"><span className="text-muted-foreground w-28">Approver</span><span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{doc.approver.first_name} {doc.approver.last_name}</span></div>)}
-                  {!doc.owner && !doc.reviewer && !doc.approver && (<p className="text-xs text-muted-foreground italic">No owner, reviewer or approver assigned yet.</p>)}
-                </div>
+                <DocumentControl key={doc.id + doc.updated_at} doc={doc} members={members} canEdit={canEditStep} onSaved={() => selectProject(projectId)} />
               </div>
             ) : (<p className="text-sm text-muted-foreground">No document created yet.</p>)}
             <div className="flex items-center gap-3 pt-2 border-t border-border/60">
@@ -395,7 +403,7 @@ export default function StepDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2"><UserPlus className="h-4 w-4" />People Assignment</CardTitle>
-              <CardDescription>Assign team members to work on, review, or approve this document.</CardDescription>
+              <CardDescription>Assign team members to work on or review this document. Approval is done by the document approver above.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {documentTasks.length > 0 && (
@@ -417,7 +425,7 @@ export default function StepDetailPage() {
                 <div className="rounded-lg border p-4 space-y-3">
                   <div className="flex items-center justify-between"><p className="text-sm font-medium">New assignment</p><button onClick={() => setShowAssignDialog(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button></div>
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div><label className="text-xs text-muted-foreground mb-1 block">Task</label><select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={assignType} onChange={(e) => setAssignType(e.target.value as TaskType)}><option value="WORK_ON_DOCUMENT">Work on document</option><option value="REVIEW_DOCUMENT">Review document</option><option value="APPROVE_DOCUMENT">Approve document</option></select></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Task</label><select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={assignType} onChange={(e) => setAssignType(e.target.value as TaskType)}><option value="WORK_ON_DOCUMENT">Work on document</option><option value="REVIEW_DOCUMENT">Review document</option></select></div>
                     <div><label className="text-xs text-muted-foreground mb-1 block">Assign to</label><select className="w-full rounded-md border bg-background px-3 py-2 text-sm" value={assignUserId} onChange={(e) => setAssignUserId(e.target.value)}><option value="">Select member...</option>{members.map((m) => (<option key={m.user_id} value={m.user_id}>{m.user.first_name} {m.user.last_name}{m.privilege === 'PROJECT_LEAD' ? ' (Lead)' : ''}</option>))}</select></div>
                     <div><label className="text-xs text-muted-foreground mb-1 block">Deadline</label><Input type="date" value={assignDeadline} onChange={(e) => setAssignDeadline(e.target.value)} /></div>
                   </div>
@@ -520,7 +528,9 @@ export default function StepDetailPage() {
               <div>
                 <p className="text-sm font-medium">Ready to complete this step?</p>
                 <p className="text-xs text-muted-foreground">
-                  {finishBlocked
+                  {documentMissing
+                    ? 'Submit the document to the library first (and have it approved if it has an approver).'
+                    : finishBlocked
                     ? 'Complete the items above first.'
                     : isRiskRegister
                       ? 'This marks the step as done and schedules the yearly review of risks.'

@@ -38,7 +38,7 @@ export const TASK_TYPE_COLORS: Record<TaskType, string> = {
 
 /** Tasks people assign by hand from a step; all others are managed from their register (same list as the server). */
 export const MANUAL_TASK_TYPES: TaskType[] = [
-  'WORK_ON_DOCUMENT', 'REVIEW_DOCUMENT', 'APPROVE_DOCUMENT', 'AWARENESS_TASK', 'TRAINING_TASK',
+  'WORK_ON_DOCUMENT', 'REVIEW_DOCUMENT', 'AWARENESS_TASK', 'TRAINING_TASK',
 ];
 
 /** Recurring maintenance activities without a step of their own. */

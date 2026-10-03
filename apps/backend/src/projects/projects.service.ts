@@ -128,11 +128,12 @@ const PHASE_1_STEPS = [
       'Understand what security awareness training should cover, how to deliver it, and what evidence to maintain for audit.',
     type: StepType.EDUCATIONAL,
     order: 8,
-    metadata_json: { clause: 'Clause 7.2.2' },
+    metadata_json: { clause: 'Clause 7.3 and control A.6.3' },
   },
 ];
 
 const RISK_REGISTER_STEP_KEY = 'iso27001.p2s2.risk-register';
+const REQUIREMENTS_STEP_KEY = 'iso27001.p1s5.legal-requirements';
 
 /** Phase 5: Conformio's maintenance module (certification cycle and recurring activities). */
 const PHASE_5_STEPS = [
@@ -259,6 +260,8 @@ const STEP_INCLUDE = {
       updated_at: true,
       deadline: true,
       update_interval: true,
+      code: true,
+      confidentiality: true,
       owner_id: true,
       reviewer_id: true,
       approver_id: true,
@@ -556,6 +559,7 @@ export class ProjectsService {
     stepId: string,
     userId: string,
     userRole: ProjectRole,
+    skip = false,
     ipAddress?: string,
     userAgent?: string,
   ) {
@@ -568,11 +572,30 @@ export class ProjectsService {
 
     const step = await this.prisma.projectStep.findUnique({
       where: { id: stepId },
-      include: { phase: { select: { project_id: true, name: true } } },
+      include: {
+        phase: { select: { project_id: true, name: true } },
+        document_instance: { select: { _count: { select: { versions: true } } } },
+        _count: { select: { requirements: true } },
+      },
     });
 
     if (!step || step.phase.project_id !== projectId) {
       throw new NotFoundException('Step not found');
+    }
+    if (step.status === StepStatus.COMPLETED) {
+      throw new BadRequestException('This step is already completed');
+    }
+
+    const meta = (step.metadata_json ?? {}) as { mandatory?: boolean };
+    if (skip) {
+      // Only suggested steps can be skipped; the decision is kept with the step.
+      if (meta.mandatory) throw new BadRequestException('This step is mandatory for ISO 27001 and cannot be skipped');
+      await this.mergeCompletionData(stepId, { proceed: false, skipped: true });
+    } else if (step.type === StepType.DOCUMENT && !step.document_instance?._count.versions) {
+      // Clause 7.5.2-7.5.3: the document must be approved and available, i.e. in the library.
+      throw new BadRequestException('Submit the document of this step to the library before finishing the step');
+    } else if (step.key === REQUIREMENTS_STEP_KEY && step._count.requirements === 0) {
+      throw new BadRequestException('Add at least one requirement of an interested party (clause 4.2) before finishing the step');
     }
 
     // The risk register is only complete when the risks are assessed, treated
@@ -636,6 +659,33 @@ export class ProjectsService {
     });
 
     return updated;
+  }
+
+  /**
+   * A completed step can be reopened by the project lead, for example when
+   * the scope changes. Its records stay as they are; it only has to be finished again.
+   */
+  async reopenStep(projectId: string, stepId: string, userId: string, ipAddress?: string, userAgent?: string) {
+    const step = await this.prisma.projectStep.findUnique({ where: { id: stepId }, include: { phase: { select: { project_id: true } } } });
+    if (!step || step.phase.project_id !== projectId) throw new NotFoundException('Step not found');
+    if (step.status !== StepStatus.COMPLETED) throw new BadRequestException('Only a completed step can be reopened');
+
+    const data = (step.completion_data ?? {}) as Record<string, unknown>;
+    const { skipped: _skipped, proceed: _proceed, ...rest } = data;
+    const reopened = await this.prisma.projectStep.update({
+      where: { id: stepId },
+      data: { status: StepStatus.NOT_STARTED, completed_at: null, completion_data: (data.skipped ? rest : data) as Prisma.InputJsonValue },
+    });
+    await this.auditLog.log({
+      userId,
+      action: AuditAction.STEP_COMPLETED,
+      entityType: 'project_step',
+      entityId: stepId,
+      details: { projectId, stepKey: step.key, stepTitle: step.title, action: 'reopened' },
+      ipAddress,
+      userAgent,
+    });
+    return reopened;
   }
 
   async addProjectMember(
@@ -821,35 +871,6 @@ export class ProjectsService {
     return this.prisma.projectStep.update({
       where: { id: stepId },
       data: { completion_data: completionData as Prisma.InputJsonValue },
-    });
-  }
-
-  async updateStepMetadata(
-    projectId: string,
-    stepId: string,
-    metadataJson: Record<string, unknown>,
-    userId: string,
-    userRole: ProjectRole,
-  ) {
-    if (
-      userRole !== ProjectRole.PROJECT_LEAD &&
-      userRole !== ProjectRole.PROJECT_AUDITOR
-    ) {
-      throw new ForbiddenException('Only leads and auditors can update step metadata');
-    }
-
-    const step = await this.prisma.projectStep.findUnique({
-      where: { id: stepId },
-      include: { phase: { select: { project_id: true } } },
-    });
-
-    if (!step || step.phase.project_id !== projectId) {
-      throw new NotFoundException('Step not found');
-    }
-
-    return this.prisma.projectStep.update({
-      where: { id: stepId },
-      data: { metadata_json: metadataJson as Prisma.InputJsonValue },
     });
   }
 

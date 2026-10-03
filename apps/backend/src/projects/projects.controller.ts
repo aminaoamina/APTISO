@@ -21,8 +21,8 @@ import {
   CreateProjectDto,
   UpdateProjectDto,
   UpdateStepCompletionDataDto,
-  UpdateStepMetadataDto,
   SendAwarenessDto,
+  CompleteStepDto,
   ConfirmTrainingDto,
 } from './dto/project.dto';
 import { ProjectInviteMemberDto, AssignIsoRolesDto } from '../organizations/dto/member.dto';
@@ -124,12 +124,27 @@ export class ProjectDetailController {
     @Param('stepId') stepId: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: CompleteStepDto,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
     return this.projectsService.completeStep(
-      projectId, stepId, userId, userRole, ipAddress, userAgent,
+      projectId, stepId, userId, userRole, dto.skip ?? false, ipAddress, userAgent,
     );
+  }
+
+  @Put(':projectId/steps/:stepId/reopen')
+  @ApiOperation({ summary: 'Reopen a completed step (project lead)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD)
+  async reopenStep(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.reopenStep(projectId, stepId, userId, ipAddress, userAgent);
   }
 
   @Post(':projectId/members')
@@ -228,21 +243,5 @@ export class ProjectDetailController {
     @Headers('user-agent') userAgent: string,
   ) {
     return this.projectsService.confirmTraining(projectId, stepId, dto, userId, userRole, ipAddress, userAgent);
-  }
-
-  @Patch(':projectId/steps/:stepId/metadata')
-  @ApiOperation({ summary: 'Update step metadata (clause, workload, deadline…)' })
-  @UseGuards(ProjectRoleGuard)
-  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_AUDITOR)
-  async updateStepMetadata(
-    @Param('projectId') projectId: string,
-    @Param('stepId') stepId: string,
-    @CurrentUser('id') userId: string,
-    @CurrentUser('projectRole') userRole: ProjectRole,
-    @Body() dto: UpdateStepMetadataDto,
-  ) {
-    return this.projectsService.updateStepMetadata(
-      projectId, stepId, dto.metadata_json ?? {}, userId, userRole,
-    );
   }
 }

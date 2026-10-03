@@ -681,38 +681,6 @@
 }
 
 /* ==========================================================================
-   SEARCH BAR — Glass search input
-   ========================================================================== */
-.search-glass {
-  flex: 1;
-  max-width: 420px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 16px;
-  border-radius: 14px;
-  background: rgba(var(--glass-bg), var(--glass-alpha));
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid rgba(var(--glass-border), var(--glass-border-alpha));
-}
-
-.search-glass input {
-  background: none;
-  border: none;
-  outline: none;
-  color: var(--foreground);
-  font-size: 14px;
-  width: 100%;
-  font-family: var(--font-body), 'Work Sans', sans-serif;
-}
-
-.search-glass input::placeholder {
-  color: var(--muted-foreground);
-  opacity: 0.6;
-}
-
-/* ==========================================================================
    EXISTING ANIMATION KEYFRAMES (kept for backwards compatibility)
    ========================================================================== */
 .animate-fade-in {

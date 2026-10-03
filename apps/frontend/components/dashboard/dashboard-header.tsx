@@ -1,6 +1,5 @@
 'use client';
 
-import { Search } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -30,16 +29,7 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="flex items-center justify-between gap-5 mb-7 fade-up" style={{ animationDelay: '0.05s' }}>
-      {/* Search bar */}
-      <div className="search-glass">
-        <Search
-          className="h-4 w-4 shrink-0"
-          style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}
-        />
-        <input placeholder="Search projects, controls, evidence..." />
-      </div>
-
+    <header className="flex items-center justify-end gap-5 mb-7 fade-up" style={{ animationDelay: '0.05s' }}>
       {/* Right side: theme, notifications, user */}
       <div className="flex items-center gap-3.5">
         <ThemeToggle glass />

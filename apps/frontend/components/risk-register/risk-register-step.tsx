@@ -796,7 +796,7 @@ export default function RiskRegisterStep({
       {showThreatsWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowThreatsWarning(false)} />
-          <div className="relative rounded-xl shadow-xl border w-full max-w-md p-6 space-y-4" style={{ backgroundColor: '#F4F1EA' }}>
+          <div className="relative rounded-xl bg-background shadow-xl border w-full max-w-md p-6 space-y-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
               <h2 className="text-lg font-semibold">Warning</h2>
@@ -819,7 +819,7 @@ export default function RiskRegisterStep({
       {showEvalWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowEvalWarning(false)} />
-          <div className="relative rounded-xl shadow-xl border w-full max-w-md p-6 space-y-4" style={{ backgroundColor: '#F4F1EA' }}>
+          <div className="relative rounded-xl bg-background shadow-xl border w-full max-w-md p-6 space-y-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
               <h2 className="text-lg font-semibold">Warning</h2>
@@ -839,7 +839,7 @@ export default function RiskRegisterStep({
       {showAssetsWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAssetsWarning(false)} />
-          <div className="relative rounded-xl shadow-xl border w-full max-w-md p-6 space-y-4" style={{ backgroundColor: '#F4F1EA' }}>
+          <div className="relative rounded-xl bg-background shadow-xl border w-full max-w-md p-6 space-y-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
               <h2 className="text-lg font-semibold">Warning</h2>
@@ -862,7 +862,7 @@ export default function RiskRegisterStep({
       {showVulnsWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowVulnsWarning(false)} />
-          <div className="relative rounded-xl shadow-xl border w-full max-w-md p-6 space-y-4" style={{ backgroundColor: '#F4F1EA' }}>
+          <div className="relative rounded-xl bg-background shadow-xl border w-full max-w-md p-6 space-y-4">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600" />
               <h2 className="text-lg font-semibold">Warning</h2>
@@ -885,12 +885,12 @@ export default function RiskRegisterStep({
       {addVulnFor && !showNewVuln && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setAddVulnFor(null)} />
-          <div className="relative rounded-xl shadow-xl border w-full max-w-lg p-6 space-y-4 max-h-[80vh] flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [scrollbar-width:thin] [scrollbar-color:#9ca3af_#f3f4f6]" style={{ backgroundColor: '#FFFFFF' }}>
+          <div className="relative rounded-xl bg-background shadow-xl border w-full max-w-lg p-6 space-y-4 max-h-[80vh] flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [scrollbar-width:thin] [scrollbar-color:#9ca3af_transparent]">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Add a vulnerability</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  To add a vulnerability to the asset <span className="font-medium text-gray-900">{addVulnFor}</span>, please select one from the list below, or create a new vulnerability.
+                <h2 className="text-lg font-semibold text-foreground">Add a vulnerability</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  To add a vulnerability to the asset <span className="font-medium text-foreground">{addVulnFor}</span>, please select one from the list below, or create a new vulnerability.
                 </p>
               </div>
               <button onClick={() => setAddVulnFor(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
@@ -899,12 +899,12 @@ export default function RiskRegisterStep({
               placeholder="Search for Vulnerabilities"
               value={vulnSearch}
               onChange={(e) => setVulnSearch(e.target.value)}
-              className="bg-white text-gray-900 border-gray-300 placeholder:text-gray-400"
+              className="bg-background text-foreground border-input placeholder:text-muted-foreground"
             />
-            <p className="text-xs font-medium text-gray-600">
+            <p className="text-xs font-medium text-muted-foreground">
               {(selectedVulnsByAsset[addVulnFor]?.size ?? 0)} selected for this asset
             </p>
-            <div className="overflow-y-auto border rounded-lg bg-white [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-gray-400 [&::-webkit-scrollbar-track]:bg-gray-100 [scrollbar-width:thin] [scrollbar-color:#9ca3af_#f3f4f6]">
+            <div className="overflow-y-auto border rounded-lg bg-background [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-muted-foreground/50 [&::-webkit-scrollbar-track]:bg-transparent [scrollbar-width:thin] [scrollbar-color:#9ca3af_transparent]">
               {filteredGlobalVulns.map((v) => {
                 const selected = selectedVulnsByAsset[addVulnFor]?.has(v.name) ?? false;
                 return (
@@ -918,7 +918,7 @@ export default function RiskRegisterStep({
                         return { ...prev, [addVulnFor]: set };
                       });
                     }}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 ${selected ? 'font-medium text-[var(--brand-orange)]' : 'text-gray-900'}`}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent ${selected ? 'font-medium text-[var(--brand-orange)]' : 'text-foreground'}`}
                   >
                     {selected ? <Check className="h-4 w-4 shrink-0 text-[var(--brand-orange)]" /> : <span className="h-4 w-4 shrink-0" />}
                     <span>{v.name}</span>
@@ -929,7 +929,7 @@ export default function RiskRegisterStep({
                 );
               })}
               {filteredGlobalVulns.length === 0 && (
-                <p className="px-3 py-2 text-sm text-gray-600">No vulnerabilities match your search.</p>
+                <p className="px-3 py-2 text-sm text-muted-foreground">No vulnerabilities match your search.</p>
               )}
             </div>
             <button
@@ -960,31 +960,31 @@ export default function RiskRegisterStep({
       {addVulnFor && showNewVuln && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowNewVuln(false)} />
-          <div className="relative rounded-xl shadow-xl border w-full max-w-lg p-6 space-y-4 max-h-[80vh] flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [scrollbar-width:thin] [scrollbar-color:#9ca3af_#f3f4f6]" style={{ backgroundColor: '#FFFFFF' }}>
+          <div className="relative rounded-xl bg-background shadow-xl border w-full max-w-lg p-6 space-y-4 max-h-[80vh] flex flex-col overflow-y-auto [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [scrollbar-width:thin] [scrollbar-color:#9ca3af_transparent]">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">New vulnerability</h2>
+              <h2 className="text-lg font-semibold text-foreground">New vulnerability</h2>
               <button onClick={() => setShowNewVuln(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
             </div>
 
             {newVulnStep === 0 && (
               <>
-                <p className="text-sm font-semibold text-gray-900">Step 1: Vulnerability Data</p>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm font-semibold text-foreground">Step 1: Vulnerability Data</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   To create a new vulnerability, please specify its name (it needs to be related to the category displayed below).
                 </p>
                 <div>
-                  <Label className="text-gray-900">Vulnerability name *</Label>
+                  <Label className="text-foreground">Vulnerability name *</Label>
                   <Input
-                    className="mt-1 bg-white text-gray-900 border-gray-300 placeholder:text-gray-400"
+                    className="mt-1 bg-background text-foreground border-input placeholder:text-muted-foreground"
                     placeholder="Please specify..."
                     value={newVulnFormName}
                     onChange={(e) => setNewVulnFormName(e.target.value)}
                   />
                 </div>
                 <div>
-                  <Label className="text-gray-900">Category</Label>
+                  <Label className="text-foreground">Category</Label>
                   <NativeSelect
-                    className="mt-1 bg-white text-gray-900"
+                    className="mt-1 bg-background text-foreground"
                     value={newVulnFormCategory}
                     onChange={(e) => setNewVulnFormCategory(e.target.value)}
                   >
@@ -1003,17 +1003,17 @@ export default function RiskRegisterStep({
 
             {newVulnStep === 1 && (
               <>
-                <p className="text-sm font-semibold text-gray-900">Step 2: Applicable Controls</p>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm font-semibold text-foreground">Step 2: Applicable Controls</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   Select at least one control that you consider applicable to this new vulnerability.
                 </p>
                 <Input
                   placeholder="Search for controls..."
                   value={newVulnControlSearch}
                   onChange={(e) => setNewVulnControlSearch(e.target.value)}
-                  className="bg-white text-gray-900 border-gray-300 placeholder:text-gray-400"
+                  className="bg-background text-foreground border-input placeholder:text-muted-foreground"
                 />
-                <div className="overflow-y-auto border rounded-lg bg-white [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-gray-400 [&::-webkit-scrollbar-track]:bg-gray-100 [scrollbar-width:thin] [scrollbar-color:#9ca3af_#f3f4f6]">
+                <div className="overflow-y-auto border rounded-lg bg-background [&::-webkit-scrollbar]:w-2.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/30 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-muted-foreground/50 [&::-webkit-scrollbar-track]:bg-transparent [scrollbar-width:thin] [scrollbar-color:#9ca3af_transparent]">
                   {seed.controls
                     .filter((c) => !newVulnControlSearch.trim() || c.title.toLowerCase().includes(newVulnControlSearch.trim().toLowerCase()))
                     .map((c) => {
@@ -1029,7 +1029,7 @@ export default function RiskRegisterStep({
                               return next;
                             });
                           }}
-                          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-100 ${selected ? 'font-medium text-[var(--brand-orange)]' : 'text-gray-900'}`}
+                          className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-accent ${selected ? 'font-medium text-[var(--brand-orange)]' : 'text-foreground'}`}
                         >
                           {selected ? <Check className="h-4 w-4 shrink-0 text-[var(--brand-orange)]" /> : <span className="h-4 w-4 shrink-0" />}
                           <span>{c.title}</span>

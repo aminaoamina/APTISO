@@ -127,7 +127,7 @@ export default function LibraryPage() {
                                 )}
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">
-                                Published {formatDate(latest.published_at)} by {person(latest.publisher ?? null)} · Owner {person(doc.owner)} · Approver {person(doc.approver)}
+                                Approved {formatDate(latest.published_at)} by {person(latest.approver ?? latest.publisher ?? null)} · Owner {person(doc.owner)}
                               </p>
                               {doc.versions.length > 1 && (
                                 <button

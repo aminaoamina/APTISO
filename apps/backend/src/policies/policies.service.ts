@@ -16,7 +16,6 @@ import {
   italic,
   paragraph,
   placeholder,
-  table,
   text,
 } from '../documents/templates/doc-control.template';
 import { STATUS_LABELS, compareControlCodes } from '../soa/soa.service';
@@ -229,23 +228,7 @@ export class PoliciesService implements OnModuleInit {
     controls: Awaited<ReturnType<PoliciesService['getControlDetails']>>,
     orgName: string,
   ): ProseMirrorNode {
-    const date = new Date();
-    const ds = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
     const content: ProseMirrorNode[] = [
-      heading(1, policy.title),
-      table([
-        [[text('Organization')], [text(orgName)]],
-        [[text('Document code')], [placeholder('document code')]],
-        [[text('Version')], [text('0.1')]],
-        [[text('Date of version')], [text(ds)]],
-        [[text('Created by')], [placeholder('author')]],
-        [[text('Approved by')], [placeholder('approver')]],
-        [[text('Confidentiality level')], [text('Internal')]],
-      ]),
-      paragraph(italic(text(
-        'Draft generated from the Statement of Applicability. Review and complete every section — in particular the text in brackets — before submitting it for approval.',
-      ))),
-
       heading(2, '1. Purpose, scope and users'),
       paragraph(text(`The purpose of this document is to ${policy.purpose.charAt(0).toLowerCase()}${policy.purpose.slice(1)}`)),
       paragraph(text(`This document applies to the entire scope of the Information Security Management System (ISMS) of ${orgName}.`)),
@@ -329,15 +312,6 @@ export class PoliciesService implements OnModuleInit {
     const fillOrg = (t: string) => t.split('{org}').join(orgName);
 
     const content: ProseMirrorNode[] = [
-      heading(1, procedure.title),
-      table([
-        [[text('Organization')], [text(orgName)]],
-        [[text('Document code')], [placeholder('document code')]],
-        [[text('Version')], [text('0.1')]],
-        [[text('Created by')], [placeholder('author')]],
-        [[text('Approved by')], [placeholder('approver')]],
-        [[text('Confidentiality level')], [text('Internal')]],
-      ]),
       heading(2, '1. Purpose, scope and users'),
       paragraph(text(`The purpose of this procedure is to ${procedure.purpose}.`)),
       paragraph(text(`This procedure applies to the entire scope of the Information Security Management System (ISMS) of ${orgName}. Users of this document are all employees, and in particular top management and the persons responsible for the ISMS.`)),

@@ -321,7 +321,7 @@ export default function RequirementsStep({
       {isDialogOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsDialogOpen(false)} />
-          <div className="relative rounded-xl shadow-xl border w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4" style={{ backgroundColor: '#F4F1EA' }}>
+          <div className="relative rounded-xl bg-background shadow-xl border w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">{editingId ? 'Edit Requirement' : 'New Requirement'}</h2>
               <button onClick={() => setIsDialogOpen(false)} className="text-muted-foreground hover:text-foreground text-lg">&times;</button>
@@ -374,7 +374,6 @@ export default function RequirementsStep({
               <Label>Responsible person *</Label>
               <NativeSelect
                 value={form.responsible_person_id}
-                placeholder="Select user"
                 onChange={(e) => setField('responsible_person_id', e.target.value)}
               >
                 <option value="">Select user…</option>
@@ -391,7 +390,6 @@ export default function RequirementsStep({
               <Label>To what area is this requirement related? *</Label>
               <NativeSelect
                 value={form.related_area}
-                placeholder="Select related documents"
                 onChange={(e) => setField('related_area', e.target.value)}
               >
                 <option value="">Select area…</option>

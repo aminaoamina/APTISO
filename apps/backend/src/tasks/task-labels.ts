@@ -26,7 +26,6 @@ export const TASK_TYPE_LABELS: Record<TaskType, string> = {
 export const MANUAL_TASK_TYPES: TaskType[] = [
   TaskType.WORK_ON_DOCUMENT,
   TaskType.REVIEW_DOCUMENT,
-  TaskType.APPROVE_DOCUMENT,
   TaskType.AWARENESS_TASK,
   TaskType.TRAINING_TASK,
 ];

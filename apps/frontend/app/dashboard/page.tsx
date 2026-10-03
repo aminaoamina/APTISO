@@ -1,109 +1,49 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Building2,
-  FolderOpen,
-  Users,
-  ShieldCheck,
-  Check,
-  Clock,
-  Plus,
-  Download,
-  ArrowRight,
-} from 'lucide-react';
+import { AlertTriangle, ArrowRight, Building2, CalendarClock, FolderOpen, Inbox, ListTodo, Plus } from 'lucide-react';
+import { ComplianceProject, projectsApi } from '@/lib/api';
+import { notificationHref, notificationMessage, notificationContext, timeAgo } from '@/lib/notifications';
+import { TASK_TYPE_COLORS, TASK_TYPE_LABELS, formatDay, isOpen, isOverdue, taskHref, taskSubject } from '@/lib/tasks';
 import { useAuthStore } from '@/store/auth-store';
+import { useInboxStore } from '@/store/inbox-store';
 import { useOrgStore } from '@/store/org-store';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
+type ProjectWithOrg = ComplianceProject & { orgName: string };
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/** Personal dashboard: everything shown comes from the user's own projects, tasks and notifications. */
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { organizations, loadOrganizations } = useOrgStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const { myTasks, awaitingRequests, notifications, loaded: inboxLoaded } = useInboxStore();
+  const [projects, setProjects] = useState<ProjectWithOrg[] | null>(null);
+
+  useEffect(() => { void loadOrganizations(); }, [loadOrganizations]);
 
   useEffect(() => {
-    loadOrganizations().finally(() => setIsLoading(false));
-  }, [loadOrganizations]);
+    let cancelled = false;
+    void Promise.all(organizations.map(async (org) =>
+      (await projectsApi.list(org.id).catch(() => [])).map((p) => ({ ...p, orgName: org.name })),
+    )).then((lists) => { if (!cancelled) setProjects(lists.flat()); });
+    return () => { cancelled = true; };
+  }, [organizations]);
 
-  const totalProjects = organizations.reduce(
-    (acc, org) => acc + (org._count?.projects || 0),
-    0
-  );
-  const totalMembers = organizations.reduce(
-    (acc, org) => acc + (org._count?.members || 0),
-    0
-  );
+  const openTasks = useMemo(() => myTasks.filter(isOpen), [myTasks]);
+  const overdue = openTasks.filter(isOverdue).length;
+  const nextTasks = openTasks.slice(0, 5); // already sorted by deadline
+  const upcoming = openTasks.filter((t) => t.deadline && new Date(t.deadline).getTime() < Date.now() + 30 * DAY);
 
-  const stats = [
-    {
-      icon: Building2,
-      value: organizations.length,
-      label: 'Organization',
-      iconBg: 'rgba(255, 145, 0, 0.15)',
-      iconColor: 'var(--brand-orange)',
-    },
-    {
-      icon: FolderOpen,
-      value: totalProjects,
-      label: 'Active project',
-      iconBg: 'rgba(52, 211, 153, 0.15)',
-      iconColor: 'var(--success)',
-    },
-    {
-      icon: Users,
-      value: totalMembers,
-      label: 'Team members',
-      iconBg: 'rgba(245, 158, 11, 0.15)',
-      iconColor: 'var(--warning)',
-    },
-    {
-      icon: ShieldCheck,
-      value: '3',
-      suffix: '/12',
-      label: 'Controls implemented',
-      iconBg: 'rgba(251, 113, 133, 0.15)',
-      iconColor: 'var(--danger)',
-    },
-  ];
-
-  const activityItems = [
-    {
-      text: 'Access control policy approved',
-      user: user?.first_name ? `${user.first_name} ${user.last_name}` : 'User',
-      time: '2 hours ago',
-      badge: 'Approved',
-      badgeClass: 'badge-success',
-      avatarBg: 'linear-gradient(135deg, #34D399, #059669)',
-      avatarIcon: Check,
-    },
-    {
-      text: 'Vendor risk assessment submitted',
-      user: 'Team member',
-      time: 'Yesterday',
-      badge: 'Pending review',
-      badgeClass: 'badge-warning',
-      avatarBg: 'linear-gradient(135deg, #F5A623, #D97706)',
-      avatarIcon: Clock,
-    },
-    {
-      text: 'New control added: Encryption at rest',
-      user: user?.first_name ? `${user.first_name} ${user.last_name}` : 'User',
-      time: '2 days ago',
-      badge: 'New',
-      badgeClass: 'badge-info',
-      avatarBg: 'linear-gradient(135deg, var(--brand-orange), #FFB347)',
-      avatarIcon: Plus,
-    },
-  ];
-
-  if (isLoading) {
+  if (!projects || !inboxLoaded) {
     return (
       <div className="flex items-center justify-center" style={{ minHeight: '400px' }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: 'var(--brand-orange)', borderTopColor: 'transparent' }} />
-          <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>Loading dashboard...</p>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2" style={{ borderColor: 'var(--brand-orange)', borderTopColor: 'transparent' }} />
       </div>
     );
   }
@@ -112,20 +52,12 @@ export default function DashboardPage() {
     return (
       <div className="flex min-h-[calc(100vh-180px)] items-center justify-center">
         <div className="glass fade-up w-full max-w-xl p-10 text-center">
-          <Building2
-            className="mx-auto mb-5 h-16 w-16"
-            style={{ color: 'var(--brand-orange)', opacity: 0.55 }}
-          />
-          <h1 className="font-display mb-2 text-2xl font-semibold">
-            Create your first organization
-          </h1>
+          <Building2 className="mx-auto mb-5 h-16 w-16" style={{ color: 'var(--brand-orange)', opacity: 0.55 }} />
+          <h1 className="font-display mb-2 text-2xl font-semibold">Create your first organization</h1>
           <p className="mx-auto mb-6 max-w-md text-sm text-dim">
             Organizations are your secure workspaces. Create one or accept an invitation before starting a project.
           </p>
-          <button
-            className="btn-accent"
-            onClick={() => router.push('/dashboard/organizations?create=true')}
-          >
+          <button className="btn-accent" onClick={() => router.push('/dashboard/organizations?create=true')}>
             <Plus className="h-4 w-4" />
             Create organization
           </button>
@@ -134,269 +66,143 @@ export default function DashboardPage() {
     );
   }
 
+  const stats = [
+    { icon: FolderOpen, value: projects.length, label: projects.length === 1 ? 'Project' : 'Projects', color: 'var(--success)', href: null },
+    { icon: ListTodo, value: openTasks.length, label: 'Tasks to do', color: 'var(--brand-orange)', href: '/dashboard/tasks' },
+    { icon: AlertTriangle, value: overdue, label: 'Overdue tasks', color: overdue ? 'var(--danger)' : 'var(--muted-foreground)', href: '/dashboard/tasks' },
+    { icon: Inbox, value: awaitingRequests.length, label: 'Requests to decide', color: 'var(--warning)', href: null },
+  ];
+
   return (
     <div>
-      {/* Welcome header */}
       <div className="fade-up mb-7" style={{ animationDelay: '0.1s' }}>
-        <h1 className="font-display text-[26px] font-bold mb-1">
-          Welcome back, {user?.first_name || 'there'} <span role="img" aria-label="wave">&#128075;</span>
-        </h1>
+        <h1 className="font-display text-[26px] font-bold mb-1">Welcome back, {user?.first_name || 'there'}</h1>
         <p className="text-[14.5px]" style={{ color: 'var(--muted-foreground)' }}>
-          Here&apos;s where your ISO 27001 program stands today.
+          Where your ISO 27001 projects stand and what needs your attention.
         </p>
       </div>
 
-      {/* Stat cards — 4 column grid */}
-      <div
-        className="grid gap-[18px] mb-5"
-        style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}
-      >
+      <div className="grid gap-[18px] mb-5 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
-          return (
-            <div
-              key={stat.label}
-              className="glass glass-hover fade-up"
-              style={{ animationDelay: `${0.15 + i * 0.05}s`, padding: 20 }}
-            >
-              <div
-                className="stat-icon"
-                style={{ background: stat.iconBg }}
-              >
-                <Icon className="h-[18px] w-[18px]" style={{ color: stat.iconColor }} />
+          const body = (
+            <>
+              <div className="stat-icon" style={{ background: 'color-mix(in srgb, currentColor 12%, transparent)', color: stat.color }}>
+                <Icon className="h-[18px] w-[18px]" />
               </div>
-              <div className="font-mono-numeric text-[26px] font-semibold">
-                {stat.value}
-                {stat.suffix && (
-                  <span className="text-[15px] font-normal" style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}>
-                    {stat.suffix}
-                  </span>
-                )}
-              </div>
-              <div className="text-[13px]" style={{ color: 'var(--muted-foreground)' }}>
-                {stat.label}
-              </div>
-            </div>
+              <div className="font-mono-numeric text-[26px] font-semibold">{stat.value}</div>
+              <div className="text-[13px]" style={{ color: 'var(--muted-foreground)' }}>{stat.label}</div>
+            </>
           );
+          const props = { className: 'glass glass-hover fade-up block', style: { animationDelay: `${0.15 + i * 0.05}s`, padding: 20 } };
+          return stat.href ? <Link key={stat.label} href={stat.href} {...props}>{body}</Link> : <div key={stat.label} {...props}>{body}</div>;
         })}
       </div>
 
-      {/* Main content grid — 1.5fr 1fr */}
-      <div
-        className="grid gap-5"
-        style={{ gridTemplateColumns: '1.5fr 1fr', alignItems: 'start' }}
-      >
-        {/* LEFT COLUMN */}
+      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] items-start">
         <div className="flex flex-col gap-5">
-          {/* Evidence chart */}
-          <div className="glass glass-hover fade-up" style={{ animationDelay: '0.35s', padding: 24 }}>
-            <div className="flex items-center justify-between mb-[18px]">
-              <div>
-                <div className="font-display text-[16px] font-semibold">Evidence collected</div>
-                <div className="text-[12.5px]" style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}>Last 14 days</div>
-              </div>
-              <button
-                className="btn-accent text-[13px]"
-                style={{
-                  background: 'rgba(255, 145, 0, 0.12)',
-                  color: 'var(--brand-orange)',
-                  boxShadow: 'none',
-                }}
-              >
-                <Download className="h-3.5 w-3.5" />
-                Export
-              </button>
-            </div>
-            <EvidenceChart />
-          </div>
-
-          {/* Recent activity */}
-          <div className="glass glass-hover fade-up" style={{ animationDelay: '0.4s', padding: 24 }}>
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="font-display text-[16px] font-semibold">Recent activity</div>
-              <button
-                className="text-[13px] font-semibold cursor-pointer"
-                style={{ color: 'var(--brand-orange)', background: 'none', border: 'none' }}
-              >
-                Show all &rarr;
-              </button>
-            </div>
-
-            {activityItems.map((item, i) => {
-              const AvatarIcon = item.avatarIcon;
+          <Panel title="My projects" delay={0.35}>
+            {projects.length === 0 ? (
+              <p className="text-sm text-dim">No project yet. Open an organization to start an ISO 27001 project.</p>
+            ) : projects.map((p) => {
+              const inProgress = (p.phases ?? []).filter((ph) => ph.progress === 'IN_PROGRESS');
               return (
-                <div key={i} className="activity-row">
-                  <div
-                    className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center shrink-0"
-                    style={{ background: item.avatarBg }}
-                  >
-                    <AvatarIcon className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13.5px] font-medium">{item.text}</div>
-                    <div className="text-[11.5px]" style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}>
-                      {item.user} &middot; {item.time}
+                <Link key={p.id} href={`/dashboard/organizations/${p.organization_id}/projects/${p.id}`} className="activity-row block">
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[13.5px] font-medium truncate">{p.name}</span>
+                      <span className="font-mono-numeric text-[13px] shrink-0">{p.progress?.percent ?? 0}%</span>
+                    </div>
+                    <Progress value={p.progress?.percent ?? 0} className="h-1.5" />
+                    <div className="text-[11.5px] text-dim">
+                      {p.orgName} · {p.progress?.completed_steps ?? 0} of {p.progress?.total_steps ?? 0} steps completed
+                      {inProgress.length > 0 && ` · in progress: ${inProgress.map((ph) => `Phase ${ph.order}`).join(', ')}`}
                     </div>
                   </div>
-                  <span className={`badge-glass ${item.badgeClass}`}>{item.badge}</span>
-                </div>
+                </Link>
               );
             })}
-          </div>
+          </Panel>
+
+          <Panel title="Recent activity" delay={0.4}>
+            {notifications.length === 0 ? (
+              <p className="text-sm text-dim">Nothing yet. Assignments, completed tasks and decisions appear here.</p>
+            ) : notifications.slice(0, 6).map((n) => {
+              const href = notificationHref(n);
+              const body = (
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13.5px]">{notificationMessage(n)}</div>
+                  <div className="text-[11.5px] text-dim">{notificationContext(n)} · {timeAgo(n.created_at)}</div>
+                </div>
+              );
+              return href
+                ? <Link key={n.id} href={href} className="activity-row">{body}</Link>
+                : <div key={n.id} className="activity-row">{body}</div>;
+            })}
+          </Panel>
         </div>
 
-        {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-5">
-          {/* Compliance score ring */}
-          <div className="glass glass-hover fade-up" style={{ animationDelay: '0.35s', padding: 26, textAlign: 'center' }}>
-            <div className="text-[13px] mb-3.5" style={{ color: 'var(--muted-foreground)' }}>Compliance score</div>
-            <svg width="150" height="150" viewBox="0 0 150 150" className="mx-auto">
-              {/* Background ring */}
-              <circle
-                cx="75" cy="75" r="62"
-                fill="none"
-                stroke="rgba(148,163,184,0.15)"
-                strokeWidth="12"
-              />
-              {/* Score ring with gradient */}
-              <circle
-                cx="75" cy="75" r="62"
-                fill="none"
-                stroke="url(#scoreGradient)"
-                strokeWidth="12"
-                strokeLinecap="round"
-                strokeDasharray="389.6"
-                strokeDashoffset="120"
-                className="score-ring"
-                style={{ transform: 'rotate(-90deg)', transformOrigin: '75px 75px' }}
-              />
-              <defs>
-                <linearGradient id="scoreGradient" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#34D399" />
-                  <stop offset="100%" stopColor="var(--brand-orange)" />
-                </linearGradient>
-              </defs>
-              <text x="75" y="70" textAnchor="middle" className="font-mono-numeric" style={{ fontSize: 28, fontWeight: 600, fill: 'var(--foreground)' }}>
-                69%
-              </text>
-              <text x="75" y="90" textAnchor="middle" style={{ fontSize: 11, fill: 'var(--muted-foreground)', fontFamily: 'var(--font-body)' }}>
-                on track
-              </text>
-            </svg>
-            <div className="flex justify-between mt-3.5 text-[11.5px] font-mono-numeric" style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}>
-              <span>25 controls</span>
-              <span>4 gaps</span>
-            </div>
-          </div>
+          <Panel title="My next tasks" delay={0.35} action={{ label: 'All tasks', href: '/dashboard/tasks' }}>
+            {nextTasks.length === 0 ? (
+              <p className="text-sm text-dim">Nothing to do right now.</p>
+            ) : nextTasks.map((t) => (
+              <Link key={t.id} href={taskHref(t)} className="activity-row">
+                <div className="flex-1 min-w-0 space-y-1">
+                  <Badge className={TASK_TYPE_COLORS[t.type]}>{TASK_TYPE_LABELS[t.type]}</Badge>
+                  <div className="text-[13px] truncate">{taskSubject(t)}</div>
+                  {t.deadline && (
+                    <div className={`text-[11.5px] ${isOverdue(t) ? 'font-semibold text-red-600 dark:text-red-400' : 'text-dim'}`}>
+                      {isOverdue(t) ? 'Overdue since' : 'Due'} {formatDay(t.deadline)}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </Panel>
 
-          {/* Upcoming audits */}
-          <div className="glass glass-hover fade-up" style={{ animationDelay: '0.4s', padding: 22 }}>
-            <div className="font-display text-[15px] font-semibold mb-3.5">Upcoming audits</div>
-
-            <div className="flex gap-3 items-center mb-3.5">
-              <div
-                className="w-[42px] h-[42px] rounded-[10px] flex flex-col items-center justify-center shrink-0"
-                style={{ background: 'rgba(251, 113, 133, 0.12)' }}
-              >
-                <div className="font-mono-numeric text-[14px] font-bold leading-none" style={{ color: 'var(--danger)' }}>14</div>
-                <div className="text-[9px]" style={{ color: 'var(--danger)' }}>SEP</div>
-              </div>
-              <div>
-                <div className="text-[13.5px] font-medium">Internal audit &mdash; Access mgmt</div>
-                <div className="text-[11.5px]" style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}>Lead: {user?.first_name || 'TBD'}</div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 items-center">
-              <div
-                className="w-[42px] h-[42px] rounded-[10px] flex flex-col items-center justify-center shrink-0"
-                style={{ background: 'rgba(255, 145, 0, 0.12)' }}
-              >
-                <div className="font-mono-numeric text-[14px] font-bold leading-none" style={{ color: 'var(--brand-orange)' }}>02</div>
-                <div className="text-[9px]" style={{ color: 'var(--brand-orange)' }}>OCT</div>
-              </div>
-              <div>
-                <div className="text-[13.5px] font-medium">External certification review</div>
-                <div className="text-[11.5px]" style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}>Lead: External auditor</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Gaps CTA */}
-          <div
-            className="glass glass-hover fade-up"
-            style={{
-              animationDelay: '0.45s',
-              padding: 22,
-              overflow: 'hidden',
-              position: 'relative',
-            }}
-          >
-            {/* Background glow */}
-            <div
-              style={{
-                position: 'absolute',
-                top: -30,
-                right: -30,
-                width: 110,
-                height: 110,
-                borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255, 145, 0, 0.35), transparent 70%)',
-              }}
-            />
-            <div className="font-display text-[15px] font-semibold mb-1.5 relative">
-              4 gaps need attention
-            </div>
-            <div className="text-[12.5px] mb-4 relative" style={{ color: 'var(--muted-foreground)', opacity: 0.6 }}>
-              Close them before your next audit window opens.
-            </div>
-            <button className="btn-accent relative">
-              Review gaps
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          <Panel title="Deadlines in the next 30 days" delay={0.4}>
+            {upcoming.length === 0 ? (
+              <p className="text-sm text-dim">No deadline in the next 30 days.</p>
+            ) : upcoming.map((t) => {
+              const d = new Date(t.deadline!);
+              return (
+                <Link key={t.id} href={taskHref(t)} className="activity-row">
+                  <div className="w-11 shrink-0 text-center">
+                    <div className="font-mono-numeric text-[18px] font-semibold leading-none">{d.getDate()}</div>
+                    <div className="text-[10.5px] uppercase text-dim">{d.toLocaleDateString('en-GB', { month: 'short' })}</div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] truncate">{TASK_TYPE_LABELS[t.type]}: {taskSubject(t)}</div>
+                    <div className="text-[11.5px] text-dim flex items-center gap-1"><CalendarClock className="h-3 w-3" />{t.project.name}</div>
+                  </div>
+                </Link>
+              );
+            })}
+          </Panel>
         </div>
       </div>
-
     </div>
   );
 }
 
-/* ---- Simple SVG bar chart (stand-in for recharts) ---- */
-function EvidenceChart() {
-  const values = [1200, 1900, 2600, 1500, 2100, 1300, 1894, 1700, 2000, 1600, 2300, 1450, 1950, 2200];
-  const chartW = 560;
-  const chartH = 150;
-  const gap = 6;
-  const barW = (chartW / values.length) - gap;
-  const max = Math.max(...values);
-
+function Panel({ title, delay, action, children }: {
+  title: string;
+  delay: number;
+  action?: { label: string; href: string };
+  children: React.ReactNode;
+}) {
   return (
-    <svg viewBox="0 0 560 180" width="100%" height="170">
-      <defs>
-        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--brand-orange)" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="var(--brand-orange)" stopOpacity="0.35" />
-        </linearGradient>
-      </defs>
-      {values.map((v, i) => {
-        const h = (v / max) * chartH;
-        const x = i * (barW + gap);
-        const y = chartH - h;
-        return (
-          <rect
-            key={i}
-            x={x}
-            y={y}
-            width={barW}
-            height={h}
-            rx={4}
-            fill={i === 6 ? 'var(--brand-orange)' : 'url(#barGrad)'}
-            className="fade-up"
-            style={{ animationDelay: `${0.4 + i * 0.04}s` }}
-          />
-        );
-      })}
-    </svg>
+    <div className="glass fade-up" style={{ animationDelay: `${delay}s`, padding: 24 }}>
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="font-display text-[16px] font-semibold">{title}</div>
+        {action && (
+          <Link href={action.href} className="text-[13px] font-semibold flex items-center gap-1" style={{ color: 'var(--brand-orange)' }}>
+            {action.label}<ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        )}
+      </div>
+      {children}
+    </div>
   );
 }

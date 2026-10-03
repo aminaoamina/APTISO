@@ -14,6 +14,7 @@ import {
   ArrayMaxSize,
   ValidateNested,
   IsUrl,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProjectStatus } from '@prisma/client';
@@ -89,11 +90,12 @@ export class UpdateStepCompletionDataDto {
   completion_data!: Record<string, unknown>;
 }
 
-export class UpdateStepMetadataDto {
-  @ApiPropertyOptional({ description: 'Step metadata — clause, workload, deadline, etc.' })
+
+export class CompleteStepDto {
+  @ApiPropertyOptional({ description: 'Skip an optional step instead of completing it' })
   @IsOptional()
-  @IsObject()
-  metadata_json?: Record<string, unknown>;
+  @IsBoolean()
+  skip?: boolean;
 }
 
 export class AwarenessMaterialDto {

@@ -167,6 +167,8 @@ model User {
   doc_reviewer                       DocumentInstance[]        @relation("DocReviewer")
   doc_approver                       DocumentInstance[]        @relation("DocApprover")
   doc_versions_published            DocumentVersion[]         @relation("DocVersionPublisher")
+  doc_versions_approved             DocumentVersion[]         @relation("DocVersionApprover")
+  doc_reviews_requested             DocumentInstance[]        @relation("DocReviewRequester")
   tasks_assigned_to                  TaskAssignment[]          @relation("TasksAssignedTo")
   tasks_assigned_by                  TaskAssignment[]          @relation("TasksAssignedBy")
   requirements_responsible           Requirement[]
@@ -532,10 +534,10 @@ enum TemplateInputType {
   DATE
 }
 
+/// DRAFT: being written; IN_REVIEW: waiting for the approver; PUBLISHED: the current content is in the library.
 enum DocumentStatus {
   DRAFT
   IN_REVIEW
-  APPROVED
   PUBLISHED
 }
 
@@ -641,6 +643,9 @@ model DocumentInstance {
   template_id     String         @db.Uuid
   step_id         String?        @unique @db.Uuid
   title           String         @db.VarChar(250)
+  /// Document control data printed on every PDF and Word export (clause 7.5.2).
+  code            String?        @db.VarChar(50)
+  confidentiality String         @default("Internal") @db.VarChar(50)
   status          DocumentStatus @default(DRAFT)
   version         String         @default("0.1") @db.VarChar(20)
   content         Json
@@ -652,6 +657,9 @@ model DocumentInstance {
   approver_id     String?        @db.Uuid
   update_interval Int?
   deadline        DateTime?      @db.Timestamp(6)
+  /// While IN_REVIEW: who sent the document for approval, and the note for the new version.
+  review_requested_by String?    @db.Uuid
+  review_notes        String?    @db.VarChar(500)
   created_at      DateTime       @default(now()) @db.Timestamp(6)
   updated_at      DateTime       @updatedAt @db.Timestamp(6)
 
@@ -662,6 +670,7 @@ model DocumentInstance {
   owner    User?            @relation("DocOwner", fields: [owner_id], references: [id], onDelete: SetNull)
   reviewer User?            @relation("DocReviewer", fields: [reviewer_id], references: [id], onDelete: SetNull)
   approver User?            @relation("DocApprover", fields: [approver_id], references: [id], onDelete: SetNull)
+  review_requester User?    @relation("DocReviewRequester", fields: [review_requested_by], references: [id], onDelete: SetNull)
 
   task_assignments TaskAssignment[]
   versions         DocumentVersion[]
@@ -683,10 +692,13 @@ model DocumentVersion {
   pdf_data        Bytes?
   published_at    DateTime @default(now()) @db.Timestamp(6)
   published_by    String   @db.Uuid
+  /// Who approved this version (clause 7.5.2 c); the publisher when no approver is assigned.
+  approved_by     String?  @db.Uuid
   notes           String?  @db.VarChar(500)
 
   document DocumentInstance @relation(fields: [document_id], references: [id], onDelete: Cascade)
   publisher User            @relation("DocVersionPublisher", fields: [published_by], references: [id])
+  approver  User?           @relation("DocVersionApprover", fields: [approved_by], references: [id], onDelete: SetNull)
 
   @@index([document_id])
   @@map("document_versions")
