@@ -7,7 +7,7 @@ import { TASK_TYPE_LABELS } from '../tasks/task-labels';
 export interface NewNotification {
   userId: string;
   type: NotificationType;
-  /** Who triggered it; nobody is notified about their own actions. */
+  /** Who triggered it; people are not notified (nor e-mailed) about their own actions, except a task they assign themselves. */
   actorId?: string | null;
   organizationId?: string | null;
   projectId?: string | null;
@@ -16,7 +16,7 @@ export interface NewNotification {
 }
 
 /** Notification types that ask the recipient to act are also sent by email. */
-const EMAILED: NotificationType[] = [NotificationType.TASK_ASSIGNED, NotificationType.TASK_DUE_SOON];
+const EMAILED = new Set<NotificationType>([NotificationType.TASK_ASSIGNED, NotificationType.TASK_DUE_SOON]);
 
 const PERSON = { select: { id: true, first_name: true, last_name: true } } as const;
 const LIST_LIMIT = 30;
@@ -36,7 +36,9 @@ export class NotificationsService {
   ) {}
 
   async notify(n: NewNotification) {
-    if (n.actorId && n.actorId === n.userId) return;
+    const ownAction = !!n.actorId && n.actorId === n.userId;
+    // A task in my list is always announced, even when I assigned it myself; other events about my own actions are not.
+    if (ownAction && n.type !== NotificationType.TASK_ASSIGNED) return;
     const notification = await this.prisma.notification.create({
       data: {
         user_id: n.userId,
@@ -48,7 +50,7 @@ export class NotificationsService {
         join_request_id: n.joinRequestId ?? null,
       },
     });
-    if (n.taskId && EMAILED.includes(n.type)) {
+    if (n.taskId && EMAILED.has(n.type) && !ownAction) {
       // E-mail is best effort: a mail server problem must never block the action that triggered it.
       this.emailTask(n.taskId, n.type).catch((e: Error) => this.logger.warn(`Task e-mail not sent: ${e.message}`));
     }
