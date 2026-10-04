@@ -6,6 +6,8 @@ import { sameContent } from '../common/services/step-document.service';
 import { TasksService } from '../tasks/tasks.service';
 import type { ProseMirrorNode } from './templates/doc-control.template';
 import { renderPdf } from './pdf-renderer';
+import { fileName } from './file-name';
+import { DriveSyncService } from '../connectors/drive-sync.service';
 import { controlBlock, loadControlData } from './control-block';
 
 /** First publication is version 1.0; each later one raises the minor number. */
@@ -14,10 +16,6 @@ const nextVersion = (previous: string | undefined) => {
   const [major, minor] = previous.split('.').map(Number);
   return `${major || 0}.${(minor || 0) + 1}`;
 };
-
-/** File name safe for every operating system, keeping the document title readable. */
-export const fileName = (title: string, version: string, ext: string) =>
-  `${title.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim()} v${version}.${ext}`;
 
 const PERSON = { select: { id: true, first_name: true, last_name: true } } as const;
 const fullName = (u: { first_name: string; last_name: string; email?: string } | null) =>
@@ -36,6 +34,7 @@ export class LibraryService {
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
     private readonly tasks: TasksService,
+    private readonly drive: DriveSyncService,
   ) {}
 
   /** "Submit to library": publishes, or sends the document to its approver. */
@@ -169,7 +168,7 @@ export class LibraryService {
       approvedBy: fullName(approver),
     });
 
-    await this.prisma.$transaction([
+    const [, created] = await this.prisma.$transaction([
       this.prisma.documentInstance.update({
         where: { id: doc.id },
         data: { status: 'PUBLISHED', version, review_requested_by: null, review_notes: null },
@@ -185,8 +184,11 @@ export class LibraryService {
           approved_by: approvedBy,
           notes: notes?.trim() || null,
         },
+        select: { id: true },
       }),
     ]);
+    // Copy to the organization's drive when one is connected (never blocks publishing).
+    await this.drive.versionPublished(created.id).catch(() => undefined);
 
     await this.auditLog.log({
       userId: approvedBy,

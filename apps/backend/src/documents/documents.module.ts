@@ -7,9 +7,10 @@ import { AuditLogService } from '../common/services/audit-log.service';
 import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { OrganizationRoleGuard } from '../common/guards/organization-role.guard';
 import { TasksModule } from '../tasks/tasks.module';
+import { ConnectorsModule } from '../connectors/connectors.module';
 
 @Module({
-  imports: [TasksModule],
+  imports: [TasksModule, ConnectorsModule],
   controllers: [DocumentsController],
   providers: [DocumentsService, DocxExportService, LibraryService, AuditLogService, ProjectRoleGuard, OrganizationRoleGuard],
   exports: [DocumentsService],

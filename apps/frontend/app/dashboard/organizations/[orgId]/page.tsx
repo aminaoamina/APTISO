@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -16,6 +16,7 @@ import {
 import { useOrgStore } from '@/store/org-store';
 import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DriveCard } from '@/components/connectors/drive-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Spinner } from '@/components/ui/spinner';
@@ -289,6 +290,12 @@ export default function OrgDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {isOwnerOrAdmin && (
+        <Suspense fallback={null}>
+          <DriveCard orgId={orgId} />
+        </Suspense>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Button variant="outline" className="justify-start" asChild>

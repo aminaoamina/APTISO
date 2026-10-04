@@ -160,6 +160,7 @@ model User {
   notifications                      Notification[]
   notifications_triggered            Notification[]            @relation("NotificationActor")
   resource_requests_made             ResourceRequest[]         @relation("ResourceRequester")
+  drive_connections                  DriveConnection[]
   evidence_created                   Evidence[]                @relation("EvidenceCreator")
   evidence_deleted                   Evidence[]                @relation("EvidenceDeleter")
   evidence_files                     EvidenceFile[]
@@ -260,6 +261,7 @@ model Organization {
   member_add_requests        MemberAddRequest[]
   organization_join_requests OrganizationJoinRequest[]
   notifications              Notification[]
+  drive_connection           DriveConnection?
 
   @@index([name])
   @@map("organizations")
@@ -704,6 +706,7 @@ model DocumentVersion {
   document DocumentInstance @relation(fields: [document_id], references: [id], onDelete: Cascade)
   publisher User            @relation("DocVersionPublisher", fields: [published_by], references: [id])
   approver  User?           @relation("DocVersionApprover", fields: [approved_by], references: [id], onDelete: SetNull)
+  drive_items DriveSyncItem[]
 
   @@index([document_id])
   @@map("document_versions")
@@ -873,6 +876,83 @@ model EvidenceLink {
   @@unique([evidence_id, target_type, target_id])
   @@index([target_type, target_id])
   @@map("evidence_links")
+}
+
+// ============================================================
+// STORAGE CONNECTORS: mirror of the library to the organization's drive
+// ============================================================
+
+enum DriveProvider {
+  GOOGLE_DRIVE
+}
+
+enum DriveConnectionStatus {
+  ACTIVE
+  /// The drive refused the stored access (revoked, password changed): reconnect.
+  NEEDS_RECONNECT
+}
+
+enum DriveSyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+}
+
+/// One drive per organization. Tokens are stored encrypted (AES-256-GCM).
+model DriveConnection {
+  id                String                @id @default(uuid()) @db.Uuid
+  organization_id   String                @unique @db.Uuid
+  provider          DriveProvider
+  account_email     String                @db.VarChar(255)
+  root_folder_id    String                @db.VarChar(200)
+  refresh_token_enc String                @db.Text
+  status            DriveConnectionStatus @default(ACTIVE)
+  last_error        String?               @db.VarChar(500)
+  last_sync_at      DateTime?             @db.Timestamp(6)
+  connected_by      String                @db.Uuid
+  connected_at      DateTime              @default(now()) @db.Timestamp(6)
+
+  organization Organization    @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  connector    User            @relation(fields: [connected_by], references: [id])
+  folders      DriveFolder[]
+  items        DriveSyncItem[]
+
+  @@map("drive_connections")
+}
+
+/// Folders already created in the drive, by their APTISO path.
+model DriveFolder {
+  id            String @id @default(uuid()) @db.Uuid
+  connection_id String @db.Uuid
+  path          String @db.VarChar(1000)
+  remote_id     String @db.VarChar(200)
+
+  connection DriveConnection @relation(fields: [connection_id], references: [id], onDelete: Cascade)
+
+  @@unique([connection_id, path])
+  @@map("drive_folders")
+}
+
+/// A library version copied (or to be copied) to the drive.
+model DriveSyncItem {
+  id                  String          @id @default(uuid()) @db.Uuid
+  connection_id       String          @db.Uuid
+  document_version_id String          @db.Uuid
+  status              DriveSyncStatus @default(PENDING)
+  attempts            Int             @default(0)
+  last_error          String?         @db.VarChar(500)
+  remote_file_id      String?         @db.VarChar(200)
+  remote_path         String?         @db.VarChar(1000)
+  synced_at           DateTime?       @db.Timestamp(6)
+  created_at          DateTime        @default(now()) @db.Timestamp(6)
+  updated_at          DateTime        @updatedAt @db.Timestamp(6)
+
+  connection DriveConnection @relation(fields: [connection_id], references: [id], onDelete: Cascade)
+  version    DocumentVersion @relation(fields: [document_version_id], references: [id], onDelete: Cascade)
+
+  @@unique([connection_id, document_version_id])
+  @@index([connection_id, status])
+  @@map("drive_sync_items")
 }
 
 // ============================================================

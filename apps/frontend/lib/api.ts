@@ -1189,6 +1189,29 @@ export const evidenceApi = {
   },
 };
 
+/** The organization's drive mirror of the document library. */
+export interface DriveStatus {
+  google_available: boolean;
+  connection: {
+    provider: 'GOOGLE_DRIVE';
+    account_email: string;
+    status: 'ACTIVE' | 'NEEDS_RECONNECT';
+    last_error: string | null;
+    last_sync_at: string | null;
+    connected_at: string;
+    connector: { first_name: string; last_name: string };
+    counts: { synced: number; pending: number; failed: number };
+  } | null;
+  failures?: { id: string; attempts: number; error: string | null; title: string; version: string }[];
+}
+
+export const connectorsApi = {
+  status: async (orgId: string): Promise<DriveStatus> => (await apiClient.get(`/organizations/${orgId}/connectors`)).data,
+  connectGoogle: async (orgId: string): Promise<{ url: string }> => (await apiClient.post(`/organizations/${orgId}/connectors/google`)).data,
+  sync: async (orgId: string): Promise<{ copied: number; failed: number }> => (await apiClient.post(`/organizations/${orgId}/connectors/sync`)).data,
+  disconnect: async (orgId: string): Promise<{ message: string }> => (await apiClient.delete(`/organizations/${orgId}/connectors`)).data,
+};
+
 export const notificationsApi = {
   list: async (): Promise<{ items: AppNotification[]; unread_count: number }> => (await apiClient.get('/notifications')).data,
 
