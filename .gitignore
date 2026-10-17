@@ -36,3 +36,6 @@ Thumbs.db
 .vscode/
 *.swp
 
+
+# Evidence files (stored outside the code; see EVIDENCE_STORAGE_DIR)
+apps/backend/storage/
