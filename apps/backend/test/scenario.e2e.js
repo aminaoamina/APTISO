@@ -16,7 +16,7 @@ const BACKEND = path.resolve(__dirname, '..');
 const DIST = path.join(BACKEND, 'dist');
 process.chdir(BACKEND);
 require(require.resolve('dotenv', { paths: [BACKEND] })).config({ quiet: true });
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL.replace(/\/([^/?]+)(\?|$)/, '/aptiso_test');
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL.replace(/\/([^/?]+)(\?|$)/, '/aptiso_test$2');
 process.env.CONNECTOR_SECRET_KEY = 'scenario-test-connector-secret-key-32+';
 process.env.EVIDENCE_STORAGE_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'aptiso-evidence-'));
 execSync('npx prisma migrate deploy', { stdio: 'ignore', env: process.env });

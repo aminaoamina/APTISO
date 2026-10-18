@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:0.8.0-pg16
     container_name: aptiso-postgres
     restart: unless-stopped
     environment:
@@ -17,18 +17,8 @@ services:
       timeout: 5s
       retries: 10
 
-  mailhog:
-    image: mailhog/mailhog:latest
-    container_name: aptiso-mailhog
-    restart: unless-stopped
-    ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI (http://localhost:8025)
-    volumes:
-      - aptiso-mailhog-data:/maildir
-
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
     container_name: aptiso-redis
     restart: unless-stopped
     ports:
@@ -60,6 +50,5 @@ services:
 
 volumes:
   aptiso-postgres-data:
-  aptiso-mailhog-data:
   aptiso-redis-data:
   aptiso-minio-data:
