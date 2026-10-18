@@ -7,6 +7,7 @@ import { AiRunService } from './ai-run.service';
 import { AiContextService } from './context.service';
 import { CatalogService } from './catalog.service';
 import { AiController } from './ai.controller';
+import { AiServiceClient } from './ai-service.client';
 import { AI_QUEUE, redisConnection } from './ai.queue';
 
 /** AI assistant core: model client, AI run log, ISO catalog, context builder and the background job queue. */
@@ -20,7 +21,7 @@ import { AI_QUEUE, redisConnection } from './ai.queue';
     }),
   ],
   controllers: [AiController],
-  providers: [AiClient, AiRunService, AiContextService, CatalogService, ProjectAccessService],
-  exports: [AiClient, AiRunService, AiContextService, CatalogService, BullModule],
+  providers: [AiServiceClient, AiClient, AiRunService, AiContextService, CatalogService, ProjectAccessService],
+  exports: [AiServiceClient, AiClient, AiRunService, AiContextService, CatalogService, BullModule],
 })
 export class AiModule {}

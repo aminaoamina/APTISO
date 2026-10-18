@@ -4,7 +4,7 @@
  * streaming, AI run records and the context builder. Run with: npm run test:ai
  *
  * Uses the scenario test database (run npm run test:scenario once first, for the
- * context builder checks).
+ * context builder checks), and the AI service (apps/ai) running on AI_SERVICE_URL.
  */
 const path = require('path');
 const { execSync } = require('child_process');
@@ -25,6 +25,8 @@ const { AiClient, AiRejectedError } = require(`${DIST}/ai/ai.client`);
 const { CatalogService } = require(`${DIST}/ai/catalog.service`);
 const { AiContextService } = require(`${DIST}/ai/context.service`);
 const { parseModelJson } = require(`${DIST}/ai/json`);
+const { AiServiceClient } = require(`${DIST}/ai/ai-service.client`);
+const { AiController } = require(`${DIST}/ai/ai.controller`);
 const { proseText, quoteIn } = require(`${DIST}/ai/text`);
 
 let failures = 0;
@@ -129,7 +131,24 @@ function fakeModel(ai, answer) {
     await expectError(() => ctxSvc.build(project.id, outsider.id), e => /not a member/.test(e.message), 'someone outside the project gets no context');
   }
 
+  // ── AI service (apps/ai), end to end ──
+  const service = app.get(AiServiceClient);
+  const ready = await service.request('GET', '/v1/health/ready');
+  ok(ready.status === 'ok' && ready.checks.database.pgvector && ready.checks.redis.ok, `the backend reaches the AI service with its token (pgvector ${ready.checks.database.pgvector}, Redis ok)`);
+  const health = await app.get(AiController).health();
+  ok(health.ai_service === 'ok' && health.checks.database.ok, `GET /ai/health reports the AI service ok (${health.latency_ms} ms)`);
+  const configWith = values => ({ get: k => ({ AI_SERVICE_URL: process.env.AI_SERVICE_URL, AI_SERVICE_TOKEN: process.env.AI_SERVICE_TOKEN, ...values })[k] });
+  const wrongToken = new AiServiceClient(configWith({ AI_SERVICE_TOKEN: 'x'.repeat(40) }));
+  ok((await wrongToken.call('GET', '/v1/health/ready')).status === 401, 'the AI service refuses a wrong service token');
+  await expectError(() => wrongToken.request('GET', '/v1/health/ready'), e => e.getStatus?.() === 503, 'a refused token surfaces as "AI unavailable" (503), not as a login error');
+  const down = new AiServiceClient(configWith({ AI_SERVICE_URL: 'http://127.0.0.1:1' }));
+  const t0 = Date.now();
+  await expectError(() => down.request('GET', '/v1/health/ready'), e => e.getStatus?.() === 503, 'an unreachable AI service gives 503');
+  ok(Date.now() - t0 < 3000, `and fails fast (${Date.now() - t0} ms)`);
+  await expectError(() => new AiServiceClient(configWith({ AI_SERVICE_TOKEN: '' })).request('GET', '/v1/health/ready'), e => /not configured/.test(e.message), 'without a token the backend does not even call the service');
+
   console.log(failures === 0 ? '\nALL CHECKS PASSED' : `\n${failures} CHECK(S) FAILED`);
   await app.close();
-  process.exit(failures === 0 ? 0 : 1);
+  // No process.exit(): on Windows it aborts while fetch's keep-alive sockets are closing.
+  process.exitCode = failures === 0 ? 0 : 1;
 })().catch(e => { console.error('CRASH', e); process.exit(2); });
