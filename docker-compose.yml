@@ -31,6 +31,26 @@ services:
       timeout: 5s
       retries: 10
 
+  # AI service (apps/ai, FastAPI). Internal: published on 127.0.0.1 only, for the backend.
+  # Start with:  docker compose --profile ai up -d --build
+  ai:
+    build: ./apps/ai
+    container_name: aptiso-ai
+    restart: unless-stopped
+    profiles: ["ai"]
+    env_file: ./apps/ai/.env
+    environment:
+      # Inside Docker the databases are reached by service name.
+      AI_DB_HOST: postgres
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   # MinIO - object storage, needed from Sprint 3 (document storage / evidence).
   # Start on demand with:  docker compose --profile minio up -d
   minio:
