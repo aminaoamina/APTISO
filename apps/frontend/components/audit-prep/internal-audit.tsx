@@ -105,6 +105,8 @@ function AuditPanel({ audit: a, state, stepId, projectId, run, open, onToggle }:
   const [filter, setFilter] = useState<'all' | 'open' | 'findings'>('all');
   const [conclusion, setConclusion] = useState(a.conclusion ?? '');
   const editable = permissions.canEdit && a.status !== 'APPROVED';
+  // The lead auditor performs the audit even with read-only access (e.g. an external consultant).
+  const performs = (permissions.canEdit || a.lead_auditor_id === permissions.userId) && a.status !== 'APPROVED';
   const done = a.items.filter(i => i.result).length;
   const items = useMemo(() => a.items.filter(i =>
     filter === 'all' ? true : filter === 'open' ? !i.result : i.result && i.result !== 'CONFORMING' && i.result !== 'NOT_AUDITED'), [a.items, filter]);
@@ -126,12 +128,14 @@ function AuditPanel({ audit: a, state, stepId, projectId, run, open, onToggle }:
               <BlurField multiline value={a.criteria} disabled={!editable} onSave={(v) => run(() => auditsApi.update(stepId, a.id, { criteria: v }))} /></div>
           </div>
 
-          {a.status === 'PLANNED' && permissions.canEdit && (
+          {a.status === 'PLANNED' && performs && (
             <div className="flex gap-2">
               <Button size="sm" onClick={() => run(() => auditsApi.start(stepId, a.id), 'Audit started')}><Play className="h-4 w-4 mr-1" />Start audit</Button>
-              <Button size="sm" variant="ghost" className="text-destructive" onClick={() => window.confirm('Delete this audit?') && run(() => auditsApi.remove(stepId, a.id), 'Audit deleted')}>
-                <Trash2 className="h-4 w-4 mr-1" />Delete
-              </Button>
+              {permissions.canEdit && (
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => window.confirm('Delete this audit?') && run(() => auditsApi.remove(stepId, a.id), 'Audit deleted')}>
+                  <Trash2 className="h-4 w-4 mr-1" />Delete
+                </Button>
+              )}
             </div>
           )}
 
@@ -144,7 +148,7 @@ function AuditPanel({ audit: a, state, stepId, projectId, run, open, onToggle }:
                 </NativeSelect>
               </div>
               <div className="space-y-1.5 max-h-[32rem] overflow-y-auto pr-1">
-                {items.map(i => <ChecklistItem key={i.id} item={i} projectId={projectId} editable={editable} onSave={(d) => run(() => auditsApi.updateItem(stepId, a.id, i.id, d))} />)}
+                {items.map(i => <ChecklistItem key={i.id} item={i} projectId={projectId} editable={performs} canAttach={editable} onSave={(d) => run(() => auditsApi.updateItem(stepId, a.id, i.id, d))} />)}
               </div>
             </>
           )}
@@ -152,10 +156,10 @@ function AuditPanel({ audit: a, state, stepId, projectId, run, open, onToggle }:
           {(a.status === 'IN_PROGRESS' || a.status === 'REPORTED' || a.status === 'APPROVED') && (
             <div className="space-y-2 border-t border-border/60 pt-3">
               <Label htmlFor={`concl-${a.id}`} className="text-xs">Audit conclusion *</Label>
-              <Textarea id={`concl-${a.id}`} rows={3} value={conclusion} disabled={a.status !== 'IN_PROGRESS' || !permissions.canEdit}
+              <Textarea id={`concl-${a.id}`} rows={3} value={conclusion} disabled={a.status !== 'IN_PROGRESS' || !performs}
                 onChange={(e) => setConclusion(e.target.value)} placeholder="Overall conformity and effectiveness of the ISMS, main findings" />
               <div className="flex flex-wrap items-center gap-2">
-                {a.status === 'IN_PROGRESS' && permissions.canEdit && (
+                {a.status === 'IN_PROGRESS' && performs && (
                   <Button size="sm" disabled={!conclusion.trim() || done < a.items.length}
                     title={done < a.items.length ? 'Assess every checklist item first' : undefined}
                     onClick={() => run(() => auditsApi.report(stepId, a.id, conclusion), 'Audit reported to management')}>
@@ -176,7 +180,9 @@ function AuditPanel({ audit: a, state, stepId, projectId, run, open, onToggle }:
   );
 }
 
-function ChecklistItem({ item: i, projectId, editable, onSave }: { item: AuditItem; projectId: string; editable: boolean; onSave: (d: Record<string, unknown>) => Promise<boolean> }) {
+function ChecklistItem({ item: i, projectId, editable, canAttach, onSave }: {
+  item: AuditItem; projectId: string; editable: boolean; canAttach: boolean; onSave: (d: Record<string, unknown>) => Promise<boolean>;
+}) {
   const [open, setOpen] = useState(false);
   const [evidence, setEvidence] = useState(i.evidence ?? '');
   // A finding picked before its evidence is typed waits here and is saved with the evidence.
@@ -219,7 +225,7 @@ function ChecklistItem({ item: i, projectId, editable, onSave }: { item: AuditIt
             onBlur={saveEvidence} />
           {pending && <p className="text-xs text-amber-700 dark:text-amber-400">Describe the evidence to record this finding.</p>}
           {i.result && !pending && <Badge className={RESULTS[i.result][1]}>{RESULTS[i.result][0]}</Badge>}
-          <EvidencePanel projectId={projectId} target={{ type: 'AUDIT_ITEM', id: i.id }} canEdit={editable}
+          <EvidencePanel projectId={projectId} target={{ type: 'AUDIT_ITEM', id: i.id }} canEdit={canAttach}
             hint="Attach what you sampled: the records, screenshots or interview notes behind the result." />
         </div>
       )}

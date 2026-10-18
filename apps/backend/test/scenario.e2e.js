@@ -480,6 +480,29 @@ const expectError = async (fn, pattern, msg) => {
   ok((await maintenance.get(project.id, lead.id)).audit_program.audits[0].status === 'IN_PROGRESS', 'the planned audit is in progress');
   await expectError(() => program.removeAudit(project.id, line.id, lead.id), /has started/, 'a started audit cannot be removed from the program');
 
+  // An external consultant (read-only auditor) performs the internal audit assigned to them
+  const consultant = await prisma.user.create({ data: { email: `cons${stamp}@t.io`, first_name: 'Cora', last_name: 'Consultant', password_hash: 'x' } });
+  await prisma.projectMember.create({ data: { project_id: project.id, user_id: consultant.id, privilege: 'PROJECT_AUDITOR' } });
+  const extAudit = (await audits.create(auStep, { title: 'External consultant audit', start_date: '2027-03-01', end_date: '2027-03-05', lead_auditor_id: consultant.id }, lead.id))
+    .audits.find(x => x.title === 'External consultant audit');
+  await audits.start(auStep, extAudit.id, consultant.id);
+  await audits.updateItem(auStep, extAudit.id, extAudit.items[0].id, { result: 'CONFORMING' }, consultant.id);
+  await prisma.auditChecklistItem.updateMany({ where: { audit_id: extAudit.id, result: null }, data: { result: 'CONFORMING' } });
+  await audits.report(auStep, extAudit.id, { conclusion: 'Conforming.' }, consultant.id);
+  ok((await prisma.internalAudit.findUnique({ where: { id: extAudit.id } })).status === 'REPORTED', 'a read-only auditor assigned as lead auditor performs and reports the audit');
+  await expectError(() => audits.update(auStep, extAudit.id, { scope: 'Changed' }, consultant.id), /read-only/, 'the consultant still cannot change the audit setup');
+
+  // Documents need a real approval
+  const unpublished = await prisma.documentInstance.findFirst({ where: { step: { phase: { project_id: project.id } }, versions: { none: {} }, approver_id: null } });
+  await expectError(() => app.get(LibraryService).submit(unpublished.id, owner.id), /Choose an approver/, 'a member cannot publish a document without an approver');
+  await expectError(() => app.get(DocumentsService).updateAssignments(unpublished.id, { approver_id: consultant.id }, lead.id), /read-only/, 'an auditor cannot be a document approver');
+
+  // A new certification cycle gets its yearly audits (the earlier ones moved to the past)
+  await prisma.programAudit.updateMany({ where: { program: { project_id: project.id } }, data: { planned_month: new Date('2020-01-01') } });
+  await prisma.maintenanceSetup.update({ where: { project_id: project.id }, data: { certification_date: new Date('2023-06-01') } });
+  const recert = (await maintenance.get(project.id, lead.id)).audit_program.audits.filter(x => x.planned_month >= new Date('2026-06-01'));
+  ok(recert.map(x => x.planned_month.toISOString().slice(0, 7)).join() === '2027-04,2028-04,2029-04', `after re-certification the new cycle has its audits: ${recert.map(x => x.planned_month.toISOString().slice(0, 7)).join(', ')}`);
+
   // ── Document library: every version is kept (clause 7.5.3) ──
   const library = app.get(LibraryService);
   const documents = app.get(DocumentsService);

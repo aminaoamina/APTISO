@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { AuditAction, Prisma, ProjectRole, TaskStatus, TaskType } from '@prisma/client';
+import { AuditAction, IsoRole, Prisma, ProjectRole, TaskStatus, TaskType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { sameContent } from '../common/services/step-document.service';
@@ -25,8 +25,8 @@ const fullName = (u: { first_name: string; last_name: string; email?: string } |
  * The document library (clauses 7.5.2 and 7.5.3). A document reaches the
  * library through its approver: when the document has an approver other than
  * the person submitting it, submitting sends it for approval and the approver
- * publishes it; otherwise the person submitting approves it. Every published
- * version is kept with its PDF.
+ * publishes it. Only the project lead or top management may approve their own
+ * submission (clauses 5.2 and 7.5.2). Every published version is kept with its PDF.
  */
 @Injectable()
 export class LibraryService {
@@ -44,6 +44,9 @@ export class LibraryService {
     this.assertChanged(doc);
 
     if (!doc.approver_id || doc.approver_id === userId) {
+      if (!(await this.canApproveOwn(doc.projectId, userId))) {
+        throw new ForbiddenException('Choose an approver for this document: only top management or the project lead can publish without approval');
+      }
       return this.publish(doc, userId, userId, notes, ipAddress, userAgent);
     }
 
@@ -220,6 +223,14 @@ export class LibraryService {
     if (previous && sameContent(previous.content, doc.content)) {
       throw new BadRequestException(`This content is already in the library as version ${previous.version}`);
     }
+  }
+
+  private async canApproveOwn(projectId: string, userId: string) {
+    const member = await this.prisma.projectMember.findFirst({
+      where: { project_id: projectId, user_id: userId },
+      select: { privilege: true, iso_roles: { select: { iso_role: true } } },
+    });
+    return !!member && (member.privilege === ProjectRole.PROJECT_LEAD || member.iso_roles.some(r => r.iso_role === IsoRole.TOP_MANAGEMENT));
   }
 
   private assertApprover(doc: { status: string; approver_id: string | null }, userId: string) {

@@ -211,28 +211,24 @@ export class AuditProgramService {
 
   /** Created with the certificate: one audit per year of the cycle, planned before each external audit. */
   async ensure(projectId: string, certification: Date) {
+    const start = cycleStart(certification);
     const existing = await this.prisma.auditProgram.findUnique({ where: { project_id: projectId }, include: { audits: LINES } });
-    if (existing) return existing;
+    // Each cycle (first certification, then every re-certification) starts with its yearly audits.
+    if (existing?.audits.some(a => a.planned_month >= firstOfMonth(start))) return existing;
     const lead = await this.prisma.projectMember.findFirst({
       where: { project_id: projectId, privilege: 'PROJECT_LEAD' },
       orderBy: { joined_at: 'asc' },
       select: { user_id: true },
     });
-    const start = cycleStart(certification);
-    return this.prisma.auditProgram.create({
-      data: {
-        project_id: projectId,
-        objectives: DEFAULT_OBJECTIVES,
-        criteria: DEFAULT_AUDIT_CRITERIA,
-        methods: DEFAULT_METHODS,
-        ...(lead && {
-          audits: {
-            create: PLANNED_MONTHS.map(m => ({ planned_month: firstOfMonth(addMonths(start, m)), auditor_id: lead.user_id, scope: DEFAULT_AUDIT_SCOPE })),
-          },
-        }),
-      },
-      include: { audits: LINES },
-    });
+    const audits = lead
+      ? { create: PLANNED_MONTHS.map(m => ({ planned_month: firstOfMonth(addMonths(start, m)), auditor_id: lead.user_id, scope: DEFAULT_AUDIT_SCOPE })) }
+      : undefined;
+    return existing
+      ? this.prisma.auditProgram.update({ where: { id: existing.id }, data: { audits }, include: { audits: LINES } })
+      : this.prisma.auditProgram.create({
+          data: { project_id: projectId, objectives: DEFAULT_OBJECTIVES, criteria: DEFAULT_AUDIT_CRITERIA, methods: DEFAULT_METHODS, audits },
+          include: { audits: LINES },
+        });
   }
 
   private async editable(projectId: string, userId: string) {

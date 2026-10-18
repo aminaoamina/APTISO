@@ -173,7 +173,7 @@ export class DocumentsService {
         // The wizard's control answers become the document's control data.
         code: resolved.document_code?.slice(0, 50) || null,
         ...(resolved.confidentiality_level && { confidentiality: resolved.confidentiality_level.slice(0, 50) }),
-        ...(members.some((m) => m.user_id === dto.answers?.approver) && { approver_id: dto.answers.approver }),
+        ...(members.some((m) => m.user_id === dto.answers?.approver && m.privilege !== ProjectRole.PROJECT_AUDITOR) && { approver_id: dto.answers.approver }),
       },
     });
 
@@ -262,6 +262,10 @@ export class DocumentsService {
     if (people.length) {
       const members = await this.prisma.projectMember.count({ where: { project_id: projectId, user_id: { in: people } } });
       if (members !== new Set(people).size) throw new BadRequestException('Owner, reviewer and approver must be project members');
+    }
+    if (dto.approver_id) {
+      const auditor = await this.prisma.projectMember.count({ where: { project_id: projectId, user_id: dto.approver_id, privilege: ProjectRole.PROJECT_AUDITOR } });
+      if (auditor) throw new BadRequestException('An auditor has read-only access and cannot approve documents');
     }
 
     const updated = await this.prisma.documentInstance.update({

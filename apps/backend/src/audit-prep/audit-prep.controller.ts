@@ -223,17 +223,20 @@ export class AuditPrepController {
     return this.audits.remove(s, a, u);
   }
 
-  @Post('steps/:stepId/audits/:auditId/start') @ProjectRoles(...EDITORS)
+  // Also open to the audit's lead auditor, checked in the service.
+  @Post('steps/:stepId/audits/:auditId/start')
   startAudit(@Param('stepId', uuid) s: string, @Param('auditId', uuid) a: string, @CurrentUser('id') u: string) {
     return this.audits.start(s, a, u);
   }
 
-  @Patch('steps/:stepId/audits/:auditId/items/:itemId') @ProjectRoles(...EDITORS)
+  // Also open to the audit's lead auditor, checked in the service.
+  @Patch('steps/:stepId/audits/:auditId/items/:itemId')
   updateAuditItem(@Param('stepId', uuid) s: string, @Param('auditId', uuid) a: string, @Param('itemId', uuid) i: string, @Body() dto: UpdateAuditItemDto, @CurrentUser('id') u: string) {
     return this.audits.updateItem(s, a, i, dto, u);
   }
 
-  @Post('steps/:stepId/audits/:auditId/report') @ProjectRoles(...EDITORS)
+  // Also open to the audit's lead auditor, checked in the service.
+  @Post('steps/:stepId/audits/:auditId/report')
   reportAudit(@Param('stepId', uuid) s: string, @Param('auditId', uuid) a: string, @Body() dto: AuditReportDto, @CurrentUser('id') u: string) {
     return this.audits.report(s, a, dto, u);
   }
