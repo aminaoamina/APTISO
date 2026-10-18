@@ -19,6 +19,14 @@ class Settings(BaseSettings):
     ai_db_port: int = 5432
     ai_db_name: str = "aptiso_ai"
     redis_url: str = "redis://localhost:6379"
+    # NVIDIA Build (OpenAI-compatible). Models are settings, so they change without code changes.
+    nvidia_api_key: SecretStr | None = None
+    ai_base_url: str = "https://integrate.api.nvidia.com/v1"
+    ai_model_main: str = "nvidia/nemotron-3-super-120b-a12b"
+    ai_model_fallback: str = "openai/gpt-oss-20b"
+    ai_model_embed: str = "nvidia/nemotron-3-embed-1b"
+    ai_model_ocr: str = "nvidia/nemotron-parse-2.0"
+    ai_model_vision: str = "meta/llama-3.2-90b-vision-instruct"
     # Largest accepted request body (JSON); evidence uploads have their own limit.
     max_body_bytes: int = 1_048_576
 

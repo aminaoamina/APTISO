@@ -1,27 +1,19 @@
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { BullModule } from '@nestjs/bullmq';
 import { ProjectAccessService } from '../common/services/project-access.service';
-import { AiClient } from './ai.client';
-import { AiRunService } from './ai-run.service';
-import { AiContextService } from './context.service';
-import { CatalogService } from './catalog.service';
-import { AiController } from './ai.controller';
+import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { AiServiceClient } from './ai-service.client';
-import { AI_QUEUE, redisConnection } from './ai.queue';
+import { AiContextService } from './context.service';
+import { AiController } from './ai.controller';
+import { AssistController } from './assist.controller';
+import { AssistService } from './assist.service';
 
-/** AI assistant core: model client, AI run log, ISO catalog, context builder and the background job queue. */
+/**
+ * Backend side of the AI assistant: permissions and context from the business
+ * data, and the client of the AI service (apps/ai), which does all the AI work.
+ */
 @Module({
-  imports: [
-    BullModule.forRootAsync({ inject: [ConfigService], useFactory: (config: ConfigService) => ({ connection: redisConnection(config) }) }),
-    BullModule.registerQueue({
-      name: AI_QUEUE,
-      // Completed jobs are kept briefly (results live in ai_runs); failed ones longer for diagnosis.
-      defaultJobOptions: { attempts: 3, backoff: { type: 'exponential', delay: 5000 }, removeOnComplete: 500, removeOnFail: 1000 },
-    }),
-  ],
-  controllers: [AiController],
-  providers: [AiServiceClient, AiClient, AiRunService, AiContextService, CatalogService, ProjectAccessService],
-  exports: [AiServiceClient, AiClient, AiRunService, AiContextService, CatalogService, BullModule],
+  controllers: [AiController, AssistController],
+  providers: [AiServiceClient, AiContextService, AssistService, ProjectAccessService, ProjectRoleGuard],
+  exports: [AiServiceClient, AiContextService],
 })
 export class AiModule {}

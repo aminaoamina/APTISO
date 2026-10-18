@@ -146,6 +146,7 @@ model User {
   // Relations
   organization_memberships           OrganizationMember[]
   project_memberships                ProjectMember[]
+  ai_decisions                       AiDecision[]
   organizations_created              Organization[]            @relation("OrganizationsCreated")
   projects_created                   ComplianceProject[]       @relation("ProjectsCreated")
   invitations_sent                   Invitation[]              @relation("InvitationsSent")
@@ -341,7 +342,7 @@ model ComplianceProject {
   management_reviews   ManagementReview[]
   maintenance          MaintenanceSetup?
   audit_program        AuditProgram?
-  ai_runs              AiRun[]
+  ai_decisions         AiDecision[]
 
   @@index([organization_id])
   @@index([status])
@@ -1737,39 +1738,28 @@ model ProgramAudit {
   @@map("program_audits")
 }
 
-enum AiRunStatus {
-  PENDING
-  RUNNING
-  SUCCEEDED
-  REJECTED
-  FAILED
+/// What the person did with an AI proposal.
+enum AiOutcome {
+  ACCEPTED
+  DISMISSED
 }
 
-/// Every AI operation: what was asked (by whom, on what), which model and prompt answered, and whether the answer passed validation.
-model AiRun {
-  id             String      @id @default(uuid()) @db.Uuid
-  project_id     String?     @db.Uuid
-  user_id        String?     @db.Uuid
-  capability     String      @db.VarChar(50)
-  model          String?     @db.VarChar(120)
-  prompt_version String      @db.VarChar(60)
-  /// SHA-256 of the exact input sent to the model.
-  input_hash     String      @db.Char(64)
-  subject_type   String?     @db.VarChar(40)
-  subject_id     String?     @db.Uuid
-  status         AiRunStatus @default(PENDING)
-  validation     Json?
-  output         Json?
-  tokens_in      Int?
-  tokens_out     Int?
-  latency_ms     Int?
-  error          String?     @db.Text
-  created_at     DateTime    @default(now()) @db.Timestamp(6)
-  finished_at    DateTime?   @db.Timestamp(6)
+/// The authoritative record of human decisions on AI proposals: the AI suggests, a person decides.
+/// run_id points to the AI run in the AI service's own database (aptiso_ai.ai_runs).
+model AiDecision {
+  id           String    @id @default(uuid()) @db.Uuid
+  run_id       String    @unique @db.Uuid
+  project_id   String    @db.Uuid
+  user_id      String    @db.Uuid
+  capability   String    @db.VarChar(50)
+  subject_type String?   @db.VarChar(40)
+  subject_id   String?   @db.VarChar(120)
+  outcome      AiOutcome
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
 
-  project ComplianceProject? @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@index([project_id, capability])
-  @@index([subject_type, subject_id])
-  @@map("ai_runs")
+  @@index([project_id])
+  @@map("ai_decisions")
 }

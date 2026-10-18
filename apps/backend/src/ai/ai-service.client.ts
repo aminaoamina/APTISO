@@ -48,14 +48,44 @@ export class AiServiceClient {
     return { status: res.status, data };
   }
 
+  /**
+   * A streamed (SSE) response to forward to the browser. Errors before the
+   * stream starts become 503; errors during it arrive as an `error` event.
+   */
+  async stream(path: string, body: unknown, signal: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+    if (!this.configured) throw new ServiceUnavailableException('The AI assistant is not configured (AI_SERVICE_TOKEN)');
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}${path}`, {
+        method: 'POST',
+        headers: { 'X-Service-Token': this.token, 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(120_000)]),
+      });
+    } catch (e) {
+      this.logger.warn(`AI service unreachable: POST ${path}: ${(e as Error).name}`);
+      throw new ServiceUnavailableException(UNAVAILABLE);
+    }
+    if (!res.ok || !res.body) {
+      this.logger.warn(`AI service answered ${res.status} to POST ${path}`);
+      throw res.status === 413 || res.status === 422 ? new BadRequestException('The AI assistant could not process this text') : new ServiceUnavailableException(UNAVAILABLE);
+    }
+    return res.body;
+  }
+
   /** The response body of a successful call; errors become 400 (bad request from us) or 503 (AI side). */
   async request<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown, opts: CallOptions = {}): Promise<T> {
     const { status, data } = await this.call<T>(method, path, body, opts);
     if (status < 400) return data;
+    throw this.error(status, `${method} ${path}`);
+  }
+
+  /** The error to raise for an AI service error status: 400 when our request was refused, otherwise 503. */
+  error(status: number, what: string) {
     if (status === 413 || status === 422) {
-      throw new BadRequestException(status === 413 ? 'The text is too long for the AI assistant' : 'The AI assistant could not process this request');
+      return new BadRequestException(status === 413 ? 'The text is too long for the AI assistant' : 'The AI assistant could not process this request');
     }
-    this.logger.warn(`AI service answered ${status} to ${method} ${path}`);
-    throw new ServiceUnavailableException(UNAVAILABLE);
+    this.logger.warn(`AI service answered ${status} to ${what}`);
+    return new ServiceUnavailableException(UNAVAILABLE);
   }
 }

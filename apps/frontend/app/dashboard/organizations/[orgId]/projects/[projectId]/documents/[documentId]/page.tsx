@@ -350,7 +350,8 @@ export default function DocumentEditorPage() {
       </Card>
 
       {/* Editor */}
-      <DocumentEditor initialContent={doc.content} editable={canEdit && !inReview} onChange={handleChange} onExportDocx={handleExportDocx} />
+      <DocumentEditor initialContent={doc.content} editable={canEdit && !inReview} onChange={handleChange} onExportDocx={handleExportDocx}
+        assistant={{ projectId, documentId }} />
 
       {canEdit && !inReview && (
         <p className="text-xs text-muted-foreground text-center">

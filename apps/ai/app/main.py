@@ -6,7 +6,8 @@ from redis.asyncio import Redis
 
 from app.config import get_settings
 from app.db import create_engine, session_factory
-from app.routers import health
+from app.llm.client import AiClient, AiRejected, AiUnavailable
+from app.routers import assist, health
 
 BODY_METHODS = {"POST", "PUT", "PATCH"}
 
@@ -17,6 +18,7 @@ async def lifespan(app: FastAPI):
     app.state.engine = create_engine(settings.database_url)
     app.state.sessions = session_factory(app.state.engine)
     app.state.redis = Redis.from_url(settings.redis_url, socket_connect_timeout=2)
+    app.state.ai = AiClient(settings, app.state.sessions)
     yield
     await app.state.redis.aclose()
     await app.state.engine.dispose()
@@ -42,4 +44,19 @@ async def limit_body_size(request: Request, call_next):
     return await call_next(request)
 
 
+@app.exception_handler(AiUnavailable)
+async def ai_unavailable(_: Request, e: AiUnavailable):
+    return JSONResponse({"detail": "No model is available right now", "code": "ai_unavailable"}, status_code=503)
+
+
+@app.exception_handler(AiRejected)
+async def ai_rejected(_: Request, e: AiRejected):
+    # The answer failed validation twice: reported, never returned as valid.
+    return JSONResponse(
+        {"detail": "The AI answer did not pass validation", "code": "ai_rejected", "errors": e.errors, "run_id": e.run_id},
+        status_code=422,
+    )
+
+
 app.include_router(health.router)
+app.include_router(assist.router)

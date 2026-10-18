@@ -25,6 +25,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { SuggestButton, SuggestionPanel } from '@/components/ai/suggest-field';
+import { aiApi, type Suggestion } from '@/lib/ai-api';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
@@ -39,24 +41,35 @@ const STEP_TEMPLATE_MAP: Record<string, string> = {
   'iso27001.p2s1.risk-methodology': 'RISK-METHODOLOGY',
 };
 
+/** Text questions the AI can suggest (company name and document code are prefilled). */
+const suggestable = (q: DocumentTemplateQuestion) =>
+  (q.input_type === 'TEXT' || q.input_type === 'LONGTEXT') && q.key !== 'company_name' && q.key !== 'document_code';
+
 function QuestionField({
   question,
   value,
   onChange,
   members,
+  suggest,
 }: {
   question: DocumentTemplateQuestion;
   value: string;
   onChange: (value: string) => void;
   members: { user_id: string; user: { first_name: string; last_name: string } }[];
+  /** ✨ Suggest, when the person may edit and the question is a text question. */
+  suggest?: { projectId: string; request: () => Promise<Suggestion> };
 }) {
   const id = `q-${question.key}`;
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm">
-        {question.label}
-        {question.required && <span className="text-destructive ml-0.5">*</span>}
-      </Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={id} className="text-sm">
+          {question.label}
+          {question.required && <span className="text-destructive ml-0.5">*</span>}
+        </Label>
+        {suggest && <SuggestButton request={suggest.request} onSuggestion={setSuggestion} />}
+      </div>
       {question.help_text && (
         <p className="text-xs text-muted-foreground">{question.help_text}</p>
       )}
@@ -108,6 +121,9 @@ function QuestionField({
               </option>
             ))}
           </NativeSelect>
+        )}
+        {suggest && suggestion && (
+          <SuggestionPanel projectId={suggest.projectId} suggestion={suggestion} value={value} onChange={onChange} onClose={() => setSuggestion(null)} />
         )}
       </div>
     </div>
@@ -195,6 +211,7 @@ export default function DocumentWizardPage() {
   }
 
   const currentPageQuestions = pages[page] ?? [];
+  const canSuggest = members.some((m) => m.user_id === user?.id && m.privilege !== 'PROJECT_AUDITOR');
   const isLastPage = page === totalPages;
 
   const setValue = (key: string, value: string) => {
@@ -280,6 +297,9 @@ export default function DocumentWizardPage() {
               value={answers[question.key] ?? ''}
               onChange={(v) => setValue(question.key, v)}
               members={members}
+              suggest={canSuggest && suggestable(question)
+                ? { projectId, request: () => aiApi.suggest(projectId, template.code, question.key, answers) }
+                : undefined}
             />
           ))}
 

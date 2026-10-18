@@ -1,4 +1,4 @@
-/** Plain-text helpers for what the AI reads and quotes. */
+/** Plain-text versions of business data for the AI service. */
 
 interface PmNode {
   type?: string;
@@ -29,13 +29,6 @@ export function proseText(node: unknown): string {
   walk((node ?? {}) as PmNode);
   return out.join('\n');
 }
-
-/** Whitespace, quotes and dashes normalized, for verbatim-quote checks. */
-export const normalize = (s: string) =>
-  s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim().toLowerCase();
-
-/** Whether `quote` appears word for word in `source` (after normalization). */
-export const quoteIn = (source: string, quote: string) => !!quote.trim() && normalize(source).includes(normalize(quote));
 
 /** Cuts at a line boundary under `max` characters and says so. */
 export function budget(text: string, max: number) {
