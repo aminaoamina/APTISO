@@ -6,13 +6,17 @@ AI-powered ISO 27001 compliance management platform. APTISO helps organizations 
 
 ```
 Browser
-  -> Next.js (port 3000) -- REST --> NestJS (port 4000) -- Prisma --> PostgreSQL
-       |                              |
-       |                              +--> Nodemailer --> Gmail SMTP (email)
-       |                              +--> BullMQ --> Redis (queues)
-       |                              +--> MinIO (file storage)
-       +-- REST --> FastAPI --> pgvector + LLM API
+  -> Next.js (port 3000) -- REST --> NestJS (port 4000) -- Prisma --> PostgreSQL "aptiso" (business data)
+                                       |
+                                       +--> Nodemailer --> Gmail SMTP (email)
+                                       +--> local disk (evidence files, EVIDENCE_STORAGE_DIR)
+                                       +-- internal HTTP + service token --> AI service (FastAPI, port 8000)
+                                                                               +--> NVIDIA Build API (LLM, embeddings, OCR)
+                                                                               +--> PostgreSQL "aptiso_ai" + pgvector (AI runs, jobs, search index)
+                                                                               +--> Redis (arq job queue) <-- AI worker
 ```
+
+The browser never calls the AI service: the backend checks permissions, sends the AI service only the data it needs, and stores the results and the human decisions. See [apps/ai/README.md](apps/ai/README.md).
 
 **Monorepo (npm workspaces)** — one repo, shared packages, single install, parallel dev via `concurrently`.
 
@@ -21,12 +25,10 @@ aptiso/
 ├── apps/
 │   ├── frontend/         Next.js 15 + TypeScript + Tailwind (shadcn/ui)
 │   ├── backend/          NestJS 11 + Prisma + JWT auth
-│   └── ai-service/       FastAPI + LangChain (AI service)
+│   └── ai/               FastAPI AI service (NVIDIA models, validation, RAG, OCR, job worker)
 ├── packages/
 │   └── shared-types/     Shared TS enums & types (roles, statuses)
-├── docker/
-│   └── postgres/         Postgres + pgvector config
-├── docker-compose.yml    Infrastructure services
+├── docker-compose.yml    Postgres (pgvector), Redis, and the AI service + worker (profile "ai")
 ├── package.json          Workspace root (scripts, workspaces config)
 └── .env.example          Environment variable template
 ```
@@ -47,11 +49,11 @@ aptiso/
 | Email         | Nodemailer + Gmail SMTP                             |
 | API Docs      | Swagger / OpenAPI                                   |
 | Containers    | Docker + Docker Compose                             |
-| Queue         | BullMQ + Redis                                      |
-| File Storage  | MinIO (S3-compatible)                               |
-| AI Service    | FastAPI + LangChain / LlamaIndex                    |
-| Vector DB     | pgvector (PostgreSQL extension)                     |
-| CI/CD         | GitHub Actions                                      |
+| AI Service    | Python FastAPI, OpenAI SDK on NVIDIA Build, Pydantic validation, SQLAlchemy + Alembic |
+| AI jobs       | arq + Redis (document reviews, evidence reading)    |
+| Vector DB     | pgvector (PostgreSQL extension), hybrid search with full text |
+| File Storage  | Local disk (evidence files)                         |
+| Whiteboard    | tldraw                                              |
 
 ## Features
 
@@ -89,12 +91,12 @@ This starts:
 
 | Service    | Port  | Purpose                            |
 |------------|-------|------------------------------------|
-| PostgreSQL | 5432  | Main database                      |
-| Redis      | 6379  | Queue backend                      |
+| PostgreSQL | 5432  | Business database (and the AI database `aptiso_ai`) |
+| Redis      | 6379  | AI job queue                       |
 
-To also start MinIO (file storage):
+The AI service and its worker start with the `ai` profile, after their one-time setup (database role, `.env`): see [apps/ai/README.md](apps/ai/README.md).
 ```sh
-docker compose --profile minio up -d
+docker compose --profile ai up -d --build
 ```
 
 ### 3. Configure environment
@@ -114,7 +116,7 @@ npm run db:migrate
 
 ### 5. Run the app
 
-Open two terminals from the project root:
+From the project root, `npm run dev` starts both apps together (frontend and backend, with `fe` / `be` log prefixes). Or run them in two terminals:
 
 **Terminal 1 — Backend (port 4000):**
 ```sh

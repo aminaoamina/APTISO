@@ -17,6 +17,7 @@ import { ManagementReviewService } from '../audit-prep/management-review.service
 import { P4 } from '../audit-prep/keys';
 import { withProgress } from './project-progress';
 import { MaintenanceService, MAINTENANCE_STEP_KEY } from '../maintenance/maintenance.service';
+import { KnowledgeService } from '../ai/knowledge.service';
 import { TasksService } from '../tasks/tasks.service';
 import {
   CreateProjectDto,
@@ -289,6 +290,7 @@ export class ProjectsService {
     private readonly audits: InternalAuditService,
     private readonly reviews: ManagementReviewService,
     private readonly maintenance: MaintenanceService,
+    private readonly knowledge: KnowledgeService,
   ) {}
 
   async create(
@@ -540,6 +542,7 @@ export class ProjectsService {
     }
 
     await this.prisma.complianceProject.delete({ where: { id: projectId } });
+    this.knowledge.removeProject(projectId);
 
     await this.auditLog.log({
       userId,

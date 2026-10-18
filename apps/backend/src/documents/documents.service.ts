@@ -251,6 +251,8 @@ export class DocumentsService {
       ipAddress,
       userAgent,
     });
+    // The companion answers from the current text too, not only from published versions.
+    this.knowledge.indexSoon(documentId);
 
     return updated;
   }

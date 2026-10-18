@@ -12,7 +12,7 @@ from sqlalchemy import delete
 
 from app import knowledge
 from app.llm.client import AiUnavailable, RunMeta
-from app.models import KnowledgeChunk
+from app.models import AiJob, AiRun, KnowledgeChunk
 from app.prompts import Prompt
 from app.security import require_service_token
 
@@ -65,12 +65,15 @@ async def delete_document(document_id: str, project_id: uuid.UUID, request: Requ
     return {"deleted": r.rowcount}
 
 
-@router.delete("/index/projects/{project_id}")
+@router.delete("/projects/{project_id}")
 async def delete_project(project_id: uuid.UUID, request: Request) -> dict:
+    """The project was deleted in APTISO: its indexed passages, jobs (with their copies of document text) and AI runs go too."""
     async with request.app.state.sessions() as s:
-        r = await s.execute(delete(KnowledgeChunk).where(KnowledgeChunk.project_id == project_id))
+        counts = {}
+        for name, model in (("chunks", KnowledgeChunk), ("jobs", AiJob), ("runs", AiRun)):
+            counts[name] = (await s.execute(delete(model).where(model.project_id == project_id))).rowcount
         await s.commit()
-    return {"deleted": r.rowcount}
+    return {"deleted": counts}
 
 
 @router.get("/index/projects/{project_id}")

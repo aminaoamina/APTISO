@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AlertCircle, Bot, Loader2, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
 import { chatApi, nextActionsApi, type ChatCitation, type ChatTurn, type NextAction } from '@/lib/ai-api';
 import { getErrorMessage } from '@/lib/utils';
@@ -35,6 +36,8 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
+  // On the whiteboard, stay clear of the canvas controls in the bottom-right corner.
+  const lifted = usePathname().endsWith('/whiteboard');
   // The greeting: what this person should do next (loaded each time the panel opens).
   const [actions, setActions] = useState<NextAction[] | null>(null);
   useEffect(() => {
@@ -76,7 +79,7 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--brand-orange)] px-4 py-3 text-sm font-medium text-white shadow-lg hover:opacity-90"
+        className={`fixed ${lifted ? 'bottom-24' : 'bottom-5'} right-5 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--brand-orange)] px-4 py-3 text-sm font-medium text-white shadow-lg hover:opacity-90`}
       >
         <MessageCircle className="h-4 w-4" />ISO companion
       </button>

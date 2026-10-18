@@ -48,6 +48,8 @@ export default function DocumentEditorPage() {
 
   // Latest content kept in a ref so autosave always sees current JSON
   const contentRef = useRef<ProseMirrorNode | null>(null);
+  // What the server has: an editor update with the same content is not a change.
+  const savedJson = useRef('');
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function DocumentEditorPage() {
         if (cancelled) return;
         setDoc(instance);
         contentRef.current = instance.content;
+        savedJson.current = JSON.stringify(instance.content);
       } catch {
         if (!cancelled) setNotFound(true);
       } finally {
@@ -73,7 +76,9 @@ export default function DocumentEditorPage() {
     if (!contentRef.current || isSaving) return;
     setIsSaving(true);
     try {
-      const updated = await documentsApi.updateContent(documentId, contentRef.current);
+      const sent = contentRef.current;
+      const updated = await documentsApi.updateContent(documentId, sent);
+      savedJson.current = JSON.stringify(sent);
       setDoc((prev) => (prev ? { ...prev, status: updated.status } : prev));
       setDirty(false);
     } catch (err) {
@@ -86,8 +91,12 @@ export default function DocumentEditorPage() {
   const handleChange = useCallback(
     (content: ProseMirrorNode) => {
       contentRef.current = content;
-      setDirty(true);
       if (saveTimer.current) clearTimeout(saveTimer.current);
+      if (JSON.stringify(content) === savedJson.current) {
+        setDirty(false);
+        return;
+      }
+      setDirty(true);
       saveTimer.current = setTimeout(() => void save(), 2000);
     },
     [save],

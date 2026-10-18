@@ -8,6 +8,7 @@ import { proseText } from './text';
 
 export interface Fact { text: string; source_type: string; source_id: string | null }
 
+const REINDEX_DELAY_MS = 15_000;
 const fmt = (d: Date | null | undefined) => (d ? d.toISOString().slice(0, 10) : null);
 const person = (u: { first_name: string; last_name: string } | null | undefined) => (u ? `${u.first_name} ${u.last_name}`.trim() : null);
 
@@ -19,6 +20,7 @@ const person = (u: { first_name: string; last_name: string } | null | undefined)
 @Injectable()
 export class KnowledgeService {
   private readonly logger = new Logger(KnowledgeService.name);
+  private readonly pending = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -60,6 +62,18 @@ export class KnowledgeService {
   /** Background variant for hooks (publishing, saving): failures are logged, never raised. */
   indexInBackground(documentId: string) {
     this.indexDocument(documentId).catch(e => this.logger.warn(`Indexing ${documentId} failed: ${(e as Error).message}`));
+  }
+
+  /** A draft is re-indexed a moment after its last save (autosave sends many saves while typing). */
+  indexSoon(documentId: string) {
+    clearTimeout(this.pending.get(documentId));
+    this.pending.set(documentId, setTimeout(() => { this.pending.delete(documentId); this.indexInBackground(documentId); }, REINDEX_DELAY_MS));
+  }
+
+  /** Every AI record of a deleted project: indexed passages, jobs and runs. */
+  removeProject(projectId: string) {
+    this.ai.request('DELETE', `/v1/projects/${projectId}`)
+      .catch(e => this.logger.warn(`Removing the AI data of project ${projectId} failed: ${(e as Error).message}`));
   }
 
   removeDocument(projectId: string, documentId: string) {
