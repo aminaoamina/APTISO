@@ -1,10 +1,11 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { Sheet } from './excel';
+import { programAuditStatus } from '../maintenance/audit-program.service';
 
 /** Registers that can be exported, in the order of the "All registers" workbook. */
 export const REGISTERS = [
   'documents', 'requirements', 'risks', 'soa', 'treatment-plan', 'nonconformities',
-  'incidents', 'trainings', 'objectives', 'internal-audits', 'evidence',
+  'incidents', 'trainings', 'objectives', 'audit-program', 'internal-audits', 'evidence',
 ] as const;
 export type RegisterKey = (typeof REGISTERS)[number];
 
@@ -228,6 +229,20 @@ const BUILDERS: Record<Exclude<RegisterKey, 'evidence'>, (ctx: Ctx) => Promise<S
   },
 
   /** Internal audits and their checklist results (clause 9.2). */
+  /** Clause 9.2.2: the internal audits planned over the certification cycle. */
+  'audit-program': async ({ prisma, projectId, people }) => {
+    const audits = await prisma.programAudit.findMany({
+      where: { program: { project_id: projectId } },
+      include: { internal_audit: { select: { title: true, status: true } } },
+      orderBy: { planned_month: 'asc' },
+    });
+    return [{
+      name: 'Internal audit program',
+      columns: [{ header: 'Planned month', width: 14 }, { header: 'Scope', width: 50 }, { header: 'Auditor', width: 20 }, { header: 'Status', width: 13 }, { header: 'Internal audit', width: 30 }],
+      rows: audits.map(a => [a.planned_month, a.scope, people(a.auditor_id), label(programAuditStatus(a)), a.internal_audit?.title]),
+    }];
+  },
+
   'internal-audits': async ({ prisma, projectId, people }) => {
     const audits = await prisma.internalAudit.findMany({ where: { project_id: projectId }, include: { items: { orderBy: { order: 'asc' } } }, orderBy: { start_date: 'asc' } });
     return [

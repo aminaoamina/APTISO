@@ -1214,7 +1214,7 @@ export const connectorsApi = {
 
 export type RegisterKey =
   | 'documents' | 'requirements' | 'risks' | 'soa' | 'treatment-plan' | 'nonconformities'
-  | 'incidents' | 'trainings' | 'objectives' | 'internal-audits' | 'evidence';
+  | 'incidents' | 'trainings' | 'objectives' | 'audit-program' | 'internal-audits' | 'evidence';
 
 export const exportsApi = {
   /** One register as Excel, or "all" for every register (one sheet each). */

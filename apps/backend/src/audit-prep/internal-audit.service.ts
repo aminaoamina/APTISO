@@ -65,6 +65,12 @@ export class InternalAuditService {
 
   /** "Schedule new audit": the checklist covers clauses 4-10 and every applicable SoA control. */
   async create(stepId: string, dto: CreateAuditDto, userId: string) {
+    await this.schedule(stepId, dto, userId);
+    return this.get(stepId, userId);
+  }
+
+  /** Creates the audit, its checklist and the auditor's task; also used by the audit programme (Phase 5). */
+  async schedule(stepId: string, dto: CreateAuditDto, userId: string) {
     const access = await this.access.forStep(stepId, userId, P4.INTERNAL_AUDIT);
     this.access.assertEdit(access);
     await this.access.assertMembers(access.projectId, [dto.lead_auditor_id]);
@@ -113,7 +119,7 @@ export class InternalAuditService {
     });
     await this.prisma.internalAudit.update({ where: { id: audit.id }, data: { task_id: task.id } });
     await this.log(userId, audit.id, { action: 'schedule_audit', checklist_items: items.length });
-    return this.get(stepId, userId);
+    return audit;
   }
 
   async update(stepId: string, auditId: string, dto: UpdateAuditDto, userId: string) {
