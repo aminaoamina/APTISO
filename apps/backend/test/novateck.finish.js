@@ -138,6 +138,15 @@ const log = (...a) => console.log('  ', ...a);
   // Phase 5: the maintenance cycle started with the review; the audit programme needs the certification date (June 2027).
   log('✔ Phase 5 started: recurring activities scheduled; the audit programme comes once the certification date is known');
 
+  // Register documents (SoA, risk report, training plan, objectives, audit report, review minutes) go to the library too.
+  const drafts = await prisma.documentInstance.findMany({ where: { versions: { none: {} }, step: { phase: { project_id: project.id } } } });
+  for (const d of drafts) {
+    await s.docs.updateAssignments(d.id, { owner_id: LEAD, approver_id: id('karim'), update_interval: 12 }, LEAD);
+    await s.library.submit(d.id, LEAD, 'First issue');
+    await s.library.approve(d.id, id('karim'));
+  }
+  log(`✔ ${drafts.length} register documents published in the library`);
+
   const view = await s.projects.findOne(project.id, LEAD);
   console.log(`\nNovaTeck: ${view.progress.completed_steps}/${view.progress.total_steps} steps (${view.progress.percent}%).`);
   await app.close();

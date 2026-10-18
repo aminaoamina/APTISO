@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { withProgress, type Progress } from '../projects/project-progress';
 import { AiServiceClient } from './ai-service.client';
 import { AiContextService } from './context.service';
 import { KnowledgeService } from './knowledge.service';
@@ -11,6 +13,7 @@ interface Search {
 }
 
 const taskLabel = (type: string) => type.toLowerCase().replace(/_/g, ' ');
+const PROGRESS_LABEL = { NOT_STARTED: 'not started', IN_PROGRESS: 'in progress', COMPLETED: 'done' } as const;
 
 /**
  * The companion chat. The backend decides what the person may see (project,
@@ -24,6 +27,7 @@ export class ChatService {
     private readonly context: AiContextService,
     private readonly knowledge: KnowledgeService,
     private readonly conversations: ConversationsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async chat(projectId: string, userId: string, dto: ChatDto, signal: AbortSignal) {
@@ -38,7 +42,8 @@ export class ChatService {
     const previous = [...conversation.history].reverse().find(t => t.role === 'user')?.content;
     const query = previous ? `${previous.slice(0, 500)}\n${dto.message}` : dto.message;
     const found = await this.ai.request<Search>('POST', '/v1/search', { project_id: projectId, user_id: userId, visibilities, query }, { timeoutMs: 30_000 });
-    const facts = await this.knowledge.facts(projectId, found.refs, ctx.access.canEdit);
+    // Where the project stands comes first: questions such as "what is left?" need it whatever they mention.
+    const facts = [await this.progressFact(projectId), ...(await this.knowledge.facts(projectId, found.refs, ctx.access.canEdit))];
 
     const user = [
       `Name: ${ctx.user.name}`,
@@ -59,5 +64,28 @@ export class ChatService {
       facts,
     }, signal);
     return this.conversations.record(conversation.id, answer);
+  }
+
+  /** The phases and steps as the project page shows them, with what is not finished. */
+  private async progressFact(projectId: string) {
+    const project = await this.prisma.complianceProject.findUniqueOrThrow({
+      where: { id: projectId },
+      select: {
+        id: true,
+        target_date: true,
+        maintenance: { select: { certification_date: true } },
+        phases: { orderBy: { order: 'asc' }, select: { order: true, name: true, steps: { orderBy: { order: 'asc' }, select: { id: true, key: true, title: true, status: true, completion_data: true } } } },
+      },
+    });
+    const view = await withProgress(this.prisma, project);
+    const lines = [`Project progress: ${view.progress.completed_steps} of ${view.progress.total_steps} steps done (${view.progress.percent}%)${project.target_date ? `, target date ${project.target_date.toISOString().slice(0, 10)}` : ''}.`];
+    for (const phase of view.phases) {
+      const steps = phase.steps as unknown as { title: string; progress: Progress }[];
+      const open = steps.filter(st => st.progress !== 'COMPLETED');
+      const done = steps.length - open.length;
+      lines.push(`Phase ${phase.order} ${phase.name}: ${done}/${steps.length} steps done${open.length ? `. Not finished: ${open.slice(0, 12).map(st => `"${st.title}" (${PROGRESS_LABEL[st.progress]})`).join(', ')}` : ''}.`);
+    }
+    if (!project.maintenance?.certification_date) lines.push('Certification date: not recorded yet (Phase 5, Maintenance).');
+    return { text: lines.join('\n').slice(0, 2000), source_type: 'project', source_id: projectId };
   }
 }
