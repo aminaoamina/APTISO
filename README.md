@@ -8,7 +8,7 @@ AI-powered ISO 27001 compliance management platform. APTISO helps organizations 
 Browser
   -> Next.js (port 3000) -- REST --> NestJS (port 4000) -- Prisma --> PostgreSQL
        |                              |
-       |                              +--> Nodemailer --> Mailhog (dev email)
+       |                              +--> Nodemailer --> Gmail SMTP (email)
        |                              +--> BullMQ --> Redis (queues)
        |                              +--> MinIO (file storage)
        +-- REST --> FastAPI --> pgvector + LLM API
@@ -44,7 +44,7 @@ aptiso/
 | ORM           | Prisma 6                                            |
 | Auth          | JWT (access + refresh tokens, HttpOnly cookies)     |
 | Passwords     | argon2                                               |
-| Email         | Nodemailer + Mailhog (dev)                          |
+| Email         | Nodemailer + Gmail SMTP                             |
 | API Docs      | Swagger / OpenAPI                                   |
 | Containers    | Docker + Docker Compose                             |
 | Queue         | BullMQ + Redis                                      |
@@ -66,7 +66,8 @@ aptiso/
 
 - Node.js >= 20
 - npm >= 10
-- Docker + Docker Compose (for PostgreSQL, Mailhog, Redis)
+- Docker + Docker Compose (for PostgreSQL and Redis)
+- A Gmail account with an App Password, to send emails
 
 ## Getting Started
 
@@ -78,7 +79,7 @@ cd aptiso
 npm install
 ```
 
-### 2. Start infrastructure (PostgreSQL + Mailhog)
+### 2. Start infrastructure (PostgreSQL + Redis)
 
 ```sh
 docker compose up -d
@@ -89,8 +90,6 @@ This starts:
 | Service    | Port  | Purpose                            |
 |------------|-------|------------------------------------|
 | PostgreSQL | 5432  | Main database                      |
-| Mailhog    | 1025  | SMTP (receives emails)             |
-| Mailhog UI | 8025  | Web UI to view captured emails     |
 | Redis      | 6379  | Queue backend                      |
 
 To also start MinIO (file storage):
@@ -133,12 +132,11 @@ npm run dev -w @aptiso/frontend
 |-----|------|
 | http://localhost:3000 | Frontend app |
 | http://localhost:4000/api/docs | Swagger API documentation |
-| http://localhost:8025 | Mailhog — view all emails sent by the backend |
 
 ### 7. Test the auth flow
 
 1. Go to http://localhost:3000/register and create an account
-2. Check http://localhost:8025 for the verification email
+2. Check the inbox of that address for the verification email
 3. Click the verification link
 4. Go to http://localhost:3000/login and sign in
 

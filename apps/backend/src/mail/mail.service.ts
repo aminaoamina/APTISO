@@ -171,9 +171,9 @@ export class MailService implements IMailService {
     const pass = this.configService.get('SMTP_PASS') || '';
 
     return {
-      host: this.configService.get('SMTP_HOST', 'localhost'),
-      port: parseInt(this.configService.get('SMTP_PORT', '1025'), 10),
-      secure: this.configService.get('SMTP_SECURE') === 'true',
+      host: this.configService.get('SMTP_HOST', 'smtp.gmail.com'),
+      port: parseInt(this.configService.get('SMTP_PORT', '465'), 10),
+      secure: this.configService.get('SMTP_SECURE', 'true') === 'true',
       auth: user ? { user, pass } : undefined,
       from: {
         name: this.configService.get('EMAIL_FROM_NAME', 'APTISO'),
