@@ -286,7 +286,7 @@ export function DashboardSidebar() {
               <NavRow
                 item={{
                   label: 'Document Library',
-                  href: `/dashboard/organizations/${orgId}/library`,
+                  href: `/dashboard/organizations/${orgId}/library${projectId ? `?project=${projectId}` : ''}`,
                   icon: BookOpen,
                 }}
                 isActive={pathname.startsWith(`/dashboard/organizations/${orgId}/library`)}

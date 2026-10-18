@@ -29,7 +29,9 @@ export function DashboardHeader() {
   };
 
   return (
-    <header className="flex items-center justify-end gap-5 mb-7 fade-up" style={{ animationDelay: '0.05s' }}>
+    // relative z-30: the fade-up animation gives the header its own layer, which must stay above
+    // the cards below it so the notification panel is not drawn under them.
+    <header className="relative z-30 flex items-center justify-end gap-5 mb-7 fade-up" style={{ animationDelay: '0.05s' }}>
       {/* Right side: theme, notifications, user */}
       <div className="flex items-center gap-3.5">
         <ThemeToggle glass />
