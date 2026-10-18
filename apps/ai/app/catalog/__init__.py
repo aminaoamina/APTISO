@@ -13,6 +13,8 @@ _DATA = json.loads((Path(__file__).parent / "iso27001_2022.json").read_text(enco
 VERSION: str = _DATA["version"]
 CLAUSES: dict[str, str] = {c["ref"]: c["title"] for c in _DATA["clauses"]}
 CONTROLS: dict[str, str] = {c["ref"]: c["title"] for c in _DATA["controls"]}
+# What an auditor checks for each clause (the internal audit checklist questions).
+CLAUSE_QUESTIONS: dict[str, str] = {c["ref"]: c["question"] for c in _DATA["clauses"]}
 _BY_TITLE = {t.lower(): r for r, t in {**CLAUSES, **CONTROLS}.items()}
 _REF = re.compile(r"^(?:clause|control)?\s*(a)?[\s.]*(\d+(?:\.\d+)*)", re.IGNORECASE)
 

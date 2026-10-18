@@ -51,6 +51,26 @@ services:
       redis:
         condition: service_healthy
 
+  # AI job worker (document reviews): same image, runs the background jobs.
+  ai-worker:
+    build: ./apps/ai
+    container_name: aptiso-ai-worker
+    restart: unless-stopped
+    profiles: ["ai"]
+    command: ["arq", "app.jobs.WorkerSettings"]
+    # The image's health check probes the API port, which the worker does not serve.
+    healthcheck:
+      disable: true
+    env_file: ./apps/ai/.env
+    environment:
+      AI_DB_HOST: postgres
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   # MinIO - object storage, needed from Sprint 3 (document storage / evidence).
   # Start on demand with:  docker compose --profile minio up -d
   minio:

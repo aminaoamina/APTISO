@@ -35,9 +35,10 @@ class AiUnavailable(Exception):
 class AiRejected(Exception):
     """The answer failed validation twice: nothing is returned as if it were valid."""
 
-    def __init__(self, errors: list[str], run_id: str):
+    def __init__(self, errors: list[str], run_id: str, partial: BaseModel | None = None):
         super().__init__("; ".join(errors[:3]))
-        self.errors, self.run_id = errors, run_id
+        # The last answer that matched the schema, so callers can keep its valid parts.
+        self.errors, self.run_id, self.partial = errors, run_id, partial
 
 
 @dataclass
@@ -112,11 +113,12 @@ class AiClient:
         messages = [{"role": "system", "content": system}, {"role": "user", "content": user_input}]
         input_hash, usage = _hash(messages), _Usage()
         errors: list[str] = []
+        partial: BaseModel | None = None
         try:
             for attempt in (1, 2):
                 text = await self._complete(capability, messages, usage)
                 try:
-                    value = schema.model_validate(parse_model_json(text))
+                    value = partial = schema.model_validate(parse_model_json(text))
                     errors = check(value)
                 except (ValueError, ValidationError) as e:
                     errors = [f"{'.'.join(map(str, x['loc'])) or 'answer'}: {x['msg']}" for x in e.errors()] if isinstance(e, ValidationError) else [str(e)]
@@ -131,8 +133,9 @@ class AiClient:
         except AiUnavailable as e:
             await self._record(capability, prompt, input_hash, meta, usage, "failed", error=str(e))
             raise
-        run_id = await self._record(capability, prompt, input_hash, meta, usage, "rejected", validation={"attempts": 2, "errors": errors})
-        raise AiRejected(errors, run_id)
+        run_id = await self._record(capability, prompt, input_hash, meta, usage, "rejected", validation={"attempts": 2, "errors": errors},
+                                    output=partial.model_dump(mode="json") if partial else None)
+        raise AiRejected(errors, run_id, partial)
 
     async def text(self, capability: str, prompt: Prompt, messages: list[dict], meta: RunMeta) -> tuple[str, str, str]:
         """Plain text answer. Returns (text, run_id, model)."""

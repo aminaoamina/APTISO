@@ -27,7 +27,11 @@ python -m venv .venv
 .venv\Scripts\alembic upgrade head
 .venv\Scripts\uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
-Stop the Docker container first (`docker compose stop ai`), since both use port 8000.
+And the job worker (document reviews), in a second terminal:
+```sh
+.venv\Scripts\arq app.jobs.WorkerSettings
+```
+Stop the Docker containers first (`docker compose stop ai ai-worker`), since the API uses port 8000.
 
 ## Check
 

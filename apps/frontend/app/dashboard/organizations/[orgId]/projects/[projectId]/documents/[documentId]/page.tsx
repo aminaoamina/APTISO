@@ -10,6 +10,7 @@ import {
   documentsApi,
 } from '@/lib/api';
 import DocumentEditor from '@/components/editor/document-editor';
+import { ReviewCard } from '@/components/ai/review-card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -359,6 +360,8 @@ export default function DocumentEditorPage() {
           immediately.
         </p>
       )}
+
+      <ReviewCard projectId={projectId} documentId={documentId} canEdit={canEdit} />
     </div>
   );
 }

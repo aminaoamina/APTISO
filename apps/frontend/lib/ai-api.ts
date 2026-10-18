@@ -56,3 +56,35 @@ export const aiApi = {
   decide: async (projectId: string, runId: string, outcome: 'ACCEPTED' | 'DISMISSED') =>
     apiClient.post(`/projects/${projectId}/ai/decisions`, { runId, outcome }).catch(() => undefined),
 };
+
+export interface ReviewFinding {
+  id: string;
+  type: 'missing' | 'contradiction' | 'vague';
+  ref: string;
+  ref_title: string | null;
+  quote: string | null;
+  explanation: string;
+  suggestion: string;
+  severity: 'high' | 'medium' | 'low';
+  state: 'OPEN' | 'ACCEPTED' | 'DISMISSED';
+}
+
+export interface DocumentReview {
+  id: string;
+  status: 'QUEUED' | 'RUNNING' | 'DONE' | 'FAILED';
+  error: string | null;
+  created_at: string;
+  completed_at: string | null;
+  /** The document changed after this review. */
+  outdated: boolean;
+  findings: ReviewFinding[];
+}
+
+export const reviewApi = {
+  latest: async (projectId: string, documentId: string): Promise<DocumentReview | null> =>
+    (await apiClient.get(`/projects/${projectId}/documents/${documentId}/ai-review`)).data.review,
+  start: async (projectId: string, documentId: string): Promise<DocumentReview | null> =>
+    (await apiClient.post(`/projects/${projectId}/documents/${documentId}/ai-review`)).data.review,
+  decide: async (projectId: string, findingId: string, state: ReviewFinding['state']) =>
+    apiClient.patch(`/projects/${projectId}/ai-review/findings/${findingId}`, { state }),
+};

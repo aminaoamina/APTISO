@@ -24,7 +24,7 @@ CAPABILITIES: dict[str, Capability] = {
     "wizard_suggest": Capability(_FAST, 0.2, 3000, 40, 1, True, True),
     "paragraph_improve": Capability(_FAST, 0.3, 1200, 30, 0, False, False),
     "companion_chat": Capability(_FAST, 0.3, 1500, 45, 0, False, False),
-    "document_review": Capability(_FAST, 0.1, 4000, 120, 2, True, True),
+    "document_review": Capability(_FAST, 0.1, 4000, 90, 1, True, True),
     "evidence_analyze": Capability(_FAST, 0.1, 1500, 120, 2, True, False),
     "next_actions": Capability(_FAST, 0.2, 800, 25, 1, True, False),
 }

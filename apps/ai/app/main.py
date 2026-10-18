@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from app.config import get_settings
 from app.db import create_engine, session_factory
 from app.llm.client import AiClient, AiRejected, AiUnavailable
-from app.routers import assist, health
+from app.routers import assist, health, jobs
 
 BODY_METHODS = {"POST", "PUT", "PATCH"}
 
@@ -19,7 +19,10 @@ async def lifespan(app: FastAPI):
     app.state.sessions = session_factory(app.state.engine)
     app.state.redis = Redis.from_url(settings.redis_url, socket_connect_timeout=2)
     app.state.ai = AiClient(settings, app.state.sessions)
+    app.state.arq = None  # job queue pool, connected on first use
     yield
+    if app.state.arq is not None:
+        await app.state.arq.aclose()
     await app.state.redis.aclose()
     await app.state.engine.dispose()
 
@@ -60,3 +63,4 @@ async def ai_rejected(_: Request, e: AiRejected):
 
 app.include_router(health.router)
 app.include_router(assist.router)
+app.include_router(jobs.router)

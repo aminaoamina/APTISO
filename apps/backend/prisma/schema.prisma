@@ -685,6 +685,7 @@ model DocumentInstance {
 
   task_assignments TaskAssignment[]
   versions         DocumentVersion[]
+  ai_reviews       DocumentAiReview[]
 
   @@index([template_id])
   @@index([created_by])
@@ -1762,4 +1763,60 @@ model AiDecision {
 
   @@index([project_id])
   @@map("ai_decisions")
+}
+
+enum AiReviewStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum AiFindingState {
+  OPEN
+  ACCEPTED
+  DISMISSED
+}
+
+/// An AI review of one version of a document (advisory: never blocks submission or approval).
+/// job_id points to the job in the AI service (aptiso_ai.ai_jobs).
+model DocumentAiReview {
+  id           String         @id @default(uuid()) @db.Uuid
+  document_id  String         @db.Uuid
+  project_id   String         @db.Uuid
+  requested_by String         @db.Uuid
+  /// SHA-256 of the reviewed content: the same content is never reviewed twice.
+  content_hash String         @db.Char(64)
+  job_id       String         @unique @db.Uuid
+  status       AiReviewStatus @default(QUEUED)
+  run_id       String?        @db.Uuid
+  error        String?        @db.Text
+  created_at   DateTime       @default(now()) @db.Timestamp(6)
+  completed_at DateTime?      @db.Timestamp(6)
+
+  document DocumentInstance  @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  findings AiReviewFinding[]
+
+  @@index([document_id, created_at])
+  @@map("document_ai_reviews")
+}
+
+/// One finding of an AI review, with the person's decision on it.
+model AiReviewFinding {
+  id          String         @id @default(uuid()) @db.Uuid
+  review_id   String         @db.Uuid
+  type        String         @db.VarChar(20)
+  ref         String         @db.VarChar(20)
+  quote       String?        @db.Text
+  explanation String         @db.Text
+  suggestion  String         @db.Text
+  severity    String         @db.VarChar(10)
+  state       AiFindingState @default(OPEN)
+  decided_by  String?        @db.Uuid
+  decided_at  DateTime?      @db.Timestamp(6)
+
+  review DocumentAiReview @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@index([review_id])
+  @@map("ai_review_findings")
 }
