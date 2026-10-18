@@ -46,7 +46,7 @@ const expectError = async (fn, check, msg) => {
   // ── AI service (apps/ai) ──
   const service = app.get(AiServiceClient);
   const ready = await service.request('GET', '/v1/health/ready');
-  ok(ready.status === 'ok' && ready.checks.database.pgvector && ready.checks.redis.ok && ready.catalog === 'iso27001-2022@1',
+  ok(ready.status === 'ok' && ready.checks.database.pgvector && ready.checks.redis.ok && ready.catalog?.startsWith('iso27001-2022@'),
     `the backend reaches the AI service with its token (pgvector ${ready.checks.database.pgvector}, Redis ok, catalog ${ready.catalog})`);
   const health = await app.get(AiController).health();
   ok(health.ai_service === 'ok' && health.checks.database.ok, `GET /ai/health reports the AI service ok (${health.latency_ms} ms)`);

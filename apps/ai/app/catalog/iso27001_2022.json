@@ -1,5 +1,5 @@
 {
- "version": "iso27001-2022@2",
+ "version": "iso27001-2022@3",
  "standard": "ISO/IEC 27001:2022",
  "clauses": [
   {
@@ -211,7 +211,7 @@
   },
   {
    "ref": "A.5.21",
-   "title": "Managing information security in the ICT supply chain"
+   "title": "Managing information security in the information and communication technology (ICT) supply chain"
   },
   {
    "ref": "A.5.22",
@@ -263,7 +263,7 @@
   },
   {
    "ref": "A.5.34",
-   "title": "Privacy and protection of PII"
+   "title": "Privacy and protection of personal identifiable information (PII)"
   },
   {
    "ref": "A.5.35",
@@ -311,7 +311,7 @@
   },
   {
    "ref": "A.7.1",
-   "title": "Physical security perimeter"
+   "title": "Physical security perimeters"
   },
   {
    "ref": "A.7.2",
@@ -319,7 +319,7 @@
   },
   {
    "ref": "A.7.3",
-   "title": "Security of offices, rooms and facilities"
+   "title": "Securing offices, rooms and facilities"
   },
   {
    "ref": "A.7.4",
@@ -327,7 +327,7 @@
   },
   {
    "ref": "A.7.5",
-   "title": "Protection against physical and environmental threats"
+   "title": "Protecting against physical and environmental threats"
   },
   {
    "ref": "A.7.6",
@@ -367,7 +367,7 @@
   },
   {
    "ref": "A.8.1",
-   "title": "User endpoint devices"
+   "title": "User end point devices"
   },
   {
    "ref": "A.8.2",
@@ -411,7 +411,7 @@
   },
   {
    "ref": "A.8.12",
-   "title": "Prevention of data leakage"
+   "title": "Data leakage prevention"
   },
   {
    "ref": "A.8.13",
@@ -463,7 +463,7 @@
   },
   {
    "ref": "A.8.25",
-   "title": "Secure development lifecycle"
+   "title": "Secure development life cycle"
   },
   {
    "ref": "A.8.26",
