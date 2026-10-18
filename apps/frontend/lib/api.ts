@@ -331,7 +331,7 @@ export type NotificationTask = Pick<TaskAssignment, 'id' | 'type' | 'status' | '
 export interface AppNotification {
   id: string;
   type: 'ORGANIZATION_JOIN_REQUEST' | 'TASK_ASSIGNED' | 'TASK_COMPLETED' | 'TASK_DUE_SOON' | 'TASK_CANCELLED'
-    | 'REQUEST_RECEIVED' | 'REQUEST_DECIDED';
+    | 'REQUEST_RECEIVED' | 'REQUEST_DECIDED' | 'TWO_FACTOR_SUGGESTED';
   read_at: string | null;
   created_at: string;
   actor: Person | null;
@@ -1246,10 +1246,29 @@ export const notificationsApi = {
 // ============================================================
 
 export const authApi = {
-  login: async (data: { email: string; password: string }): Promise<{ user: User }> => {
+  /** With two-step verification on, the password step returns a challenge instead of the user. */
+  login: async (data: { email: string; password: string }): Promise<{ user: User } | { two_factor_required: true; challenge_token: string }> => {
     const response = await apiClient.post('/auth/login', data);
     return response.data;
   },
+
+  loginSecondFactor: async (challenge_token: string, code: string): Promise<{ user: User }> =>
+    (await apiClient.post('/auth/login/2fa', { challenge_token, code })).data,
+
+  twoFactorStatus: async (): Promise<{ enabled: boolean; enabled_at: string | null; recovery_codes_left: number }> =>
+    (await apiClient.get('/auth/2fa')).data,
+
+  twoFactorSetup: async (): Promise<{ qr_code: string; secret: string; uri: string }> =>
+    (await apiClient.post('/auth/2fa/setup')).data,
+
+  twoFactorEnable: async (code: string): Promise<{ recovery_codes: string[] }> =>
+    (await apiClient.post('/auth/2fa/enable', { code })).data,
+
+  twoFactorDisable: async (password: string, code: string): Promise<{ enabled: false }> =>
+    (await apiClient.post('/auth/2fa/disable', { password, code })).data,
+
+  twoFactorRecoveryCodes: async (code: string): Promise<{ recovery_codes: string[] }> =>
+    (await apiClient.post('/auth/2fa/recovery-codes', { code })).data,
 
   register: async (data: {
     first_name: string;

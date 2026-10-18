@@ -66,6 +66,7 @@ enum NotificationType {
   TASK_CANCELLED
   REQUEST_RECEIVED
   REQUEST_DECIDED
+  TWO_FACTOR_SUGGESTED
 }
 
 enum ProjectStatus {
@@ -144,6 +145,13 @@ model User {
   updated_at        DateTime  @updatedAt @db.Timestamp(6)
 
   // Relations
+  /// Two-step verification (TOTP). The secret is encrypted (AES-256-GCM); it is pending until the first code confirms it.
+  totp_secret     String?   @db.Text
+  totp_enabled_at DateTime? @db.Timestamp(6)
+  /// Last 30-second step used: a code cannot be used twice.
+  totp_last_step  Int?
+  recovery_codes  TwoFactorRecoveryCode[]
+
   organization_memberships           OrganizationMember[]
   project_memberships                ProjectMember[]
   ai_decisions                       AiDecision[]
@@ -1863,4 +1871,18 @@ model Whiteboard {
   project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@map("whiteboards")
+}
+
+/// One-time codes to sign in when the authenticator app is not available (stored as hashes only).
+model TwoFactorRecoveryCode {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String    @db.Uuid
+  code_hash  String    @db.Char(64)
+  used_at    DateTime? @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("two_factor_recovery_codes")
 }

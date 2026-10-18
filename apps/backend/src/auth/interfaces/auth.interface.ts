@@ -12,6 +12,12 @@ export interface RegisterResponse {
   message: string;
 }
 
+/** The password was right and two-step verification is on: the code is asked next. */
+export interface TwoFactorChallenge {
+  two_factor_required: true;
+  challenge_token: string;
+}
+
 export interface LoginResponse {
   user: PublicUser;
   sessionId: string;

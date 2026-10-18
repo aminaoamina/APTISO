@@ -21,6 +21,7 @@ import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
+import { TwoFactorCard } from '@/components/profile/two-factor-card';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1').replace('/api/v1', '');
 
@@ -691,6 +692,11 @@ export default function ProfilePage() {
             </button>
           </div>
         </div>
+      </SectionCard>
+
+      {/* ─── Two-step verification ─────────────────────── */}
+      <SectionCard delay="0.18s">
+        <TwoFactorCard />
       </SectionCard>
 
       {/* ─── Notifications ────────────────────────────────── */}

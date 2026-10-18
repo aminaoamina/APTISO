@@ -22,6 +22,8 @@ export function notificationMessage(n: AppNotification) {
       return `${actor} removed this task from your list: ${what}.`;
     case 'REQUEST_RECEIVED':
       return `${actor} requests ${asked}. Approve or reject it.`;
+    case 'TWO_FACTOR_SUGGESTED':
+      return 'Protect your account: turn on two-step verification with an authenticator app (optional).';
     case 'REQUEST_DECIDED':
       return `${actor} ${request?.status === 'APPROVED' ? 'approved' : 'rejected'} your request for ${asked}${request?.decision_comment ? `: ${request.decision_comment}` : '.'}`;
   }
@@ -29,6 +31,7 @@ export function notificationMessage(n: AppNotification) {
 
 /** Where a notification leads; null when there is nothing to open. */
 export function notificationHref(n: AppNotification) {
+  if (n.type === 'TWO_FACTOR_SUGGESTED') return '/dashboard/profile#two-factor';
   if (n.task_assignment && n.type !== 'TASK_CANCELLED') return taskHref(n.task_assignment);
   const request = n.resource_request;
   if (request && n.type === 'REQUEST_RECEIVED') return requestsHref(request);

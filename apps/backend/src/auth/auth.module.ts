@@ -10,6 +10,9 @@ import { MailModule } from '../mail/mail.module';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { SessionService } from '../common/services/session.service';
 import { APP_GUARD } from '@nestjs/core';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { SecretBox } from '../connectors/secret-box';
+import { TwoFactorService } from './two-factor.service';
 
 @Module({
   imports: [
@@ -25,10 +28,13 @@ import { APP_GUARD } from '@nestjs/core';
       inject: [ConfigService],
     }),
     MailModule,
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
+    TwoFactorService,
+    SecretBox,
     AuditLogService,
     SessionService,
     JwtStrategy,

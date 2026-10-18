@@ -173,3 +173,25 @@ export class ChangePasswordDto {
   @MinLength(8, { message: 'New password must be at least 8 characters' })
   new_password: string;
 }
+
+export class TwoFactorCodeDto {
+  @ApiProperty({ example: '123456', description: 'Code from the authenticator app, or a recovery code' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(20)
+  code: string;
+}
+
+export class TwoFactorLoginDto extends TwoFactorCodeDto {
+  @ApiProperty({ description: 'The challenge_token returned by POST /auth/login' })
+  @IsString()
+  @IsNotEmpty()
+  challenge_token: string;
+}
+
+export class TwoFactorDisableDto extends TwoFactorCodeDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+}
