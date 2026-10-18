@@ -7,6 +7,7 @@ import { BookOpen, ChevronDown, ChevronRight, Download, FileText, Folder, Search
 import { toast } from 'sonner';
 import { documentsApi, LibraryDocument } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
+import { ExcelButton, LibraryZipButton } from '@/components/exports/export-buttons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -100,7 +101,13 @@ export default function LibraryPage() {
       ) : (
         grouped.map(([projectId, project]) => (
           <section key={projectId} className="space-y-4">
-            <h2 className="text-base font-semibold flex items-center gap-2"><Folder className="h-4 w-4 text-primary" />{project.name}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-semibold flex items-center gap-2"><Folder className="h-4 w-4 text-primary" />{project.name}</h2>
+              <div className="flex gap-2">
+                <ExcelButton projectId={projectId} register="documents" label="Master list (Excel)" />
+                <LibraryZipButton projectId={projectId} />
+              </div>
+            </div>
             {[...project.phases.entries()].map(([phase, phaseDocs]) => (
               <Card key={phase}>
                 <CardContent className="py-3 px-5">

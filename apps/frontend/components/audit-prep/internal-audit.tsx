@@ -5,6 +5,7 @@ import { Check, ChevronDown, ChevronRight, Play, Plus, Send, Trash2 } from 'luci
 import Link from 'next/link';
 import { auditsApi, Audit, AuditItem, AuditResult, AuditsState } from '@/lib/audit-prep-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ExcelButton } from '@/components/exports/export-buttons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -48,7 +49,7 @@ export default function InternalAudit({ stepId, orgId, projectId, onCompletionCh
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Scheduled audits</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="text-base">Scheduled audits</CardTitle><ExcelButton projectId={projectId} register="internal-audits" /></div>
           <CardDescription className="max-w-3xl leading-relaxed">
             Schedule the internal audit and choose an objective, impartial lead auditor — auditors must not audit their own work.
             The checklist covers every ISO 27001 requirement (clauses 4 to 10) and every control applicable in your Statement of Applicability.

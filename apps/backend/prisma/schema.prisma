@@ -120,6 +120,7 @@ enum AuditAction {
   DOCUMENT_PUBLISHED
   TASK_ASSIGNED
   TASK_COMPLETED
+  DATA_EXPORTED
 }
 
 // ============================================================

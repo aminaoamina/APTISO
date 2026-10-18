@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Check, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { objectivesApi, Frequency, Objective, ObjectivesState } from '@/lib/audit-prep-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ExcelButton } from '@/components/exports/export-buttons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -39,7 +40,7 @@ export default function SecurityObjectives({ stepId, orgId, projectId, onComplet
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Security objectives</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="text-base">Security objectives</CardTitle><ExcelButton projectId={projectId} register="objectives" /></div>
           <CardDescription className="max-w-3xl leading-relaxed">
             Eight typical objectives are suggested — adapt them, delete the ones that do not fit, or add your own. For each objective define
             what will be done, the resources, who is responsible, when it will be completed and how the results are evaluated (clause 6.2).

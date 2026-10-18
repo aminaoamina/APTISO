@@ -13,6 +13,6 @@ import { ConnectorsModule } from '../connectors/connectors.module';
   imports: [TasksModule, ConnectorsModule],
   controllers: [DocumentsController],
   providers: [DocumentsService, DocxExportService, LibraryService, AuditLogService, ProjectRoleGuard, OrganizationRoleGuard],
-  exports: [DocumentsService],
+  exports: [DocumentsService, DocxExportService],
 })
 export class DocumentsModule {}

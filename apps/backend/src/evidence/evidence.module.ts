@@ -10,6 +10,7 @@ import { FileStorage, LocalDiskStorage } from './file-storage';
 @Module({
   imports: [TasksModule],
   controllers: [EvidenceController],
+  exports: [EvidenceService],
   providers: [EvidenceService, AuditMapService, AuditLogService, ProjectRoleGuard, { provide: FileStorage, useClass: LocalDiskStorage }],
 })
 export class EvidenceModule {}

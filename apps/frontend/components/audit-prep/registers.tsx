@@ -6,6 +6,7 @@ import {
   registersApi, ActionStatus, FindingSource, Incident, IncidentStatus, Member, Nonconformity, NcStatus, RegistersState, Severity,
 } from '@/lib/audit-prep-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ExcelButton } from '@/components/exports/export-buttons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -82,7 +83,7 @@ function NonconformityRegister({ state, projectId, run }: { state: RegistersStat
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Nonconformity register</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="text-base">Nonconformity register</CardTitle><ExcelButton projectId={projectId} register="nonconformities" /></div>
         <CardDescription className="max-w-3xl leading-relaxed">
           Here you should enter all nonconformities, i.e., when your employee, supplier or partner does not comply with your policies, procedures, contracts or other requirements.
           For each one record the correction, the root cause and the corrective actions; it is resolved once the actions are done and their effectiveness is reviewed (clause 10.2).
@@ -265,7 +266,7 @@ function IncidentRegister({ state, projectId, run }: { state: RegistersState; pr
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Incident register</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="text-base">Incident register</CardTitle><ExcelButton projectId={projectId} register="incidents" /></div>
         <CardDescription className="max-w-3xl leading-relaxed">
           Here you need to enter all events that could compromise the confidentiality, integrity or availability of your information.
           Assess each event (is it a security incident?), respond to it, collect evidence and record the lessons learned (controls A.5.24–A.5.28).

@@ -10,6 +10,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { ProjectsModule } from './projects/projects.module';
 import { RequestsModule } from './requests/requests.module';
 import { EvidenceModule } from './evidence/evidence.module';
+import { ExportsModule } from './exports/exports.module';
 import { FrameworksModule } from './frameworks/frameworks.module';
 import { DocumentsModule } from './documents/documents.module';
 import { RequirementsModule } from './requirements/requirements.module';
@@ -42,6 +43,7 @@ import { AuditLogService } from './common/services/audit-log.service';
     ProjectsModule,
     RequestsModule,
     EvidenceModule,
+    ExportsModule,
     FrameworksModule,
     DocumentsModule,
     RequirementsModule,

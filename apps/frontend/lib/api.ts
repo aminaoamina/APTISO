@@ -1212,6 +1212,28 @@ export const connectorsApi = {
   disconnect: async (orgId: string): Promise<{ message: string }> => (await apiClient.delete(`/organizations/${orgId}/connectors`)).data,
 };
 
+export type RegisterKey =
+  | 'documents' | 'requirements' | 'risks' | 'soa' | 'treatment-plan' | 'nonconformities'
+  | 'incidents' | 'trainings' | 'objectives' | 'internal-audits' | 'evidence';
+
+export const exportsApi = {
+  /** One register as Excel, or "all" for every register (one sheet each). */
+  register: async (projectId: string, register: RegisterKey | 'all'): Promise<void> => {
+    const response = await apiClient.get(`/projects/${projectId}/exports/registers/${register}`, { responseType: 'blob', timeout: 60_000 });
+    saveBlob(response.data, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', response.headers['content-disposition'], 'registers.xlsx');
+  },
+
+  /** The library as a ZIP: PDF + Word of each approved document, master list and registers. */
+  library: async (projectId: string, options: { earlierVersions: boolean; evidence: boolean }): Promise<void> => {
+    const response = await apiClient.get(`/projects/${projectId}/exports/library`, {
+      params: { earlier_versions: options.earlierVersions, evidence: options.evidence },
+      responseType: 'blob',
+      timeout: 0,
+    });
+    saveBlob(response.data, 'application/zip', response.headers['content-disposition'], 'library.zip');
+  },
+};
+
 export const notificationsApi = {
   list: async (): Promise<{ items: AppNotification[]; unread_count: number }> => (await apiClient.get('/notifications')).data,
 

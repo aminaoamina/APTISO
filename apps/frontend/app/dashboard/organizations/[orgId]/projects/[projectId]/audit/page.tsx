@@ -15,6 +15,7 @@ import { STATUS_LABELS } from '@/components/soa/soa-stages';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ExcelButton, LibraryZipButton } from '@/components/exports/export-buttons';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -55,11 +56,17 @@ export default function AuditEvidencePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5"><ShieldCheck className="h-6 w-6 text-primary" />Audit &amp; Evidence</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          What the certification auditor will check: for each requirement, the approved documents, the records of your registers and the evidence that it works.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5"><ShieldCheck className="h-6 w-6 text-primary" />Audit &amp; Evidence</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            What the certification auditor will check: for each requirement, the approved documents, the records of your registers and the evidence that it works.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <ExcelButton projectId={projectId} register="all" label="All registers (Excel)" />
+          <LibraryZipButton projectId={projectId} />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -211,6 +218,7 @@ function EvidenceLibrary({ projectId, canEdit, isLead }: { projectId: string; ca
             {{ all: 'All', expiring: 'Expiring in 30 days', expired: 'Expired', unlinked: 'Not linked' }[f]}
           </Button>
         ))}
+        <ExcelButton projectId={projectId} register="evidence" />
         {canEdit && !adding && <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4 mr-1" />Add evidence</Button>}
       </div>
 
