@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:scenario": "nest build && node test/scenario.e2e.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
