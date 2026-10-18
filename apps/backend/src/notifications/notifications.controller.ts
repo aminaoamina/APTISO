@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { NotificationsService } from './notifications.service';
 
@@ -9,6 +9,18 @@ export class MarkNotificationsReadDto {
   @IsOptional()
   @IsUUID('all', { each: true })
   ids?: string[];
+}
+
+export class NotificationSettingsDto {
+  @ApiPropertyOptional({ description: 'Notification e-mails (the bell in the app stays on)' })
+  @IsOptional()
+  @IsBoolean()
+  email_notifications?: boolean;
+
+  @ApiPropertyOptional({ description: 'The Monday weekly digest e-mail' })
+  @IsOptional()
+  @IsBoolean()
+  weekly_digest?: boolean;
 }
 
 @ApiTags('Notifications')
@@ -21,6 +33,16 @@ export class NotificationsController {
   @ApiOperation({ summary: 'My latest notifications and the unread count' })
   list(@CurrentUser('id') userId: string) {
     return this.notifications.list(userId);
+  }
+
+  @Get('settings')
+  settings(@CurrentUser('id') userId: string) {
+    return this.notifications.settings(userId);
+  }
+
+  @Put('settings')
+  updateSettings(@CurrentUser('id') userId: string, @Body() dto: NotificationSettingsDto) {
+    return this.notifications.updateSettings(userId, dto);
   }
 
   @Post('read')

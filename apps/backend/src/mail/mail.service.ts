@@ -144,6 +144,12 @@ export class MailService implements IMailService {
     this.logger.log(`Notification e-mail sent to ${email}`);
   }
 
+  /** The Monday digest; the content (and its links) is prepared by DigestService. */
+  async sendWeeklyDigest(email: string, subject: string, context: Record<string, unknown>): Promise<void> {
+    await this.sendEmail({ to: email, subject, template: 'weekly-digest.hbs', context });
+    this.logger.log(`Weekly digest sent to ${email}`);
+  }
+
   private async sendEmail(emailTemplate: EmailTemplate): Promise<void> {
     try {
       const html = await this.templateEngine.compile(

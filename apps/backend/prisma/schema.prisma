@@ -147,6 +147,10 @@ model User {
   // Relations
   /// Two-step verification (TOTP). The secret is encrypted (AES-256-GCM); it is pending until the first code confirms it.
   totp_secret     String?   @db.Text
+  /// Notification e-mails (tasks, requests...); the bell in the app is always on.
+  email_notifications Boolean   @default(true)
+  /// Monday e-mail: team and personal recap of the week, written by the AI.
+  weekly_digest       Boolean   @default(true)
   totp_enabled_at DateTime? @db.Timestamp(6)
   /// Last 30-second step used: a code cannot be used twice.
   totp_last_step  Int?

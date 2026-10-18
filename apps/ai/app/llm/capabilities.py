@@ -30,4 +30,5 @@ CAPABILITIES: dict[str, Capability] = {
     "evidence_ocr": Capability(("ocr", "ocr_fallback", "vision"), 0, 3000, 60, 1, False, False),
     "evidence_ocr_check": Capability(("ocr_fallback", "vision"), 0, 3000, 60, 1, False, False),
     "next_actions": Capability(_FAST, 0.2, 800, 25, 1, True, False),
+    "weekly_digest": Capability(_FAST, 0.5, 1500, 45, 1, True, False),
 }

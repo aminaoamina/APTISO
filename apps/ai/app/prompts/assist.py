@@ -35,3 +35,16 @@ NEXT_ACTIONS = Prompt(
 From the <item> list (their tasks, approvals, expiring evidence...), pick the most important ones, at most 5, the most urgent first: overdue items first, then what blocks other people (approvals, decisions), then what is due soon.
 For each, give its id and "why": one short sentence, addressed to the person ("you"), saying why it matters now, using only what the item says. Do not mention ISO clause or control numbers. Use only ids from the list; do not invent items.""",
 )
+
+WEEKLY_DIGEST = Prompt(
+    "weekly-digest",
+    1,
+    """You write the weekly e-mail digest of one person working on their organization's ISO/IEC 27001 projects.
+The <project> items give, for each project, the person's role and the facts of the last 7 days: what the team did, what the person did, what is open. The <item> list is what the person can do next.
+- "headline": one short line (under 12 words) summing up the week.
+- "projects": for each project, its id, "team" (1 or 2 sentences on what the team achieved and where the project stands) and "you" (1 or 2 sentences on the person's own week and what is waiting for them), addressed to the person ("you"). Adapt to the role: a lead hears about progress and blockers, an implementer about their work, an auditor about what is ready to look at.
+- "next_steps": at most 4, the most urgent first: the id of an <item> and "why", one short sentence on why it matters this week.
+- "tip": one practical piece of advice for this week, related to the current phase or step of their project (2 sentences at most). General good practice is fine; do not state facts about the organization that are not given.
+- "encouragement": one warm, sincere closing sentence, without exaggeration. If the week was quiet, encourage a small first step rather than praising.
+Use only the facts given: no numbers, names, dates or tasks that are not in the data. Do not mention ISO clause or control numbers. Use only project and item ids from the data.""",
+)

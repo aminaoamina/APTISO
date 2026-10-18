@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from app.llm.client import AiUnavailable, RunMeta
 from app.models import AiRun
-from app.prompts.assist import IMPROVE_INSTRUCTIONS, IMPROVE_PARAGRAPH, NEXT_ACTIONS, WIZARD_SUGGEST
+from app.prompts.assist import IMPROVE_INSTRUCTIONS, IMPROVE_PARAGRAPH, NEXT_ACTIONS, WEEKLY_DIGEST, WIZARD_SUGGEST
 from app.security import require_service_token
 from app.validation import quote_in, unsupported_names
 
@@ -193,3 +193,59 @@ async def next_actions(body: NextActionsRequest, request: Request) -> dict:
         RunMeta(str(body.project_id), str(body.user_id), "next_actions", None), check,
     )
     return {"actions": [a.model_dump() for a in value.actions[:5]], "run_id": run_id}
+
+
+class DigestProject(BaseModel):
+    id: uuid.UUID
+    facts: str = Field(max_length=4000)
+
+
+class DigestRequest(BaseModel):
+    user_id: uuid.UUID
+    user: str = Field(max_length=300)
+    projects: list[DigestProject] = Field(min_length=1, max_length=10)
+    items: list[ActionItem] = Field(max_length=40)
+
+
+class DigestProjectText(BaseModel):
+    id: uuid.UUID
+    team: str = Field(max_length=600)
+    you: str = Field(max_length=600)
+
+
+class Digest(BaseModel):
+    headline: str = Field(max_length=120)
+    projects: list[DigestProjectText]
+    next_steps: list[Action]
+    tip: str = Field(max_length=500)
+    encouragement: str = Field(max_length=300)
+
+
+_NUMBER = re.compile(r"\b\d+\b")
+
+
+@router.post("/weekly-digest")
+async def weekly_digest(body: DigestRequest, request: Request) -> dict:
+    """The words of the weekly e-mail; the facts were computed by the backend and every number must come from them."""
+    project_ids = {p.id for p in body.projects}
+    item_ids = {i.id for i in body.items}
+    facts = "\n".join([f'<project id="{p.id}">{p.facts}</project>' for p in body.projects] + [f'<item id="{i.id}">{i.text}</item>' for i in body.items])
+    known_numbers = set(_NUMBER.findall(facts))
+
+    def check(d: Digest) -> list[str]:
+        errors = [f'"{p.id}" is not one of the project ids' for p in d.projects if p.id not in project_ids]
+        errors += [f'"{x.id}" is not one of the item ids' for x in d.next_steps if x.id not in item_ids]
+        if len(d.next_steps) > 4:
+            errors.append("give at most 4 next steps")
+        texts = [d.headline, d.tip, d.encouragement] + [t for p in d.projects for t in (p.team, p.you)] + [x.why for x in d.next_steps]
+        for text in texts:
+            errors += [f'the number {n} is not in the data: remove it' for n in set(_NUMBER.findall(text)) - known_numbers]
+            if m := _CLAUSE_OR_CONTROL.search(text):
+                errors.append(f'"{m.group(0)}": remove clause and control numbers')
+        return errors
+
+    value, run_id, _ = await request.app.state.ai.structured(
+        "weekly_digest", WEEKLY_DIGEST, f'<data name="person">{body.user}</data>\n{facts}', Digest,
+        RunMeta(None, str(body.user_id), "weekly_digest", None), check,
+    )
+    return {**value.model_dump(mode="json"), "run_id": run_id}

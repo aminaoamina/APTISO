@@ -20,6 +20,6 @@ import { NextActionsService } from './next-actions.service';
 @Module({
   controllers: [AiController, AssistController, DocumentReviewController],
   providers: [AiServiceClient, AiJobsService, AiContextService, AssistService, DocumentReviewService, ChatService, KnowledgeService, NextActionsService, ProjectAccessService, ProjectRoleGuard],
-  exports: [AiServiceClient, AiJobsService, AiContextService, KnowledgeService],
+  exports: [AiServiceClient, AiJobsService, AiContextService, KnowledgeService, NextActionsService],
 })
 export class AiModule {}

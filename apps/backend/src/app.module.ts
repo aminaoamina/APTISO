@@ -22,6 +22,7 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { AiModule } from './ai/ai.module';
 import { WhiteboardModule } from './whiteboard/whiteboard.module';
 import { TeamModule } from './team/team.module';
+import { DigestModule } from './digest/digest.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { CsrfController } from './common/controllers/csrf.controller';
@@ -58,6 +59,7 @@ import { AuditLogService } from './common/services/audit-log.service';
     AiModule,
     WhiteboardModule,
     TeamModule,
+    DigestModule,
     // Nightly jobs (ISMS maintenance reminders).
     ScheduleModule.forRoot(),
   ],

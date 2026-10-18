@@ -328,6 +328,11 @@ export interface TaskAssignment {
 /** The task fields a notification carries, enough to describe it and link to it. */
 export type NotificationTask = Pick<TaskAssignment, 'id' | 'type' | 'status' | 'deadline' | 'notes' | 'completion_notes' | 'project_id' | 'step_id' | 'document_instance_id' | 'project' | 'step' | 'document'>;
 
+export interface NotificationSettings {
+  email_notifications: boolean;
+  weekly_digest: boolean;
+}
+
 export interface AppNotification {
   id: string;
   type: 'ORGANIZATION_JOIN_REQUEST' | 'TASK_ASSIGNED' | 'TASK_COMPLETED' | 'TASK_DUE_SOON' | 'TASK_CANCELLED'
@@ -1254,6 +1259,14 @@ export const authApi = {
 
   loginSecondFactor: async (challenge_token: string, code: string): Promise<{ user: User }> =>
     (await apiClient.post('/auth/login/2fa', { challenge_token, code })).data,
+
+  notificationSettings: async (): Promise<NotificationSettings> => (await apiClient.get('/notifications/settings')).data,
+
+  updateNotificationSettings: async (data: Partial<NotificationSettings>): Promise<NotificationSettings> =>
+    (await apiClient.put('/notifications/settings', data)).data,
+
+  /** Sends this week's digest now; sent is false when there was nothing to tell. */
+  sendDigestNow: async (): Promise<{ sent: boolean }> => (await apiClient.post('/digest/send-now')).data,
 
   twoFactorStatus: async (): Promise<{ enabled: boolean; enabled_at: string | null; recovery_codes_left: number }> =>
     (await apiClient.get('/auth/2fa')).data,

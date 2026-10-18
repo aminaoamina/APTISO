@@ -52,6 +52,12 @@ export class NextActionsService {
     }
   }
 
+  /** The same items in the fixed order, without the AI (the weekly digest has its own AI call). */
+  async pending(projectId: string, userId: string) {
+    const access = await this.access.forProject(projectId, userId);
+    return (await this.items(projectId, userId, access)).sort((a, b) => a.rank - b.rank).slice(0, 8).map(i => this.view(i));
+  }
+
   private view(i: Item) {
     return { id: i.id, title: i.title, href: i.href, due: i.due ? day(i.due) : null, overdue: i.overdue };
   }
