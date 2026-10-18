@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bot, Loader2, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
-import { chatApi, type ChatCitation, type ChatTurn } from '@/lib/ai-api';
+import { AlertCircle, Bot, Loader2, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
+import { chatApi, nextActionsApi, type ChatCitation, type ChatTurn, type NextAction } from '@/lib/ai-api';
 import { getErrorMessage } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +13,7 @@ interface Message extends ChatTurn {
   error?: boolean;
 }
 
-const EXAMPLES = ['What should I do next?', 'Are we ready for A.8.13?', 'What does our security policy say about objectives?'];
+const EXAMPLES = ['Are we ready for A.8.13?', 'What does our security policy say about objectives?', 'What does ISO 27001 require for internal audits?'];
 const MARKER = /\[([SF]\d{1,2}(?:\s*[,;]\s*[SF]\d{1,2})*)\]/g;
 
 /** Citation markers the answer used, kept only when they point to a real source. */
@@ -35,6 +35,13 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
+  // The greeting: what this person should do next (loaded each time the panel opens).
+  const [actions, setActions] = useState<NextAction[] | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    setActions(null);
+    nextActionsApi.get(projectId).then((r) => setActions(r.actions)).catch(() => setActions([]));
+  }, [open, projectId]);
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
@@ -92,7 +99,22 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
         {messages.length === 0 && (
-          <div className="space-y-2 text-muted-foreground">
+          <div className="space-y-2">
+            <p className="text-xs font-medium">Your next actions</p>
+            {actions === null && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />Looking at your project…</p>}
+            {actions?.length === 0 && <p className="text-xs text-muted-foreground">Nothing waiting for you right now.</p>}
+            {actions?.map((a) => (
+              <Link key={a.id} href={a.href} onClick={() => setOpen(false)} className="block rounded-md border px-3 py-2 text-xs hover:bg-muted">
+                <span className="flex items-start gap-1.5 font-medium">
+                  {a.overdue && <AlertCircle className="h-3.5 w-3.5 mt-0.5 shrink-0 text-destructive" />}{a.title}
+                </span>
+                {a.why && <span className="block text-muted-foreground mt-0.5">{a.why}</span>}
+              </Link>
+            ))}
+          </div>
+        )}
+        {messages.length === 0 && (
+          <div className="space-y-2 text-muted-foreground pt-2">
             <p>Ask about ISO 27001 or your project. Answers come from your documents and records, with their sources.</p>
             {EXAMPLES.map((q) => (
               <button key={q} type="button" onClick={() => ask(q)} className="block w-full rounded-md border px-3 py-2 text-left text-xs hover:bg-muted">{q}</button>

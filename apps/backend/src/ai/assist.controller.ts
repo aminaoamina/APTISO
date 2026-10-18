@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseUUIDPipe, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProjectRole } from '@prisma/client';
 import type { Request, Response } from 'express';
@@ -8,6 +8,7 @@ import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { AssistService } from './assist.service';
 import { ChatService } from './chat.service';
 import { KnowledgeService } from './knowledge.service';
+import { NextActionsService } from './next-actions.service';
 import { ChatDto, DecisionDto, ImproveDto, SuggestDto } from './assist.dto';
 
 const EDITORS = [ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER];
@@ -37,6 +38,7 @@ export class AssistController {
     private readonly assist: AssistService,
     private readonly chats: ChatService,
     private readonly knowledge: KnowledgeService,
+    private readonly nextActions: NextActionsService,
   ) {}
 
   @Post('wizard/suggest')
@@ -69,6 +71,12 @@ export class AssistController {
     @Res() res: Response,
   ) {
     await forward(req, res, signal => this.chats.chat(projectId, userId, dto, signal));
+  }
+
+  @Get('next-actions')
+  @ApiOperation({ summary: 'What the person should do next: their tasks, approvals, decisions and expiring evidence, ranked by the AI' })
+  next(@Param('projectId', ParseUUIDPipe) projectId: string, @CurrentUser('id') userId: string) {
+    return this.nextActions.forUser(projectId, userId);
   }
 
   @Post('reindex')

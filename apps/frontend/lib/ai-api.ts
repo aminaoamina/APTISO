@@ -153,3 +153,18 @@ export const evidenceAnalysisApi = {
   retry: async (projectId: string, evidenceId: string): Promise<EvidenceAnalysis | null> =>
     (await apiClient.post(`/projects/${projectId}/evidence/${evidenceId}/analysis`)).data.analysis,
 };
+
+export interface NextAction {
+  id: string;
+  title: string;
+  /** Why it matters now (from the AI); null when the list is in the fixed order. */
+  why: string | null;
+  href: string;
+  due: string | null;
+  overdue: boolean;
+}
+
+export const nextActionsApi = {
+  get: async (projectId: string): Promise<{ actions: NextAction[]; ranked_by: 'ai' | 'rules' }> =>
+    (await apiClient.get(`/projects/${projectId}/ai/next-actions`, { timeout: 40_000 })).data,
+};

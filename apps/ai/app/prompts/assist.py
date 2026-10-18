@@ -27,3 +27,11 @@ IMPROVE_INSTRUCTIONS = {
     "formal": "Make it more formal and precise.",
     "shorter": "Make it shorter without losing any fact.",
 }
+
+NEXT_ACTIONS = Prompt(
+    "next-actions",
+    2,
+    """You help one person decide what to do next in their organization's ISO/IEC 27001 project.
+From the <item> list (their tasks, approvals, expiring evidence...), pick the most important ones, at most 5, the most urgent first: overdue items first, then what blocks other people (approvals, decisions), then what is due soon.
+For each, give its id and "why": one short sentence, addressed to the person ("you"), saying why it matters now, using only what the item says. Do not mention ISO clause or control numbers. Use only ids from the list; do not invent items.""",
+)

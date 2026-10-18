@@ -12,7 +12,7 @@ from sqlalchemy import select
 
 from app.llm.client import AiUnavailable, RunMeta
 from app.models import AiRun
-from app.prompts.assist import IMPROVE_INSTRUCTIONS, IMPROVE_PARAGRAPH, WIZARD_SUGGEST
+from app.prompts.assist import IMPROVE_INSTRUCTIONS, IMPROVE_PARAGRAPH, NEXT_ACTIONS, WIZARD_SUGGEST
 from app.security import require_service_token
 from app.validation import quote_in, unsupported_names
 
@@ -21,6 +21,8 @@ router = APIRouter(prefix="/v1", tags=["assist"], dependencies=[Depends(require_
 _PLACEHOLDER = re.compile(r"\[[^\]]{2,40}\]|\bTBD\b|\bXXX\b|<[a-z ]{3,30}>", re.IGNORECASE)
 # Facts that must not appear out of nowhere in a rewrite: numbers (24 hours, 30 days, 2026) and control/clause IDs.
 _FACT = re.compile(r"\bA\.\d+(?:\.\d+)*\b|\b\d+(?:[.,:]\d+)*\b")
+# Clause and control numbers ("A.8.16", "clause 4.3") that a next-action reason must not bring in.
+_CLAUSE_OR_CONTROL = re.compile(r"\bA\.\d+\.\d+\b|\b(?:clause|control)\s+\d+(?:\.\d+)*", re.IGNORECASE)
 
 
 class ContextItem(BaseModel):
@@ -149,3 +151,45 @@ async def outcome(run_id: uuid.UUID, body: Outcome, request: Request) -> dict:
         run.outcome = body.outcome
         await session.commit()
         return {"capability": run.capability, "subject_type": run.subject_type, "subject_id": run.subject_id}
+
+
+class ActionItem(BaseModel):
+    id: str = Field(max_length=80)
+    text: str = Field(max_length=600)
+
+
+class NextActionsRequest(BaseModel):
+    project_id: uuid.UUID
+    user_id: uuid.UUID
+    user: str = Field(max_length=600)
+    items: list[ActionItem] = Field(min_length=1, max_length=40)
+
+
+class Action(BaseModel):
+    id: str
+    why: str
+
+
+class Actions(BaseModel):
+    actions: list[Action]
+
+
+@router.post("/next-actions")
+async def next_actions(body: NextActionsRequest, request: Request) -> dict:
+    """Ranks and phrases the person's items (computed by the backend); every id must be one of them."""
+    ids = {i.id for i in body.items}
+    items = "\n".join(f'<item id="{i.id}">{i.text}</item>' for i in body.items)
+
+    def check(a: Actions) -> list[str]:
+        errors = [f'"{x.id}" is not one of the item ids' for x in a.actions if x.id not in ids]
+        if len(a.actions) > 5:
+            errors.append("give at most 5 actions")
+        # A reason must not bring in clauses or controls the item does not mention.
+        errors += [f'the reason for "{x.id}" mentions {m.group(0)}: remove clause and control numbers' for x in a.actions if (m := _CLAUSE_OR_CONTROL.search(x.why))]
+        return errors
+
+    value, run_id, _ = await request.app.state.ai.structured(
+        "next_actions", NEXT_ACTIONS, f'<data name="person">{body.user}</data>\n{items}', Actions,
+        RunMeta(str(body.project_id), str(body.user_id), "next_actions", None), check,
+    )
+    return {"actions": [a.model_dump() for a in value.actions[:5]], "run_id": run_id}
