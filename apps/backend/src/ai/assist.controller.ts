@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProjectRole } from '@prisma/client';
 import type { Request, Response } from 'express';
@@ -8,6 +8,7 @@ import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { AssistService } from './assist.service';
 import { ChatService } from './chat.service';
 import { KnowledgeService } from './knowledge.service';
+import { ConversationsService } from './conversations.service';
 import { NextActionsService } from './next-actions.service';
 import { ChatDto, DecisionDto, ImproveDto, SuggestDto } from './assist.dto';
 
@@ -39,6 +40,7 @@ export class AssistController {
     private readonly chats: ChatService,
     private readonly knowledge: KnowledgeService,
     private readonly nextActions: NextActionsService,
+    private readonly conversations: ConversationsService,
   ) {}
 
   @Post('wizard/suggest')
@@ -71,6 +73,22 @@ export class AssistController {
     @Res() res: Response,
   ) {
     await forward(req, res, signal => this.chats.chat(projectId, userId, dto, signal));
+  }
+
+  @Get('conversations')
+  @ApiOperation({ summary: 'My companion conversations in this project, newest first' })
+  conversationsList(@Param('projectId', ParseUUIDPipe) projectId: string, @CurrentUser('id') userId: string) {
+    return this.conversations.list(projectId, userId);
+  }
+
+  @Get('conversations/:conversationId')
+  conversation(@Param('projectId', ParseUUIDPipe) projectId: string, @Param('conversationId', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
+    return this.conversations.get(projectId, userId, id);
+  }
+
+  @Delete('conversations/:conversationId')
+  deleteConversation(@Param('projectId', ParseUUIDPipe) projectId: string, @Param('conversationId', ParseUUIDPipe) id: string, @CurrentUser('id') userId: string) {
+    return this.conversations.remove(projectId, userId, id);
   }
 
   @Get('next-actions')

@@ -12,6 +12,7 @@ import { ChatService } from './chat.service';
 import { KnowledgeService } from './knowledge.service';
 import { AiJobsService } from './jobs.service';
 import { NextActionsService } from './next-actions.service';
+import { ConversationsService } from './conversations.service';
 
 /**
  * Backend side of the AI assistant: permissions and context from the business
@@ -19,7 +20,7 @@ import { NextActionsService } from './next-actions.service';
  */
 @Module({
   controllers: [AiController, AssistController, DocumentReviewController],
-  providers: [AiServiceClient, AiJobsService, AiContextService, AssistService, DocumentReviewService, ChatService, KnowledgeService, NextActionsService, ProjectAccessService, ProjectRoleGuard],
+  providers: [AiServiceClient, AiJobsService, AiContextService, AssistService, DocumentReviewService, ChatService, KnowledgeService, NextActionsService, ConversationsService, ProjectAccessService, ProjectRoleGuard],
   exports: [AiServiceClient, AiJobsService, AiContextService, KnowledgeService, NextActionsService],
 })
 export class AiModule {}

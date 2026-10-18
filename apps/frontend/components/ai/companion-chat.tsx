@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { AlertCircle, Bot, Loader2, MessageCircle, RotateCcw, Send, X } from 'lucide-react';
-import { chatApi, nextActionsApi, type ChatCitation, type ChatTurn, type NextAction } from '@/lib/ai-api';
+import { AlertCircle, Bot, History, Loader2, MessageCircle, RotateCcw, Send, Trash2, X } from 'lucide-react';
+import { chatApi, nextActionsApi, type ChatCitation, type ChatConversation, type ChatTurn, type NextAction } from '@/lib/ai-api';
 import { getErrorMessage } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,18 @@ function cleanMarkers(text: string, citations: ChatCitation[]) {
   });
 }
 
+/** The last conversation, reopened with the panel (a convenience: the history itself is on the server). */
+const lastKey = (projectId: string) => `aptiso.companion.${projectId}`;
+const remember = (projectId: string, id: string | null) => {
+  try {
+    if (id) localStorage.setItem(lastKey(projectId), id);
+    else localStorage.removeItem(lastKey(projectId));
+  } catch { /* storage unavailable */ }
+};
+const recall = (projectId: string) => {
+  try { return localStorage.getItem(lastKey(projectId)); } catch { return null; }
+};
+
 /**
  * The ISO 27001 companion: answers from the project's documents and records
  * the person may see, with the sources it used.
@@ -35,6 +47,9 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  // null: the chat is shown; a list: the history is shown.
+  const [history, setHistory] = useState<ChatConversation[] | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
   // On the whiteboard, stay clear of the canvas controls in the bottom-right corner.
   const lifted = usePathname().endsWith('/whiteboard');
@@ -48,17 +63,56 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
 
   useEffect(() => { bottom.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  const load = async (id: string) => {
+    try {
+      const c = await chatApi.conversation(projectId, id);
+      setMessages(c.messages.map((m) => ({ role: m.role, content: m.citations ? cleanMarkers(m.content, m.citations) : m.content, citations: m.citations ?? undefined })));
+      setConversationId(id);
+      remember(projectId, id);
+    } catch {
+      remember(projectId, null);
+    }
+    setHistory(null);
+  };
+
+  // Opening the panel brings back the last conversation.
+  useEffect(() => {
+    const last = open && !conversationId ? recall(projectId) : null;
+    if (last) void load(last);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, projectId]);
+
+  const newConversation = () => {
+    setMessages([]);
+    setConversationId(null);
+    setHistory(null);
+    remember(projectId, null);
+  };
+
+  const showHistory = async () => {
+    if (history) return setHistory(null);
+    setHistory(await chatApi.conversations(projectId).catch(() => []));
+  };
+
+  const remove = async (id: string) => {
+    await chatApi.deleteConversation(projectId, id).catch(() => undefined);
+    setHistory((h) => h?.filter((c) => c.id !== id) ?? null);
+    if (id === conversationId) newConversation();
+  };
+
   const ask = async (question: string) => {
     const text = question.trim();
     if (!text || busy) return;
-    const history: ChatTurn[] = messages.filter((m) => !m.error).slice(-6).map(({ role, content }) => ({ role, content }));
     setMessages((m) => [...m, { role: 'user', content: text }, { role: 'assistant', content: '' }]);
     setInput('');
     setBusy(true);
     const update = (patch: Partial<Message>) => setMessages((m) => [...m.slice(0, -1), { ...m[m.length - 1], ...patch }]);
     try {
       let answer = '';
-      const citations = await chatApi.ask(projectId, text, history, (sofar) => { answer = sofar; update({ content: sofar }); });
+      const citations = await chatApi.ask(projectId, text, conversationId, (sofar) => { answer = sofar; update({ content: sofar }); }, (id) => {
+        setConversationId(id);
+        remember(projectId, id);
+      });
       update({ content: cleanMarkers(answer, citations), citations });
     } catch (err) {
       update({ content: getErrorMessage(err, 'The AI assistant is not available right now'), error: true });
@@ -91,8 +145,11 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
       <div className="flex items-center justify-between border-b px-4 py-2.5">
         <p className="text-sm font-medium flex items-center gap-2"><Bot className="h-4 w-4 text-[var(--brand-orange)]" />ISO companion</p>
         <div className="flex items-center gap-1">
-          {messages.length > 0 && (
-            <button type="button" title="New conversation" onClick={() => setMessages([])} disabled={busy} className="rounded p-1.5 text-muted-foreground hover:bg-muted">
+          <button type="button" title="History" onClick={() => void showHistory()} disabled={busy} className={`rounded p-1.5 hover:bg-muted ${history ? 'text-[var(--brand-orange)]' : 'text-muted-foreground'}`}>
+            <History className="h-4 w-4" />
+          </button>
+          {(messages.length > 0 || history) && (
+            <button type="button" title="New conversation" onClick={newConversation} disabled={busy} className="rounded p-1.5 text-muted-foreground hover:bg-muted">
               <RotateCcw className="h-4 w-4" />
             </button>
           )}
@@ -100,6 +157,23 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
         </div>
       </div>
 
+      {history ? (
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 text-sm">
+          <p className="text-xs font-medium pb-1">Your conversations in this project</p>
+          {history.length === 0 && <p className="text-xs text-muted-foreground">No conversation yet.</p>}
+          {history.map((c) => (
+            <div key={c.id} className={`flex items-center gap-2 rounded-md border px-3 py-2 hover:bg-muted ${c.id === conversationId ? 'border-[var(--brand-orange)]/50' : ''}`}>
+              <button type="button" onClick={() => void load(c.id)} className="min-w-0 flex-1 text-left">
+                <span className="block truncate text-xs font-medium">{c.title}</span>
+                <span className="block text-[11px] text-muted-foreground">{new Date(c.updated_at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              </button>
+              <button type="button" title="Delete" onClick={() => void remove(c.id)} className="rounded p-1 text-muted-foreground hover:text-destructive">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
         {messages.length === 0 && (
           <div className="space-y-2">
@@ -149,6 +223,7 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
         ))}
         <div ref={bottom} />
       </div>
+      )}
 
       <form className="flex items-end gap-2 border-t p-3" onSubmit={(e) => { e.preventDefault(); void ask(input); }}>
         <Textarea

@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsIn, IsObject, IsOptional, IsString, IsUUID, MaxLength, MinLength, ValidateNested } from 'class-validator';
+import { IsIn, IsObject, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
 export class SuggestDto {
   @ApiProperty({ example: 'ISMS-SCOPE' }) @IsString() @MaxLength(50) templateCode!: string;
@@ -20,13 +19,8 @@ export class DecisionDto {
   @ApiProperty({ enum: ['ACCEPTED', 'DISMISSED'] }) @IsIn(['ACCEPTED', 'DISMISSED']) outcome!: 'ACCEPTED' | 'DISMISSED';
 }
 
-export class ChatTurnDto {
-  @ApiProperty({ enum: ['user', 'assistant'] }) @IsIn(['user', 'assistant']) role!: 'user' | 'assistant';
-  @ApiProperty() @IsString() @MaxLength(6000) content!: string;
-}
-
 export class ChatDto {
   @ApiProperty() @IsString() @MinLength(1) @MaxLength(2000) message!: string;
-  @ApiPropertyOptional({ type: [ChatTurnDto], description: 'The last turns of the conversation (at most 6)' })
-  @IsOptional() @IsArray() @ArrayMaxSize(6) @ValidateNested({ each: true }) @Type(() => ChatTurnDto) history?: ChatTurnDto[];
+  @ApiPropertyOptional({ description: 'The conversation to continue; a new one is started without it' })
+  @IsOptional() @IsUUID() conversation_id?: string;
 }

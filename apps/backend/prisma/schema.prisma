@@ -155,6 +155,7 @@ model User {
   /// Last 30-second step used: a code cannot be used twice.
   totp_last_step  Int?
   recovery_codes  TwoFactorRecoveryCode[]
+  ai_conversations AiConversation[]
 
   organization_memberships           OrganizationMember[]
   project_memberships                ProjectMember[]
@@ -356,6 +357,7 @@ model ComplianceProject {
   audit_program        AuditProgram?
   ai_decisions         AiDecision[]
   whiteboard           Whiteboard?
+  ai_conversations     AiConversation[]
 
   @@index([organization_id])
   @@index([status])
@@ -1862,6 +1864,40 @@ model EvidenceAnalysis {
   file EvidenceFile @relation(fields: [file_id], references: [id], onDelete: Cascade)
 
   @@map("evidence_analyses")
+}
+
+/// Companion chat history: a person's conversations in a project, private to them.
+model AiConversation {
+  id         String   @id @default(uuid()) @db.Uuid
+  project_id String   @db.Uuid
+  user_id    String   @db.Uuid
+  /// The first question, shortened.
+  title      String   @db.VarChar(120)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  project  ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@index([project_id, user_id, updated_at])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id              String   @id @default(uuid()) @db.Uuid
+  conversation_id String   @db.Uuid
+  /// user | assistant
+  role            String   @db.VarChar(10)
+  content         String   @db.Text
+  /// The sources the answer cited (assistant messages).
+  citations       Json?
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+
+  conversation AiConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
+  @@map("ai_messages")
 }
 
 /// The project's whiteboard (tldraw): one board per project, saved as a snapshot.

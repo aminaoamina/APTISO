@@ -104,20 +104,42 @@ export interface ChatTurn {
   content: string;
 }
 
+export interface ChatConversation {
+  id: string;
+  title: string;
+  updated_at: string;
+}
+
+export interface ChatConversationDetail {
+  id: string;
+  title: string;
+  messages: (ChatTurn & { citations: ChatCitation[] | null })[];
+}
+
 export const chatApi = {
-  /** Streams the companion's answer; resolves with the citations that point to real sources. */
-  ask: async (projectId: string, message: string, history: ChatTurn[], onText: (sofar: string) => void): Promise<ChatCitation[]> => {
+  /**
+   * Streams the companion's answer in a conversation (a new one when conversationId is null);
+   * onConversation gets its id first; resolves with the citations that point to real sources.
+   */
+  ask: async (
+    projectId: string,
+    message: string,
+    conversationId: string | null,
+    onText: (sofar: string) => void,
+    onConversation: (id: string) => void,
+  ): Promise<ChatCitation[]> => {
     let sofar = '';
     let citations: ChatCitation[] = [];
     let finished = false;
     let failure: string | null = null;
     const read = sseReader((event, data) => {
-      if (event === 'delta') onText((sofar += (data as { text: string }).text));
+      if (event === 'conversation') onConversation((data as { id: string }).id);
+      else if (event === 'delta') onText((sofar += (data as { text: string }).text));
       else if (event === 'citations') citations = data as ChatCitation[];
       else if (event === 'done') finished = true;
       else if (event === 'error') failure = (data as { message: string }).message;
     });
-    await apiClient.post(`/projects/${projectId}/ai/chat`, { message, history }, {
+    await apiClient.post(`/projects/${projectId}/ai/chat`, { message, ...(conversationId && { conversation_id: conversationId }) }, {
       responseType: 'text',
       timeout: 130_000,
       onDownloadProgress: (e) => read(String((e.event?.target as XMLHttpRequest | undefined)?.responseText ?? '')),
@@ -125,6 +147,15 @@ export const chatApi = {
     if (failure || !finished) throw new Error(failure ?? 'The AI assistant stopped unexpectedly');
     return citations;
   },
+
+  conversations: async (projectId: string): Promise<ChatConversation[]> =>
+    (await apiClient.get(`/projects/${projectId}/ai/conversations`)).data,
+
+  conversation: async (projectId: string, id: string): Promise<ChatConversationDetail> =>
+    (await apiClient.get(`/projects/${projectId}/ai/conversations/${id}`)).data,
+
+  deleteConversation: async (projectId: string, id: string) =>
+    (await apiClient.delete(`/projects/${projectId}/ai/conversations/${id}`)).data,
 };
 
 export interface EvidenceAnalysis {
