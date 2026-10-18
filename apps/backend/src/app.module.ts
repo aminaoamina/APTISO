@@ -8,7 +8,17 @@ import { AuthModule } from './auth/auth.module';
 import { MailModule } from './mail/mail.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { ProjectsModule } from './projects/projects.module';
+import { RequestsModule } from './requests/requests.module';
+import { EvidenceModule } from './evidence/evidence.module';
 import { FrameworksModule } from './frameworks/frameworks.module';
+import { DocumentsModule } from './documents/documents.module';
+import { RequirementsModule } from './requirements/requirements.module';
+import { RiskRegisterModule } from './risk-register/risk-register.module';
+import { SoaModule } from './soa/soa.module';
+import { PoliciesModule } from './policies/policies.module';
+import { AuditPrepModule } from './audit-prep/audit-prep.module';
+import { MaintenanceModule } from './maintenance/maintenance.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { CsrfController } from './common/controllers/csrf.controller';
 import { AuditLogService } from './common/services/audit-log.service';
@@ -30,7 +40,18 @@ import { AuditLogService } from './common/services/audit-log.service';
     AuthModule,
     OrganizationsModule,
     ProjectsModule,
+    RequestsModule,
+    EvidenceModule,
     FrameworksModule,
+    DocumentsModule,
+    RequirementsModule,
+    RiskRegisterModule,
+    SoaModule,
+    PoliciesModule,
+    AuditPrepModule,
+    MaintenanceModule,
+    // Nightly jobs (ISMS maintenance reminders).
+    ScheduleModule.forRoot(),
   ],
   controllers: [
     AppController,

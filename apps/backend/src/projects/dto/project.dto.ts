@@ -6,9 +6,17 @@ import {
   IsEnum,
   IsDateString,
   IsUUID,
+  IsObject,
   MinLength,
   MaxLength,
+  IsArray,
+  ArrayMinSize,
+  ArrayMaxSize,
+  ValidateNested,
+  IsUrl,
+  IsBoolean,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ProjectStatus } from '@prisma/client';
 
 export class CreateProjectDto {
@@ -30,15 +38,15 @@ export class CreateProjectDto {
   @IsEnum(ProjectStatus)
   status?: ProjectStatus;
 
-  @ApiPropertyOptional({ example: '2026-01-15' })
-  @IsOptional()
+  @ApiProperty({ example: '2026-01-15' })
   @IsDateString()
-  start_date?: string;
+  @IsNotEmpty()
+  start_date: string;
 
-  @ApiPropertyOptional({ example: '2026-07-15' })
-  @IsOptional()
+  @ApiProperty({ example: '2026-07-15' })
   @IsDateString()
-  target_date?: string;
+  @IsNotEmpty()
+  target_date: string;
 
   @ApiProperty({ description: 'Compliance framework to base the project on' })
   @IsUUID()
@@ -76,9 +84,74 @@ export class UpdateProjectDto {
   target_date?: string;
 }
 
-export class UpdatePhaseDto {
-  @ApiProperty({ enum: ['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'] })
-  @IsEnum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'] as const)
+export class UpdateStepCompletionDataDto {
+  @ApiProperty({ description: 'Completion data JSON — gate answer + question responses' })
+  @IsObject()
+  completion_data!: Record<string, unknown>;
+}
+
+
+export class CompleteStepDto {
+  @ApiPropertyOptional({ description: 'Skip an optional step instead of completing it' })
+  @IsOptional()
+  @IsBoolean()
+  skip?: boolean;
+}
+
+export class AwarenessMaterialDto {
+  @ApiProperty()
+  @IsString()
   @IsNotEmpty()
-  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  @MaxLength(300)
+  title!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl({ require_protocol: true })
+  @MaxLength(1000)
+  url?: string;
+}
+
+export class SendAwarenessDto {
+  @ApiProperty({ type: [AwarenessMaterialDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => AwarenessMaterialDto)
+  materials!: AwarenessMaterialDto[];
+
+  @ApiProperty({ type: [String], description: 'Project members who receive the materials' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('all', { each: true })
+  user_ids!: string[];
+}
+
+export class TrainingRowDto {
+  @ApiProperty({ description: 'Project member who needs the training' })
+  @IsUUID()
+  user_id!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(1000)
+  skills!: string;
+
+  @ApiPropertyOptional({ description: 'Concrete training or course' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  training?: string;
+}
+
+export class ConfirmTrainingDto {
+  @ApiProperty({ type: [TrainingRowDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => TrainingRowDto)
+  rows!: TrainingRowDto[];
 }

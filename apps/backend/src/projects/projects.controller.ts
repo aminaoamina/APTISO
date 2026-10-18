@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Ip,
@@ -19,7 +20,10 @@ import { ProjectsService } from './projects.service';
 import {
   CreateProjectDto,
   UpdateProjectDto,
-  UpdatePhaseDto,
+  UpdateStepCompletionDataDto,
+  SendAwarenessDto,
+  CompleteStepDto,
+  ConfirmTrainingDto,
 } from './dto/project.dto';
 import { ProjectInviteMemberDto, AssignIsoRolesDto } from '../organizations/dto/member.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -111,22 +115,36 @@ export class ProjectDetailController {
     );
   }
 
-  @Put(':projectId/phases/:phaseId')
-  @ApiOperation({ summary: 'Update phase status' })
+  @Put(':projectId/steps/:stepId/complete')
+  @ApiOperation({ summary: 'Mark an implementation step as completed' })
   @UseGuards(ProjectRoleGuard)
-  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_AUDITOR)
-  async updatePhase(
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async completeStep(
     @Param('projectId') projectId: string,
-    @Param('phaseId') phaseId: string,
+    @Param('stepId') stepId: string,
     @CurrentUser('id') userId: string,
     @CurrentUser('projectRole') userRole: ProjectRole,
-    @Body() dto: UpdatePhaseDto,
+    @Body() dto: CompleteStepDto,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.projectsService.updatePhase(
-      projectId, phaseId, dto, userId, userRole, ipAddress, userAgent,
+    return this.projectsService.completeStep(
+      projectId, stepId, userId, userRole, dto.skip ?? false, ipAddress, userAgent,
     );
+  }
+
+  @Put(':projectId/steps/:stepId/reopen')
+  @ApiOperation({ summary: 'Reopen a completed step (project lead)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD)
+  async reopenStep(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.reopenStep(projectId, stepId, userId, ipAddress, userAgent);
   }
 
   @Post(':projectId/members')
@@ -177,5 +195,53 @@ export class ProjectDetailController {
     return this.projectsService.assignIsoRoles(
       projectId, memberId, dto.iso_roles, userId, userRole,
     );
+  }
+
+  @Patch(':projectId/steps/:stepId/completion-data')
+  @ApiOperation({ summary: 'Save step completion data (gate + question responses)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async updateStepCompletionData(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: UpdateStepCompletionDataDto,
+  ) {
+    return this.projectsService.updateStepCompletionData(
+      projectId, stepId, dto.completion_data, userId, userRole,
+    );
+  }
+
+  @Post(':projectId/steps/:stepId/awareness')
+  @ApiOperation({ summary: 'Send awareness materials for a step (creates awareness tasks)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async sendAwareness(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: SendAwarenessDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.sendAwareness(projectId, stepId, dto, userId, userRole, ipAddress, userAgent);
+  }
+
+  @Post(':projectId/steps/:stepId/training')
+  @ApiOperation({ summary: 'Confirm training needs for a step (creates training tasks)' })
+  @UseGuards(ProjectRoleGuard)
+  @ProjectRoles(ProjectRole.PROJECT_LEAD, ProjectRole.PROJECT_MEMBER)
+  async confirmTraining(
+    @Param('projectId') projectId: string,
+    @Param('stepId') stepId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('projectRole') userRole: ProjectRole,
+    @Body() dto: ConfirmTrainingDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.projectsService.confirmTraining(projectId, stepId, dto, userId, userRole, ipAddress, userAgent);
   }
 }

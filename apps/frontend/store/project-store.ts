@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { projectsApi, ComplianceProject, ProjectMember, ProjectPhase } from '@/lib/api';
+import { projectsApi, ComplianceProject, ProjectMember, ProjectPhase, ProjectStep } from '@/lib/api';
 
 interface ProjectState {
   projects: ComplianceProject[];
@@ -25,7 +25,8 @@ interface ProjectState {
     target_date?: string;
   }) => Promise<void>;
   deleteProject: (projectId: string) => Promise<void>;
-  updatePhase: (phaseId: string, status: string) => Promise<void>;
+  completeStep: (stepId: string, skip?: boolean) => Promise<ProjectStep>;
+  reopenStep: (stepId: string) => Promise<void>;
   addMember: (email: string, privilege: string, custom_role?: string) => Promise<void>;
   removeMember: (memberId: string) => Promise<void>;
   assignIsoRoles: (memberId: string, isoRoles: string[]) => Promise<void>;
@@ -91,13 +92,22 @@ export const useProjectStore = create<ProjectState>()(
       }));
     },
 
-    updatePhase: async (phaseId, status) => {
+    completeStep: async (stepId, skip = false) => {
       const project = get().currentProject;
-      if (!project) return;
-      const updated = await projectsApi.updatePhase(project.id, phaseId, status);
-      set((state) => ({
-        phases: state.phases.map((p) => (p.id === phaseId ? { ...p, ...updated } : p)),
-      }));
+      if (!project) throw new Error('No project selected');
+      const step = await projectsApi.completeStep(project.id, stepId, skip);
+      // Completing a step can finish its phase or add steps (the SoA adds Phase 3 policies): reload everything.
+      const refreshed = await projectsApi.getOne(project.id);
+      set({ currentProject: refreshed, phases: refreshed.phases || [] });
+      return step;
+    },
+
+    reopenStep: async (stepId) => {
+      const project = get().currentProject;
+      if (!project) throw new Error('No project selected');
+      await projectsApi.reopenStep(project.id, stepId);
+      const refreshed = await projectsApi.getOne(project.id);
+      set({ currentProject: refreshed, phases: refreshed.phases || [] });
     },
 
     addMember: async (email, privilege, custom_role) => {

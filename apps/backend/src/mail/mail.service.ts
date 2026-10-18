@@ -122,6 +122,28 @@ export class MailService implements IMailService {
     this.logger.log(`Organization join request email sent to ${email}`);
   }
 
+  /** A notification that asks the recipient to act: what, where, and a button to open it. */
+  async sendNotificationEmail(email: string, data: {
+    subject: string;
+    heading: string;
+    recipientName: string;
+    message: string;
+    details: { label: string; value: string }[];
+    /** Path in the web app, e.g. /dashboard/tasks?task=… */
+    path: string;
+    linkLabel: string;
+  }): Promise<void> {
+    const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+    const { path, ...context } = data;
+    await this.sendEmail({
+      to: email,
+      subject: data.subject,
+      template: 'notification.hbs',
+      context: { ...context, link: `${frontendUrl}${path}` },
+    });
+    this.logger.log(`Notification e-mail sent to ${email}`);
+  }
+
   private async sendEmail(emailTemplate: EmailTemplate): Promise<void> {
     try {
       const html = await this.templateEngine.compile(

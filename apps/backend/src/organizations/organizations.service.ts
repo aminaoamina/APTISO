@@ -19,6 +19,7 @@ import {
   NotificationType,
 } from '@prisma/client';
 import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class OrganizationsService {
@@ -28,6 +29,7 @@ export class OrganizationsService {
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
     private readonly mailService: MailService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async create(
@@ -399,13 +401,12 @@ export class OrganizationsService {
     });
 
     if (userToAdd) {
-      await this.prisma.notification.create({
-        data: {
-          user_id: userToAdd.id,
-          organization_id: orgId,
-          join_request_id: request.id,
-          type: NotificationType.ORGANIZATION_JOIN_REQUEST,
-        },
+      await this.notifications.notify({
+        userId: userToAdd.id,
+        actorId: inviterId,
+        type: NotificationType.ORGANIZATION_JOIN_REQUEST,
+        organizationId: orgId,
+        joinRequestId: request.id,
       });
     } else {
       const inviter = await this.prisma.user.findUnique({
@@ -430,19 +431,6 @@ export class OrganizationsService {
     });
 
     return request;
-  }
-
-  async listNotifications(userId: string) {
-    return this.prisma.notification.findMany({
-      where: { user_id: userId },
-      include: {
-        organization: { select: { id: true, name: true } },
-        join_request: {
-          select: { id: true, role: true, status: true, created_at: true },
-        },
-      },
-      orderBy: { created_at: 'desc' },
-    });
   }
 
   async respondToJoinRequest(

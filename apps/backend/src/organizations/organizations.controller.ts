@@ -53,12 +53,6 @@ export class OrganizationsController {
     return this.organizationsService.findAllForUser(userId);
   }
 
-  @Get('notifications')
-  @ApiOperation({ summary: 'List my organization notifications' })
-  async listNotifications(@CurrentUser('id') userId: string) {
-    return this.organizationsService.listNotifications(userId);
-  }
-
   @Get(':id')
   @ApiOperation({ summary: 'Get organization details' })
   @ApiResponse({ status: 200, description: 'Organization details' })

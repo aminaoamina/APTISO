@@ -4,9 +4,10 @@ import { OrganizationsController } from './organizations.controller';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { OrganizationRoleGuard } from '../common/guards/organization-role.guard';
 import { MailModule } from '../mail/mail.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [MailModule],
+  imports: [MailModule, NotificationsModule],
   controllers: [OrganizationsController],
   providers: [OrganizationsService, AuditLogService, OrganizationRoleGuard],
   exports: [OrganizationsService],
