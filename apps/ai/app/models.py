@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from pgvector.sqlalchemy import HALFVEC
+from sqlalchemy import Computed, DateTime, Index, Integer, String, Text, func
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -57,3 +58,34 @@ class AiJob(Base):
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+EMBED_DIM = 2048  # nvidia/nemotron-3-embed-1b
+
+
+class KnowledgeChunk(Base):
+    """A searchable passage: a copy of part of a business document (or of the ISO catalog), with its embedding.
+    Replaced when the document is indexed again, deleted with it."""
+
+    __tablename__ = "knowledge_chunks"
+    __table_args__ = (
+        Index("ix_knowledge_chunks_source", "project_id", "source_id"),
+        Index("ix_knowledge_chunks_tsv", "tsv", postgresql_using="gin"),
+        Index("ix_knowledge_chunks_embedding", "embedding", postgresql_using="hnsw", postgresql_ops={"embedding": "halfvec_cosine_ops"}),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))  # None: shared ISO catalog
+    source_type: Mapped[str] = mapped_column(String(30))  # document | iso
+    source_id: Mapped[str] = mapped_column(String(64))
+    version: Mapped[str | None] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(250))
+    section: Mapped[str | None] = mapped_column(String(300))
+    refs: Mapped[list[str]] = mapped_column(ARRAY(String(20)), default=list)
+    # Who may retrieve it: "all" members, or only "editors" (drafts).
+    visibility: Mapped[str] = mapped_column(String(20))
+    content: Mapped[str] = mapped_column(Text)
+    content_hash: Mapped[str] = mapped_column(String(64))
+    embedding: Mapped[list[float]] = mapped_column(HALFVEC(EMBED_DIM))
+    tsv = mapped_column(TSVECTOR, Computed("to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(section, '') || ' ' || content)", persisted=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

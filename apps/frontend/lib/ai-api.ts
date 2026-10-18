@@ -88,3 +88,40 @@ export const reviewApi = {
   decide: async (projectId: string, findingId: string, state: ReviewFinding['state']) =>
     apiClient.patch(`/projects/${projectId}/ai-review/findings/${findingId}`, { state }),
 };
+
+export interface ChatCitation {
+  id: string;
+  kind: 'source' | 'fact';
+  source_type: string;
+  source_id: string | null;
+  title: string;
+  section: string | null;
+}
+
+export interface ChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export const chatApi = {
+  /** Streams the companion's answer; resolves with the citations that point to real sources. */
+  ask: async (projectId: string, message: string, history: ChatTurn[], onText: (sofar: string) => void): Promise<ChatCitation[]> => {
+    let sofar = '';
+    let citations: ChatCitation[] = [];
+    let finished = false;
+    let failure: string | null = null;
+    const read = sseReader((event, data) => {
+      if (event === 'delta') onText((sofar += (data as { text: string }).text));
+      else if (event === 'citations') citations = data as ChatCitation[];
+      else if (event === 'done') finished = true;
+      else if (event === 'error') failure = (data as { message: string }).message;
+    });
+    await apiClient.post(`/projects/${projectId}/ai/chat`, { message, history }, {
+      responseType: 'text',
+      timeout: 130_000,
+      onDownloadProgress: (e) => read(String((e.event?.target as XMLHttpRequest | undefined)?.responseText ?? '')),
+    }).then((r) => read(String(r.data)));
+    if (failure || !finished) throw new Error(failure ?? 'The AI assistant stopped unexpectedly');
+    return citations;
+  },
+};

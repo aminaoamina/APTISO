@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from app.config import get_settings
 from app.db import create_engine, session_factory
 from app.llm.client import AiClient, AiRejected, AiUnavailable
-from app.routers import assist, health, jobs
+from app.routers import assist, health, jobs, knowledge
 
 BODY_METHODS = {"POST", "PUT", "PATCH"}
 
@@ -64,3 +64,4 @@ async def ai_rejected(_: Request, e: AiRejected):
 app.include_router(health.router)
 app.include_router(assist.router)
 app.include_router(jobs.router)
+app.include_router(knowledge.router)

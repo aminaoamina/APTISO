@@ -9,6 +9,7 @@ import { renderPdf } from './pdf-renderer';
 import { fileName } from './file-name';
 import { DriveSyncService } from '../connectors/drive-sync.service';
 import { controlBlock, loadControlData } from './control-block';
+import { KnowledgeService } from '../ai/knowledge.service';
 
 /** First publication is version 1.0; each later one raises the minor number. */
 const nextVersion = (previous: string | undefined) => {
@@ -35,6 +36,7 @@ export class LibraryService {
     private readonly auditLog: AuditLogService,
     private readonly tasks: TasksService,
     private readonly drive: DriveSyncService,
+    private readonly knowledge: KnowledgeService,
   ) {}
 
   /** "Submit to library": publishes, or sends the document to its approver. */
@@ -192,6 +194,8 @@ export class LibraryService {
     ]);
     // Copy to the organization's drive when one is connected (never blocks publishing).
     await this.drive.versionPublished(created.id).catch(() => undefined);
+    // The companion chat answers from the library: index the new version (never blocks publishing).
+    this.knowledge.indexInBackground(doc.id);
 
     await this.auditLog.log({
       userId: approvedBy,

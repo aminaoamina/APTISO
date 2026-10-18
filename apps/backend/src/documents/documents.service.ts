@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { AuditAction, Prisma, ProjectRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { KnowledgeService } from '../ai/knowledge.service';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { sameContent } from '../common/services/step-document.service';
 import { CreateDocumentDto, UpdateDocumentContentDto, UpdateDocumentAssignmentsDto } from './dto/document.dto';
@@ -55,6 +56,7 @@ export class DocumentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditLog: AuditLogService,
+    private readonly knowledge: KnowledgeService,
   ) {}
 
   async getTemplate(code: string) {
@@ -295,6 +297,7 @@ export class DocumentsService {
     }
 
     await this.prisma.documentInstance.delete({ where: { id: documentId } });
+    this.knowledge.removeDocument(projectId, documentId);
 
     await this.auditLog.log({
       userId,

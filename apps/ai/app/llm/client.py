@@ -172,6 +172,31 @@ class AiClient:
         run_id = await self._record(capability, prompt, _hash(full), meta, usage, "succeeded", output={"text": text})
         yield "done", {"run_id": run_id, "model": usage.model, "text": text}
 
+    async def embed(self, texts: list[str], input_type: str, meta: RunMeta) -> list[list[float]]:
+        """Embeddings for retrieval: input_type "passage" for indexed content, "query" for questions."""
+        usage, vectors = _Usage(model=self.models["embed"]), []
+        try:
+            for i in range(0, len(texts), 32):
+                for attempt in range(3):
+                    try:
+                        r = await self._client().embeddings.create(
+                            model=usage.model, input=texts[i : i + 32], encoding_format="float", timeout=30,
+                            extra_body={"input_type": input_type, "truncate": "END"},
+                        )
+                        break
+                    except openai.OpenAIError as e:
+                        if attempt == 2 or not _transient(e):
+                            raise AiUnavailable(f"Embeddings failed: {type(e).__name__}") from e
+                        await asyncio.sleep(2**attempt)
+                vectors += [d.embedding for d in sorted(r.data, key=lambda d: d.index)]
+                usage.tokens_in += r.usage.prompt_tokens if r.usage else 0
+        except AiUnavailable as e:
+            await self._record("embedding", Prompt(f"embed-{input_type}", 1, ""), _hash([{"n": len(texts)}]), meta, usage, "failed", error=str(e))
+            raise
+        if input_type == "passage":  # queries are recorded with the answer they serve
+            await self._record("embedding", Prompt(f"embed-{input_type}", 1, ""), _hash([{"t": texts}]), meta, usage, "succeeded", output={"count": len(vectors)})
+        return vectors
+
     # ─── Internals ────────────────────────────────────────────────
 
     async def _complete(self, capability: str, messages: list[dict], usage: _Usage) -> str:
