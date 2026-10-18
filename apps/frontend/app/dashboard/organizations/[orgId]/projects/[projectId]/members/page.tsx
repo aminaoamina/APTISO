@@ -18,6 +18,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ISO_ROLE_LABELS } from '@/lib/roles';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -236,7 +237,7 @@ export default function ProjectMembersPage() {
                             ) : (
                               member.iso_roles.map((r) => (
                                 <Badge key={r.iso_role} variant="outline" className="text-xs">
-                                  {r.iso_role}
+                                  {ISO_ROLE_LABELS[r.iso_role] ?? r.iso_role}
                                 </Badge>
                               ))
                             )}

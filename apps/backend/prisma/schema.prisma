@@ -343,6 +343,7 @@ model ComplianceProject {
   maintenance          MaintenanceSetup?
   audit_program        AuditProgram?
   ai_decisions         AiDecision[]
+  whiteboard           Whiteboard?
 
   @@index([organization_id])
   @@index([status])
@@ -1849,4 +1850,17 @@ model EvidenceAnalysis {
   file EvidenceFile @relation(fields: [file_id], references: [id], onDelete: Cascade)
 
   @@map("evidence_analyses")
+}
+
+/// The project's whiteboard (tldraw): one board per project, saved as a snapshot.
+model Whiteboard {
+  id         String   @id @default(uuid()) @db.Uuid
+  project_id String   @unique @db.Uuid
+  snapshot   Json
+  updated_by String   @db.Uuid
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("whiteboards")
 }
