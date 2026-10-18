@@ -25,10 +25,14 @@ class Settings(BaseSettings):
     ai_model_main: str = "nvidia/nemotron-3-super-120b-a12b"
     ai_model_fallback: str = "openai/gpt-oss-20b"
     ai_model_embed: str = "nvidia/nemotron-3-embed-1b"
-    ai_model_ocr: str = "nvidia/nemotron-parse-2.0"
-    ai_model_vision: str = "meta/llama-3.2-90b-vision-instruct"
+    # Reading scans: the models that read our test scan correctly (14/14, 14/14, 13/14 facts).
+    ai_model_ocr: str = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+    ai_model_ocr_fallback: str = "nvidia/nemotron-3.5-super-vl-120b-a12b"
+    ai_model_vision: str = "meta/llama-3.2-11b-vision-instruct"
     # Largest accepted request body (JSON); evidence uploads have their own limit.
     max_body_bytes: int = 1_048_576
+    # Job submissions may carry an evidence file (15 MB, base64-encoded).
+    max_job_body_bytes: int = 21_000_000
 
     @property
     def database_url(self) -> str:

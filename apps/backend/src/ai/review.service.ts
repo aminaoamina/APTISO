@@ -5,19 +5,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProjectAccessService } from '../common/services/project-access.service';
 import { ISO_REQUIREMENTS } from '../audit-prep/iso-requirements';
 import { SOA_KEY } from '../audit-prep/keys';
-import { AiServiceClient } from './ai-service.client';
+import { AiJobsService, isActive } from './jobs.service';
 import { coverage } from './coverage';
 import { proseText } from './text';
 
-interface Job {
-  job_id: string;
-  status: 'queued' | 'running' | 'succeeded' | 'failed';
-  error: string | null;
-  result: { findings: Omit<Finding, 'id'>[]; run_id: string } | null;
-}
-interface Finding { id: string; type: string; ref: string; quote: string | null; explanation: string; suggestion: string; severity: string }
-
-const STATUS = { queued: 'QUEUED', running: 'RUNNING', succeeded: 'DONE', failed: 'FAILED' } as const;
+interface Finding { type: string; ref: string; quote: string | null; explanation: string; suggestion: string; severity: string }
+interface ReviewResult { findings: Finding[]; run_id: string }
+type Job = Awaited<ReturnType<AiJobsService['get']>> & { result: ReviewResult | null };
 const SEVERITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
 /**
@@ -30,7 +24,7 @@ export class DocumentReviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly access: ProjectAccessService,
-    private readonly ai: AiServiceClient,
+    private readonly jobs: AiJobsService,
   ) {}
 
   async request(projectId: string, userId: string, documentId: string) {
@@ -46,17 +40,17 @@ export class DocumentReviewService {
     // Same content: show the existing review instead of starting a new one (a failed one can be retried).
     if (previous[0] && previous[0].status !== 'FAILED') return this.latest(projectId, userId, documentId);
 
-    const job = await this.ai.request<Job>('POST', '/v1/jobs', {
-      kind: 'review',
-      idempotency_key: `review:${documentId}:${contentHash}${previous.length ? `:retry-${previous.length}` : ''}`,
-      project_id: projectId,
-      user_id: userId,
-      payload: { document: { id: documentId, title: doc.title, text }, covers: await this.covers(projectId, refs) },
-    }, { timeoutMs: 15_000 });
+    const job = await this.jobs.submit<ReviewResult>(
+      'review',
+      `review:${documentId}:${contentHash}${previous.length ? `:retry-${previous.length}` : ''}`,
+      projectId,
+      userId,
+      { document: { id: documentId, title: doc.title, text }, covers: await this.covers(projectId, refs) },
+    );
     await this.prisma.documentAiReview.upsert({
       where: { job_id: job.job_id },
       update: {},
-      create: { document_id: documentId, project_id: projectId, requested_by: userId, content_hash: contentHash, job_id: job.job_id, status: STATUS[job.status] },
+      create: { document_id: documentId, project_id: projectId, requested_by: userId, content_hash: contentHash, job_id: job.job_id, status: job.status },
     });
     return this.latest(projectId, userId, documentId);
   }
@@ -67,9 +61,8 @@ export class DocumentReviewService {
     const doc = await this.loadDocument(projectId, documentId);
     let review = await this.prisma.documentAiReview.findFirst({ where: { document_id: documentId }, orderBy: { created_at: 'desc' } });
     if (!review) return { review: null };
-    if (review.status === 'QUEUED' || review.status === 'RUNNING') {
-      const job = await this.ai.request<Job>('GET', `/v1/jobs/${review.job_id}?project_id=${projectId}`, undefined, { timeoutMs: 10_000 });
-      await this.sync(review.id, job);
+    if (isActive(review.status)) {
+      await this.sync(review.id, await this.jobs.get<ReviewResult>(review.job_id, projectId));
       review = await this.prisma.documentAiReview.findUniqueOrThrow({ where: { id: review.id } });
     }
     const findings = await this.prisma.aiReviewFinding.findMany({ where: { review_id: review.id } });
@@ -102,16 +95,16 @@ export class DocumentReviewService {
 
   /** Saves the job's outcome once: the status change and the findings are one transaction, guarded by the status. */
   private async sync(reviewId: string, job: Job) {
-    if (job.status === 'queued' || job.status === 'running') {
-      await this.prisma.documentAiReview.updateMany({ where: { id: reviewId, status: { in: ['QUEUED', 'RUNNING'] } }, data: { status: STATUS[job.status] } });
+    if (isActive(job.status)) {
+      await this.prisma.documentAiReview.updateMany({ where: { id: reviewId, status: { in: ['QUEUED', 'RUNNING'] } }, data: { status: job.status } });
       return;
     }
     await this.prisma.$transaction(async tx => {
       const claimed = await tx.documentAiReview.updateMany({
         where: { id: reviewId, status: { in: ['QUEUED', 'RUNNING'] } },
-        data: { status: STATUS[job.status], completed_at: new Date(), run_id: job.result?.run_id ?? null, error: job.error },
+        data: { status: job.status, completed_at: new Date(), run_id: job.result?.run_id ?? null, error: job.error },
       });
-      if (claimed.count === 1 && job.status === 'succeeded' && job.result) {
+      if (claimed.count === 1 && job.status === 'DONE' && job.result) {
         await tx.aiReviewFinding.createMany({
           data: job.result.findings.map(f => ({ review_id: reviewId, type: f.type, ref: f.ref, quote: f.quote, explanation: f.explanation, suggestion: f.suggestion, severity: f.severity })),
         });

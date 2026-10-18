@@ -49,6 +49,14 @@ export class KnowledgeService {
     }, { timeoutMs: 120_000 });
   }
 
+  /** What the AI read in an evidence file, so the companion can answer from it (evidence is visible to every member). */
+  indexEvidence(projectId: string, evidenceId: string, title: string, summary: string, text: string) {
+    this.ai.request('PUT', `/v1/index/documents/${evidenceId}`, {
+      project_id: projectId, source_type: 'evidence', version: null, title, visibility: 'all', refs: [],
+      sections: [{ heading: 'Summary', text: summary }, { heading: 'Content', text: text.slice(0, 50_000) }],
+    }, { timeoutMs: 120_000 }).catch(e => this.logger.warn(`Indexing evidence ${evidenceId} failed: ${(e as Error).message}`));
+  }
+
   /** Background variant for hooks (publishing, saving): failures are logged, never raised. */
   indexInBackground(documentId: string) {
     this.indexDocument(documentId).catch(e => this.logger.warn(`Indexing ${documentId} failed: ${(e as Error).message}`));

@@ -10,6 +10,8 @@ import { FileStorage } from './file-storage';
 import { CreateEvidenceDto, EvidenceTargetDto, UpdateEvidenceDto } from './evidence.dto';
 import { TASK_TYPE_LABELS } from '../tasks/task-labels';
 import { TasksService } from '../tasks/tasks.service';
+import { KnowledgeService } from '../ai/knowledge.service';
+import { EvidenceAnalysisService } from './evidence-analysis.service';
 
 export const MAX_EVIDENCE_BYTES = 25 * 1024 * 1024;
 
@@ -67,6 +69,8 @@ export class EvidenceService {
     private readonly storage: FileStorage,
     private readonly auditLog: AuditLogService,
     private readonly tasks: TasksService,
+    private readonly analyses: EvidenceAnalysisService,
+    private readonly knowledge: KnowledgeService,
   ) {}
 
   async create(projectId: string, dto: CreateEvidenceDto, file: UploadedFile | undefined, userId: string, ipAddress?: string, userAgent?: string) {
@@ -93,6 +97,8 @@ export class EvidenceService {
       include: EVIDENCE_INCLUDE,
     });
     await this.log(userId, evidence.id, { action: 'evidence_added', kind: dto.kind, links: targets.length, sha256: stored?.sha256 }, ipAddress, userAgent);
+    // The AI reads the file in the background and proposes a summary, links and expiry date.
+    if (evidence.files[0]) this.analyses.analyzeInBackground(evidence.files[0].id, userId);
     return evidence;
   }
 
@@ -138,7 +144,8 @@ export class EvidenceService {
     if (evidence.kind !== EvidenceKind.FILE) throw new BadRequestException('Only file evidence has a file');
     if (!file) throw new BadRequestException('Choose the new file');
     const stored = await this.store(evidence.project_id, file);
-    await this.prisma.evidenceFile.create({ data: { ...stored, evidence_id: evidenceId, uploaded_by: userId } });
+    const created = await this.prisma.evidenceFile.create({ data: { ...stored, evidence_id: evidenceId, uploaded_by: userId }, select: { id: true } });
+    this.analyses.analyzeInBackground(created.id, userId);
     await this.closeRenewal(evidenceId, 'New version uploaded');
     await this.log(userId, evidenceId, { action: 'evidence_file_replaced', sha256: stored.sha256 }, ipAddress, userAgent);
     return { message: 'File replaced' };
@@ -146,12 +153,13 @@ export class EvidenceService {
 
   /** Withdrawn evidence leaves every list but its record (and files) are kept. */
   async withdraw(evidenceId: string, reason: string, userId: string, ipAddress?: string, userAgent?: string) {
-    await this.load(evidenceId);
+    const evidence = await this.load(evidenceId);
     await this.prisma.evidence.update({
       where: { id: evidenceId },
       data: { deleted_at: new Date(), deleted_by: userId, delete_reason: reason.trim() },
     });
     await this.closeRenewal(evidenceId, `Evidence withdrawn: ${reason.trim()}`);
+    this.knowledge.removeDocument(evidence.project_id, evidenceId);
     await this.log(userId, evidenceId, { action: 'evidence_withdrawn', reason }, ipAddress, userAgent);
     return { message: 'Withdrawn' };
   }

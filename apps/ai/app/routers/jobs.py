@@ -11,17 +11,18 @@ from sqlalchemy.dialects.postgresql import insert
 
 from app.jobs import connect, enqueue
 from app.models import AiJob
+from app.evidence import EVIDENCE_ANALYSIS, EvidencePayload
 from app.review import DOCUMENT_REVIEW, ReviewPayload
 from app.security import require_service_token
 
 router = APIRouter(prefix="/v1/jobs", tags=["jobs"], dependencies=[Depends(require_service_token)])
 
 # Payload model and prompt of each kind: the prompt version is part of the key, so a new prompt means a new job.
-KINDS = {"review": (ReviewPayload, DOCUMENT_REVIEW)}
+KINDS = {"review": (ReviewPayload, DOCUMENT_REVIEW), "evidence": (EvidencePayload, EVIDENCE_ANALYSIS)}
 
 
 class JobRequest(BaseModel):
-    kind: Literal["review"]
+    kind: Literal["review", "evidence"]
     idempotency_key: str = Field(min_length=8, max_length=200)
     project_id: uuid.UUID
     user_id: uuid.UUID

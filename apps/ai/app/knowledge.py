@@ -45,22 +45,22 @@ def chunk_sections(sections: list[dict]) -> list[tuple[str | None, str]]:
     return out
 
 
-async def index_document(session: AsyncSession, ai: AiClient, project_id: uuid.UUID, document_id: str, version: str | None,
+async def index_document(session: AsyncSession, ai: AiClient, project_id: uuid.UUID, source_type: str, document_id: str, version: str | None,
                          title: str, visibility: str, refs: list[str], sections: list[dict]) -> int:
-    """Replaces every chunk of the document; unchanged chunks keep their embedding (no new model call)."""
+    """Replaces every chunk of the document (or evidence); unchanged chunks keep their embedding (no new model call)."""
     pieces = chunk_sections(sections)
     old = {c.content_hash: c.embedding for c in (await session.scalars(
         select(KnowledgeChunk).where(KnowledgeChunk.project_id == project_id, KnowledgeChunk.source_id == document_id))).all()}
     hashes = [_hash(title, h or "", t) for h, t in pieces]
     missing = [i for i, h in enumerate(hashes) if h not in old]
     new_vectors = await ai.embed([f"{title}\n{pieces[i][0] or ''}\n{pieces[i][1]}" for i in missing], "passage",
-                                 RunMeta(str(project_id), None, "document", document_id)) if missing else []
+                                 RunMeta(str(project_id), None, source_type, document_id)) if missing else []
     vectors = dict(zip(missing, new_vectors))
     resolved = [r for r in (catalog.resolve(x) for x in refs) if r]
     await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.project_id == project_id, KnowledgeChunk.source_id == document_id))
     for i, (heading, body) in enumerate(pieces):
         session.add(KnowledgeChunk(
-            project_id=project_id, source_type="document", source_id=document_id, version=version, title=title, section=heading,
+            project_id=project_id, source_type=source_type, source_id=document_id, version=version, title=title, section=heading,
             refs=list(dict.fromkeys(resolved + find_refs(body))), visibility=visibility, content=body, content_hash=hashes[i],
             embedding=vectors[i] if i in vectors else old[hashes[i]],
         ))

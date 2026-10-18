@@ -864,6 +864,7 @@ model EvidenceFile {
 
   evidence Evidence @relation(fields: [evidence_id], references: [id], onDelete: Cascade)
   uploader User     @relation(fields: [uploaded_by], references: [id])
+  analysis EvidenceAnalysis?
 
   @@index([evidence_id])
   @@map("evidence_files")
@@ -1765,7 +1766,8 @@ model AiDecision {
   @@map("ai_decisions")
 }
 
-enum AiReviewStatus {
+/// Status of a long AI task, as seen by the backend.
+enum AiJobStatus {
   QUEUED
   RUNNING
   DONE
@@ -1788,7 +1790,7 @@ model DocumentAiReview {
   /// SHA-256 of the reviewed content: the same content is never reviewed twice.
   content_hash String         @db.Char(64)
   job_id       String         @unique @db.Uuid
-  status       AiReviewStatus @default(QUEUED)
+  status       AiJobStatus @default(QUEUED)
   run_id       String?        @db.Uuid
   error        String?        @db.Text
   created_at   DateTime       @default(now()) @db.Timestamp(6)
@@ -1819,4 +1821,32 @@ model AiReviewFinding {
 
   @@index([review_id])
   @@map("ai_review_findings")
+}
+
+/// What the AI read in an evidence file: proposals only, applied by a person through the normal evidence actions.
+/// job_id points to the job in the AI service (aptiso_ai.ai_jobs); the file copy sent there is removed once the job is over.
+model EvidenceAnalysis {
+  id            String      @id @default(uuid()) @db.Uuid
+  file_id       String      @unique @db.Uuid
+  project_id    String      @db.Uuid
+  job_id        String?     @unique @db.Uuid
+  status        AiJobStatus @default(QUEUED)
+  summary       String?     @db.Text
+  document_type String?     @db.VarChar(200)
+  /// [{ref, title, reason, confidence}]
+  suggestions   Json?
+  expiry_date   DateTime?   @db.Date
+  expiry_quote  String?     @db.Text
+  pages         Int?
+  ocr_pages     Int?
+  note          String?     @db.VarChar(500)
+  error         String?     @db.Text
+  run_id        String?     @db.Uuid
+  attempts      Int         @default(0)
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  completed_at  DateTime?   @db.Timestamp(6)
+
+  file EvidenceFile @relation(fields: [file_id], references: [id], onDelete: Cascade)
+
+  @@map("evidence_analyses")
 }

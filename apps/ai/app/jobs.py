@@ -15,6 +15,7 @@ from app.config import get_settings
 from app.db import create_engine, session_factory
 from app.llm.client import AiClient, RunMeta
 from app.models import AiJob
+from app.evidence import analyze
 from app.review import review
 
 log = logging.getLogger("ai.jobs")
@@ -22,7 +23,9 @@ log = logging.getLogger("ai.jobs")
 MAX_ATTEMPTS = 3
 LEASE = timedelta(minutes=5)
 REQUEUE_AFTER = timedelta(minutes=1)
-HANDLERS = {"review": review}
+HANDLERS = {"review": review, "evidence": analyze}
+# Copies of business files are not kept once the job is over.
+FILE_FIELDS = {"evidence": ("file", "data")}
 
 
 def redis_settings(*, worker: bool) -> RedisSettings:
@@ -50,7 +53,8 @@ async def run_job(ctx: dict, job_id: str) -> None:
         await s.commit()
     if job is None:
         return
-    meta = RunMeta(str(job.project_id), str(job.user_id), job.kind, job.payload.get("document", {}).get("id"))
+    subject = job.payload.get("document") or job.payload.get("evidence") or {}
+    meta = RunMeta(str(job.project_id), str(job.user_id), job.kind, subject.get("id"))
     try:
         result = await HANDLERS[job.kind](ctx["ai"], job.payload, meta)
         values = {"status": "succeeded", "result": result, "error": None, "lease_until": None}
@@ -58,6 +62,9 @@ async def run_job(ctx: dict, job_id: str) -> None:
         log.warning("job %s (%s) attempt %s failed: %s", job.id, job.kind, job.attempts, e)
         final = job.attempts >= MAX_ATTEMPTS
         values = {"status": "failed" if final else "queued", "error": f"{type(e).__name__}: {e}"[:2000], "lease_until": None}
+    if values["status"] in ("succeeded", "failed") and job.kind in FILE_FIELDS:
+        section, field = FILE_FIELDS[job.kind]
+        values["payload"] = {**job.payload, section: {k: v for k, v in job.payload[section].items() if k != field}}
     # The result is saved before the job is reported done.
     async with sessions() as s:
         await s.execute(update(AiJob).where(AiJob.id == job.id).values(**values))

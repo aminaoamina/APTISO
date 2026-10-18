@@ -40,6 +40,7 @@ class Section(BaseModel):
 
 class IndexDocument(BaseModel):
     project_id: uuid.UUID
+    source_type: Literal["document", "evidence"] = "document"
     version: str | None = Field(default=None, max_length=20)
     title: str = Field(max_length=250)
     visibility: Literal["all", "editors"]
@@ -51,7 +52,7 @@ class IndexDocument(BaseModel):
 async def index_document(document_id: str, body: IndexDocument, request: Request) -> dict:
     """Replaces the document's passages (on publish or when its content or visibility changed)."""
     async with request.app.state.sessions() as s:
-        count = await knowledge.index_document(s, request.app.state.ai, body.project_id, document_id, body.version, body.title,
+        count = await knowledge.index_document(s, request.app.state.ai, body.project_id, body.source_type, document_id, body.version, body.title,
                                                body.visibility, body.refs, [x.model_dump() for x in body.sections])
     return {"chunks": count}
 

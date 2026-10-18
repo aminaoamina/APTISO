@@ -10,6 +10,7 @@ import { DocumentReviewController } from './review.controller';
 import { DocumentReviewService } from './review.service';
 import { ChatService } from './chat.service';
 import { KnowledgeService } from './knowledge.service';
+import { AiJobsService } from './jobs.service';
 
 /**
  * Backend side of the AI assistant: permissions and context from the business
@@ -17,7 +18,7 @@ import { KnowledgeService } from './knowledge.service';
  */
 @Module({
   controllers: [AiController, AssistController, DocumentReviewController],
-  providers: [AiServiceClient, AiContextService, AssistService, DocumentReviewService, ChatService, KnowledgeService, ProjectAccessService, ProjectRoleGuard],
-  exports: [AiServiceClient, AiContextService, KnowledgeService],
+  providers: [AiServiceClient, AiJobsService, AiContextService, AssistService, DocumentReviewService, ChatService, KnowledgeService, ProjectAccessService, ProjectRoleGuard],
+  exports: [AiServiceClient, AiJobsService, AiContextService, KnowledgeService],
 })
 export class AiModule {}

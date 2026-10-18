@@ -87,6 +87,7 @@ class AiClient:
             "fallback": settings.ai_model_fallback,
             "embed": settings.ai_model_embed,
             "ocr": settings.ai_model_ocr,
+            "ocr_fallback": settings.ai_model_ocr_fallback,
             "vision": settings.ai_model_vision,
         }
         self._sessions = sessions

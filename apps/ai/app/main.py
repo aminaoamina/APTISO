@@ -42,7 +42,9 @@ async def limit_body_size(request: Request, call_next):
         length = request.headers.get("content-length")
         if length is None:
             return JSONResponse({"detail": "Content-Length required"}, status_code=411)
-        if not length.isdigit() or int(length) > get_settings().max_body_bytes:
+        settings = get_settings()
+        limit = settings.max_job_body_bytes if request.url.path == "/v1/jobs" else settings.max_body_bytes
+        if not length.isdigit() or int(length) > limit:
             return JSONResponse({"detail": "Request body too large"}, status_code=413)
     return await call_next(request)
 

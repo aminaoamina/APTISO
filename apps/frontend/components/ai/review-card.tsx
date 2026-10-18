@@ -5,6 +5,7 @@ import { Check, Loader2, RotateCcw, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { reviewApi, type DocumentReview, type ReviewFinding } from '@/lib/ai-api';
 import { getErrorMessage } from '@/lib/utils';
+import { usePollWhile } from '@/lib/use-poll';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +16,6 @@ const SEVERITY: Record<ReviewFinding['severity'], [string, string]> = {
   low: ['Low', 'bg-muted text-muted-foreground'],
 };
 const TYPE: Record<ReviewFinding['type'], string> = { missing: 'Missing', contradiction: 'Contradiction', vague: 'Vague' };
-const POLL_MS = 3000;
 
 /**
  * AI review of the document: findings on what its clauses and controls require,
@@ -40,11 +40,7 @@ export function ReviewCard({ projectId, documentId, canEdit }: { projectId: stri
   useEffect(() => { void load(); }, [load]);
 
   const running = review?.status === 'QUEUED' || review?.status === 'RUNNING';
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(load, POLL_MS);
-    return () => clearInterval(t);
-  }, [running, load]);
+  usePollWhile(running, load);
 
   const start = async () => {
     setStarting(true);

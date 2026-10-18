@@ -11,6 +11,7 @@ import { getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { EvidencePanel, ACCEPT, KIND_ICON, MAX_MB, NewEvidenceForm, validity } from '@/components/evidence/evidence-panel';
+import { EvidenceAnalysisView } from '@/components/ai/evidence-analysis';
 import { STATUS_LABELS } from '@/components/soa/soa-stages';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -228,12 +229,12 @@ function EvidenceLibrary({ projectId, canEdit, isLead }: { projectId: string; ca
         <Card className="border-dashed"><CardContent className="py-10 text-center text-sm text-muted-foreground">
           {items.length ? 'Nothing matches.' : 'No evidence yet. Add it here or directly on a clause, a control or a task.'}
         </CardContent></Card>
-      ) : shown.map((e) => <LibraryItem key={e.id} evidence={e} canEdit={canEdit} isLead={isLead} onChanged={load} />)}
+      ) : shown.map((e) => <LibraryItem key={e.id} projectId={projectId} evidence={e} canEdit={canEdit} isLead={isLead} onChanged={load} />)}
     </div>
   );
 }
 
-function LibraryItem({ evidence: e, canEdit, isLead, onChanged }: { evidence: Evidence; canEdit: boolean; isLead: boolean; onChanged: () => Promise<void> }) {
+function LibraryItem({ projectId, evidence: e, canEdit, isLead, onChanged }: { projectId: string; evidence: Evidence; canEdit: boolean; isLead: boolean; onChanged: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(e.title);
   const [validUntil, setValidUntil] = useState(e.valid_until?.slice(0, 10) ?? '');
@@ -291,6 +292,7 @@ function LibraryItem({ evidence: e, canEdit, isLead, onChanged }: { evidence: Ev
                 ))}
               </ul>
             )}
+            {e.files[0] && <EvidenceAnalysisView projectId={projectId} evidenceId={e.id} fileId={e.files[0].id} canEdit={canEdit} onApplied={onChanged} />}
           </div>
           {canEdit && (
             <div className="flex shrink-0 gap-1">

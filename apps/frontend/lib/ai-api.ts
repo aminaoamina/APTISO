@@ -1,4 +1,5 @@
 import apiClient from './api-client';
+import type { EvidenceTarget } from './api';
 
 export interface Suggestion {
   answer: string;
@@ -124,4 +125,31 @@ export const chatApi = {
     if (failure || !finished) throw new Error(failure ?? 'The AI assistant stopped unexpectedly');
     return citations;
   },
+};
+
+export interface EvidenceAnalysis {
+  status: 'QUEUED' | 'RUNNING' | 'DONE' | 'FAILED';
+  error: string | null;
+  note: string | null;
+  summary: string | null;
+  document_type: string | null;
+  pages: number | null;
+  ocr_pages: number | null;
+  suggestions: {
+    ref: string;
+    title: string;
+    reason: string;
+    confidence: 'likely' | 'possible';
+    /** What "Link" does; null when the control is not in the Statement of Applicability yet. */
+    target: EvidenceTarget | null;
+    linked: boolean;
+  }[];
+  expiry: { date: string; quote: string; applied: boolean } | null;
+}
+
+export const evidenceAnalysisApi = {
+  get: async (projectId: string, evidenceId: string): Promise<EvidenceAnalysis | null> =>
+    (await apiClient.get(`/projects/${projectId}/evidence/${evidenceId}/analysis`)).data.analysis,
+  retry: async (projectId: string, evidenceId: string): Promise<EvidenceAnalysis | null> =>
+    (await apiClient.post(`/projects/${projectId}/evidence/${evidenceId}/analysis`)).data.analysis,
 };

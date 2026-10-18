@@ -57,9 +57,12 @@ export function CompanionChat({ orgId, projectId }: { orgId: string; projectId: 
     }
   };
 
-  // Document passages and document facts link to the document itself.
-  const href = (c: ChatCitation) =>
-    c.source_type === 'document' && c.source_id ? `/dashboard/organizations/${orgId}/projects/${projectId}/documents/${c.source_id}` : null;
+  // Documents link to the document itself; evidence to the Audit & Evidence page.
+  const href = (c: ChatCitation) => {
+    const base = `/dashboard/organizations/${orgId}/projects/${projectId}`;
+    if (c.source_type === 'document' && c.source_id) return `${base}/documents/${c.source_id}`;
+    return c.source_type === 'evidence' ? `${base}/audit` : null;
+  };
 
   if (!open) {
     return (
