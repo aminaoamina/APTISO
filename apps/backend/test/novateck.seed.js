@@ -104,6 +104,9 @@ const log = (...a) => console.log('  ', ...a);
     if (!pending) await s.library.approve(docId, id(approver));
   };
   const finish = async (stepId, title) => {
+    // A register step's generated document goes to the library first (clause 7.5.3).
+    const doc = await prisma.documentInstance.findUnique({ where: { step_id: stepId }, include: { _count: { select: { versions: true } } } });
+    if (doc && !doc._count.versions && doc.status === 'DRAFT') await publish(doc.id);
     await s.projects.completeStep(project.id, stepId, LEAD, 'PROJECT_LEAD');
     log(`✔ ${title}`);
   };
@@ -408,6 +411,21 @@ const log = (...a) => console.log('  ', ...a);
   await s.improvement.updateNonconformity(project.id, ncGit.id, { correction: 'Account disabled on 12 October; its activity since 31 August reviewed (no access).', root_cause: 'Contractor accounts were not in the HR leaver process.' }, LEAD);
   await s.improvement.addAction(project.id, ncGit.id, { description: 'Add contractors to the leaver checklist and review GitLab and AWS accounts every month', responsible_id: id('youssef'), due_date: '2026-11-30' }, LEAD);
   log('✔ Registers: 2 incidents, 2 nonconformities with corrective actions');
+
+  // Real mailboxes for testing the e-mails (existing accounts keep their password; new ones get the demo password).
+  const TESTERS = [
+    { email: 'amina.bayoudh@ieee.org', first: 'Amina', last: 'Bayoudh', org: 'ORG_ADMIN', project: 'PROJECT_MEMBER', iso: ['INFORMATION_SECURITY_MANAGER'] },
+    { email: 'bibiko218@gmail.com', first: 'Test', last: 'Member', org: 'ORG_MEMBER', project: 'PROJECT_MEMBER', iso: ['TOP_MANAGEMENT'] },
+    { email: 'aminabayoudh5@gmail.com', first: 'Amina', last: 'Bayoudh (Gmail)', org: 'ORG_MEMBER', project: 'PROJECT_AUDITOR', iso: ['INTERNAL_AUDITOR'] },
+  ];
+  for (const t of TESTERS) {
+    const user = await prisma.user.findUnique({ where: { email: t.email } })
+      ?? await prisma.user.create({ data: { email: t.email, first_name: t.first, last_name: t.last, password_hash, is_active: true, is_email_verified: true, timezone: 'Africa/Tunis' } });
+    await prisma.organizationMember.create({ data: { organization_id: org.id, user_id: user.id, role: t.org } });
+    const m = await prisma.projectMember.create({ data: { project_id: project.id, user_id: user.id, privilege: t.project } });
+    await prisma.projectMemberIsoRole.createMany({ data: t.iso.map(r => ({ project_member_id: m.id, iso_role: r })) });
+  }
+  log(`✔ Testers added: ${TESTERS.map(t => t.email).join(', ')}`);
 
   const view = await s.projects.findOne(project.id, LEAD);
   console.log(`\nNovaTeck ready: ${view.progress.completed_steps}/${view.progress.total_steps} steps (${view.progress.percent}%), ${mails} e-mails not sent.`);

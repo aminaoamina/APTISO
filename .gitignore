@@ -39,3 +39,6 @@ Thumbs.db
 
 # Evidence files (stored outside the code; see EVIDENCE_STORAGE_DIR)
 apps/backend/storage/
+
+# Local demo notes (accounts and passwords)
+DEMO-GUIDE.md

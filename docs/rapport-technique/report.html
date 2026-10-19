@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>APTISO — Rapport technique — Amina Bayoudh</title>
+<style>
+  :root{ --ink:#22292d; --head:#2f3e46; --teal:#4a7c76; --rule:#c9a395; --soft:#eef3f2; --mute:#6b7b7f; }
+  @page{ size:A4; margin:27mm 24mm 24mm 24mm; }
+  @page cover{ margin:0; }
+  *{ box-sizing:border-box; }
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ margin:0; font-family:Cambria, "Cambria Math", Georgia, serif; font-size:10.6pt; line-height:1.42; color:var(--ink); background:#fff; max-width:100%; overflow-x:hidden; }
+  p{ margin:0 0 .55em; text-align:justify; hyphens:auto; }
+  .mk{ color:#fff; font-size:1px; line-height:1px; height:1px; overflow:hidden; display:block; }
+  a{ color:inherit; text-decoration:none; }
+  code{ font-family:Consolas,"Courier New",monospace; font-size:.88em; }
+  .cover{ page:cover; height:297mm; position:relative; padding:22mm 24mm 18mm; break-after:page; }
+  .cover .logos{ display:flex; justify-content:space-between; align-items:center; }
+  .cover .logos img.es{ height:20mm; }
+  .cover .logos img.asm{ height:24mm; }
+  .cover .band{ margin-top:42mm; border-top:2.2px solid #111; border-bottom:2.2px solid #111; padding:13mm 0 11mm; text-align:center; }
+  .cover .band h1{ font-size:30pt; color:var(--head); margin:0 0 5mm; font-weight:700; }
+  .cover .band .sub{ font-style:italic; font-size:14pt; }
+  .cover .who{ text-align:center; margin-top:24mm; font-size:12.5pt; line-height:1.6; }
+  .cover .who b{ font-size:13.5pt; }
+  .cover .who .gap{ height:7mm; }
+  .cover .year{ position:absolute; bottom:20mm; left:0; right:0; text-align:center; color:#8a9696; font-size:12pt; }
+  .fm, .chapter, .unnum{ break-before:page; }
+  .fm h1, .unnum h1{ font-size:21pt; color:var(--head); margin:16mm 0 0; padding-bottom:5mm; border-bottom:1px solid var(--rule); margin-bottom:9mm; }
+  .chapter .cnum{ margin-top:20mm; color:var(--teal); font-weight:700; font-size:11.5pt; }
+  .chapter h1{ font-size:22pt; color:var(--head); margin:3mm 0 0; padding-bottom:5mm; border-bottom:1px solid var(--rule); margin-bottom:9mm; }
+  h2{ font-size:14.5pt; color:var(--teal); margin:7mm 0 3mm; break-after:avoid; }
+  h3{ font-size:11.8pt; color:var(--head); margin:5mm 0 2mm; break-after:avoid; }
+  h2 .n{ margin-right:3mm; }
+  ul,ol{ margin:.2em 0 .7em; padding-left:6mm; }
+  li{ margin:.15em 0; text-align:justify; }
+  .toc{ font-size:10pt; }
+  .toc .row{ display:flex; align-items:baseline; margin:.7mm 0; }
+  .toc .row .t{ white-space:normal; max-width:88%; }
+  .toc .row .d{ flex:1; border-bottom:1px dotted #9aa; margin:0 2mm; transform:translateY(-1mm); }
+  .toc .row .p{ min-width:8mm; text-align:right; }
+  .toc .l0{ font-weight:700; margin-top:3mm; }
+  .toc .l0 .d{ border:none; }
+  .toc .l1{ padding-left:7mm; }
+  .toc .num{ display:inline-block; min-width:8mm; }
+  .toc .l1 .num{ min-width:10mm; }
+  figure{ margin:5mm 0 6mm; text-align:center; break-inside:avoid; }
+  figcaption{ font-size:9.4pt; margin-top:2.5mm; }
+  figcaption b, .tcap b{ color:var(--teal); }
+  .tcap{ font-size:9.4pt; text-align:center; margin:4mm 0 2mm; break-after:avoid; }
+  table{ border-collapse:collapse; margin:0 auto 5mm; font-size:9.4pt; break-inside:avoid; }
+  table.full{ width:100%; table-layout:fixed; }
+  td,th{ overflow-wrap:anywhere; padding:1.3mm 2.4mm; text-align:left; vertical-align:top; }
+  thead th{ border-top:1.2px solid #556; border-bottom:.8px solid #556; }
+  tbody tr:last-child td{ border-bottom:1.2px solid #556; }
+  .tw{ break-inside:avoid; }
+  .box{ background:var(--soft); border-left:3px solid var(--teal); padding:3mm 4mm; margin:4mm 0; font-size:10pt; break-inside:avoid; }
+  .box p:last-child{ margin:0; }
+  .code{ font-family:Consolas,"Courier New",monospace; font-size:8.6pt; background:#f6f8f8; border:1px solid #dfe5e5; padding:3mm 4mm; white-space:pre; line-height:1.38; margin:3mm 0 4mm; break-inside:avoid; text-align:left; }
+  .formula{ font-family:"Cambria Math",Cambria,serif; text-align:center; margin:3mm 0; font-size:10.5pt; }
+  .bib p{ text-align:left; padding-left:9mm; text-indent:-9mm; font-size:9.8pt; margin-bottom:2.2mm; }
+</style>
+</head>
+<body>
+
+<!-- ================= COUVERTURE ================= -->
+<section class="cover">
+  <div class="logos">
+    <img class="es" src="img/esprit.png" alt="ESPRIT">
+    <img class="asm" src="img/asm.png" alt="ASM — All Soft Multimedia">
+  </div>
+  <div class="band">
+    <h1>Rapport technique</h1>
+    <div class="sub">APTISO : plateforme de mise en conformité ISO/IEC 27001<br>assistée par l'intelligence artificielle</div>
+  </div>
+  <div class="who">
+    <b>Présenté par</b><br>Amina Bayoudh
+    <div class="gap"></div>
+    Stage réalisé au sein de<br><b>ASM — All Soft Multimedia</b>
+    <div class="gap"></div>
+    Code source : <span style="font-family:Consolas,monospace;font-size:11pt">github.com/aminaoamina/APTISO</span>
+  </div>
+  <div class="year">Année universitaire 2025–2026</div>
+</section>
+
+<section class="fm toc">
+  <span class="mk">§FM§</span>
+  <h1>Sommaire</h1>
+  <!--TOC-->
+</section>
+
+<section class="fm toc">
+  <span class="mk">§FM§</span>
+  <h1>Liste des figures</h1>
+  <!--LOF-->
+  <h1 style="margin-top:7mm">Liste des tableaux</h1>
+  <!--LOT-->
+</section>
+
+<!-- ================= INTRODUCTION ================= -->
+<section class="unnum" id="intro">
+  <span class="mk">§ARABIC§</span><span class="mk">§UN:Introduction générale§</span><span class="mk">§H:intro§</span>
+  <h1>Introduction générale</h1>
+  <p>La norme <b>ISO/IEC 27001:2022</b> définit les exigences d'un système de management de la sécurité de l'information (SMSI) [1]. Pour une organisation, l'obtenir demande des mois de travail : fixer un périmètre, évaluer et traiter les risques, choisir parmi les 93 mesures de l'Annexe A, rédiger des dizaines de documents, former le personnel, réaliser un audit interne puis une revue de direction. Ce travail est souvent mené avec des tableurs et des documents dispersés, sans vue d'ensemble ni traçabilité.</p>
+  <p><b>APTISO</b> répond à ce besoin. C'est une plateforme web qui guide une organisation à travers les cinq phases d'un projet ISO 27001, sur le modèle de Conformio [3], et qui conserve chaque décision, chaque document et chaque preuve. Un assistant d'intelligence artificielle aide à remplir les assistants de rédaction, relit les documents, lit les preuves numérisées et répond aux questions sur la norme et sur le projet, toujours sous le contrôle d'une personne.</p>
+  <p>Ce rapport décrit la réalisation technique d'APTISO pendant le stage effectué au sein d'<b>ASM — All Soft Multimedia</b>. Il présente le projet et ses exigences (chapitre 1), l'architecture générale (chapitre 2), la conception des données avec les diagrammes de classes (chapitre 3), puis chaque composant : le backend (chapitre 4), le frontend (chapitre 5) et le service d'IA (chapitre 6). Il traite ensuite la sécurité (chapitre 7), l'infrastructure et le déploiement (chapitre 8), les tests (chapitre 9), et se termine par les limites et les perspectives (chapitre 10).</p>
+</section>
+
+<!-- ================= CHAPITRE 1 ================= -->
+<section class="chapter" id="ch1">
+  <span class="mk">§CH:1:Présentation du projet§</span><span class="mk">§H:ch1§</span>
+  <div class="cnum">Chapitre 1</div>
+  <h1>Présentation du projet</h1>
+
+  <h2 id="s1-1"><span class="mk">§H:s1-1§</span><span class="n">1.1</span>Contexte : la mise en conformité ISO/IEC 27001</h2>
+  <p>Un projet ISO 27001 produit des <b>informations documentées</b> (politiques, procédures, registres, enregistrements) qui doivent être approuvées, diffusées, conservées et revues (clause 7.5). Il repose aussi sur des <b>décisions tracées</b> : acceptation des risques résiduels par leurs propriétaires, approbation du plan de traitement par la direction, conclusions de la revue de direction. L'auditeur de certification vérifie la cohérence de l'ensemble : une mesure déclarée applicable dans la Déclaration d'applicabilité (SoA) doit être reliée à un risque, à une politique et à des preuves.</p>
+  <p>Deux publics utilisent la plateforme : les <b>organisations</b> qui mettent en œuvre la norme (responsable de projet, direction, propriétaires d'actifs, équipes techniques) et les <b>auditeurs</b>, internes ou externes, qui consultent les registres et les documents en lecture seule.</p>
+
+  <h2 id="s1-2"><span class="mk">§H:s1-2§</span><span class="n">1.2</span>Objectifs de la plateforme</h2>
+  <ul>
+    <li><b>Guider</b> : découper le projet en phases et en étapes, chacune avec son assistant de saisie, son registre ou son document, et une liste de contrôle de fin d'étape.</li>
+    <li><b>Faire respecter les règles de la norme</b> par le serveur : une étape ne se termine que lorsque ses conditions sont remplies et que son document est approuvé dans la bibliothèque.</li>
+    <li><b>Tracer</b> : versions de documents, approbations, journal d'audit des actions, journal des appels à l'IA et des décisions humaines.</li>
+    <li><b>Assister par l'IA sans lui déléguer la décision</b> : l'IA propose, une personne accepte ou rejette.</li>
+    <li><b>Faire vivre le SMSI</b> après la certification : tâches récurrentes, rappels, programme d'audit sur trois ans.</li>
+  </ul>
+
+  <h2 id="s1-3"><span class="mk">§H:s1-3§</span><span class="n">1.3</span>Périmètre fonctionnel</h2>
+  <p>Le parcours compte cinq phases et 19 étapes de base ; la phase 3 reçoit en plus une étape par politique exigée par la SoA (21 politiques pour le projet de démonstration). La figure 1.1 résume ce que produit chaque phase.</p>
+  <figure><span class="mk">§F:1.1§</span>{{FIG:phases}}
+    <figcaption><b>Figure 1.1 :</b> Les cinq phases du parcours APTISO et leur socle commun.</figcaption></figure>
+
+  <h2 id="s1-4"><span class="mk">§H:s1-4§</span><span class="n">1.4</span>Exigences techniques</h2>
+  <p>Les exigences non fonctionnelles découlent de la nature du produit : un outil de sécurité doit lui-même être sûr, et un outil d'audit doit lui-même être traçable.</p>
+  <p class="tcap"><b>Tableau 1.1 :</b> Exigences non fonctionnelles et réponse technique.</p><span class="mk">§T:1.1§</span>
+  <table class="full"><colgroup><col style="width:30%"><col></colgroup>
+    <thead><tr><th>Exigence</th><th>Réponse technique</th></tr></thead>
+    <tbody>
+      <tr><td>Traçabilité (clause 7.5)</td><td>versions de documents conservées avec leur PDF, approbateur et date ; journal d'audit ; journal <code>ai_runs</code> des appels IA</td></tr>
+      <tr><td>Confidentialité des données</td><td>droits relus en base à chaque requête, cookies HttpOnly, double authentification, secrets chiffrés (AES-256-GCM)</td></tr>
+      <tr><td>Exactitude de l'IA</td><td>réponses structurées validées par schéma et par des contrôles métier ; citations vérifiées ; décision humaine enregistrée</td></tr>
+      <tr><td>Disponibilité indépendante de l'IA</td><td>chaque fonction IA a un comportement de repli : une panne du fournisseur ne bloque aucun travail de conformité</td></tr>
+      <tr><td>Maintenabilité</td><td>TypeScript de bout en bout côté application, modules indépendants, client de base typé, migrations versionnées</td></tr>
+      <tr><td>Reproductibilité</td><td>versions de dépendances figées, infrastructure décrite dans Docker Compose, scripts de données de démonstration</td></tr>
+    </tbody></table>
+</section>
+
+<!-- ================= CHAPITRE 2 ================= -->
+<section class="chapter" id="ch2">
+  <span class="mk">§CH:2:Architecture générale§</span><span class="mk">§H:ch2§</span>
+  <div class="cnum">Chapitre 2</div>
+  <h1>Architecture générale</h1>
+
+  <h2 id="s2-1"><span class="mk">§H:s2-1§</span><span class="n">2.1</span>Vue d'ensemble</h2>
+  <p>APTISO est composé de trois applications qui communiquent en HTTP : un <b>frontend</b> Next.js, un <b>backend</b> NestJS et un <b>service d'IA</b> FastAPI (figure 2.1). Le navigateur n'appelle que le backend ; le backend est le seul à lire la base métier et le seul à appeler le service d'IA, qui n'est pas exposé sur le réseau.</p>
+  <figure><span class="mk">§F:2.1§</span>{{FIG:architecture}}
+    <figcaption><b>Figure 2.1 :</b> Architecture générale d'APTISO.</figcaption></figure>
+
+  <h2 id="s2-2"><span class="mk">§H:s2-2§</span><span class="n">2.2</span>Choix technologiques</h2>
+  <p class="tcap"><b>Tableau 2.1 :</b> Technologies retenues et justification.</p><span class="mk">§T:2.1§</span>
+  <table class="full"><colgroup><col style="width:17%"><col style="width:29%"><col></colgroup>
+    <thead><tr><th>Couche</th><th>Technologie</th><th>Justification</th></tr></thead>
+    <tbody>
+      <tr><td>Interface</td><td>Next.js 15 (App Router), React 19, Tailwind CSS 4, Radix UI</td><td>routage par dossiers, composants accessibles, rendu rapide ; écosystème TypeScript partagé avec le backend [4]</td></tr>
+      <tr><td>API métier</td><td>NestJS 11, TypeScript</td><td>architecture modulaire, injection de dépendances, guards et pipes de validation, documentation Swagger générée [5]</td></tr>
+      <tr><td>Accès aux données</td><td>Prisma 6, PostgreSQL 16</td><td>schéma unique, client typé vérifié à la compilation, migrations SQL versionnées [6]</td></tr>
+      <tr><td>Service d'IA</td><td>Python 3.12, FastAPI, Pydantic, SQLAlchemy 2 (asyncpg), Alembic</td><td>écosystème IA en Python, validation par schéma, asynchrone de bout en bout [7, 14]</td></tr>
+      <tr><td>Recherche</td><td>pgvector 0.8 (HNSW, <code>halfvec</code>) + plein texte PostgreSQL</td><td>recherche hybride dans la base existante, sans moteur supplémentaire [8]</td></tr>
+      <tr><td>Traitements longs</td><td>Redis 7 + arq</td><td>file légère pour l'asyncio Python, relance des tâches [11]</td></tr>
+      <tr><td>Modèles</td><td>API NVIDIA Build via le SDK OpenAI</td><td>modèles ouverts récents (texte, embeddings, vision), interface standard interchangeable [10]</td></tr>
+      <tr><td>Édition, dessin</td><td>Tiptap (ProseMirror), tldraw 4</td><td>documents en JSON structuré exportables ; tableau blanc collaboratif [15, 16]</td></tr>
+      <tr><td>Infrastructure</td><td>Docker Compose</td><td>environnement reproductible : base, file, service d'IA et worker [17]</td></tr>
+    </tbody></table>
+
+  <h2 id="s2-3"><span class="mk">§H:s2-3§</span><span class="n">2.3</span>Principes de conception</h2>
+  <ul>
+    <li><b>Le serveur décide.</b> Le navigateur n'est jamais cru sur l'identité, le rôle ou l'état qu'il affirme ; toutes les règles de la norme sont appliquées dans les services du backend.</li>
+    <li><b>Séparation métier / IA.</b> Le métier (TypeScript) et l'IA (Python) évoluent indépendamment. Le service d'IA ne lit jamais la base métier : il ne reçoit que les données déjà filtrées par les droits de la personne.</li>
+    <li><b>« L'IA propose, le code vérifie, l'humain décide ».</b> Toute sortie de modèle exploitable par le programme est validée avant d'être utilisée ; toute proposition est acceptée ou rejetée par une personne.</li>
+    <li><b>Deux bases distinctes</b> sur le même serveur PostgreSQL : <code>aptiso</code> (métier, Prisma) et <code>aptiso_ai</code> (IA, Alembic), avec des rôles de connexion séparés.</li>
+    <li><b>Dégradation contrôlée.</b> Chaque fonction IA possède un repli sans IA ; les envois d'e-mails sont « au mieux » et ne bloquent jamais l'action qui les déclenche.</li>
+  </ul>
+
+  <h2 id="s2-4"><span class="mk">§H:s2-4§</span><span class="n">2.4</span>Organisation du dépôt</h2>
+  <p>Le code vit dans un seul dépôt Git (monorepo), publié sur GitHub : <code>https://github.com/aminaoamina/APTISO</code> [19]. Les applications JavaScript et le paquet partagé sont déclarés comme <b>workspaces npm</b> dans le <code>package.json</code> racine ; le service d'IA, en Python, est dans le même dépôt mais hors de npm.</p>
+  <div class="code">APTISO/
+├── apps/
+│   ├── frontend/        @aptiso/frontend      Next.js 15 + React 19
+│   ├── backend/         @aptiso/backend       NestJS 11 + Prisma 6 (schema.prisma, 49 migrations)
+│   └── ai/              service IA            FastAPI, Dockerfile, migrations Alembic
+├── packages/
+│   └── shared-types/    @aptiso/shared-types  énumérations TypeScript communes
+├── docker-compose.yml   PostgreSQL (pgvector), Redis, service IA + worker
+└── package.json         "workspaces": ["apps/*", "packages/*"], scripts racine</div>
+  <p>Une seule commande <code>npm install</code> installe les dépendances de toutes les applications dans un <code>node_modules</code> commun (une dépendance partagée n'est installée qu'une fois) et un seul fichier de verrouillage garantit les mêmes versions sur toutes les machines.</p>
+  <p class="tcap"><b>Tableau 2.2 :</b> Scripts du workspace racine.</p><span class="mk">§T:2.2§</span>
+  <table class="full"><colgroup><col style="width:32%"><col></colgroup>
+    <thead><tr><th>Commande</th><th>Effet</th></tr></thead>
+    <tbody>
+      <tr><td><code>npm run dev</code></td><td>lance ensemble le frontend (<code>next dev</code>, port 3000) et le backend (<code>nest start --watch</code>, port 4000) avec <code>concurrently</code>, journaux préfixés <code>fe</code> / <code>be</code></td></tr>
+      <tr><td><code>npm run build</code></td><td>compile <code>shared-types</code>, puis chaque application</td></tr>
+      <tr><td><code>npm run lint</code>, <code>npm run typecheck</code></td><td>ESLint et <code>tsc --noEmit</code> dans chaque workspace</td></tr>
+      <tr><td><code>npm run db:generate | db:migrate | db:studio</code></td><td>commandes Prisma, déléguées au workspace backend</td></tr>
+      <tr><td><code>npm run test:scenario -w @aptiso/backend</code></td><td>scénario de bout en bout (chapitre 9)</td></tr>
+    </tbody></table>
+</section>
+
+<!-- ================= CHAPITRE 3 ================= -->
+<section class="chapter" id="ch3">
+  <span class="mk">§CH:3:Conception des données§</span><span class="mk">§H:ch3§</span>
+  <div class="cnum">Chapitre 3</div>
+  <h1>Conception des données</h1>
+
+  <h2 id="s3-1"><span class="mk">§H:s3-1§</span><span class="n">3.1</span>Base métier et Prisma</h2>
+  <p>La base métier <code>aptiso</code> (PostgreSQL 16) compte <b>66 modèles</b> et <b>50 énumérations</b>, décrits dans un fichier unique <code>apps/backend/prisma/schema.prisma</code>. Prisma génère à partir de ce schéma un client TypeScript typé : chaque requête est vérifiée à la compilation, si bien qu'une colonne renommée casse la compilation au lieu de casser l'exécution. Les sections suivantes présentent le modèle sous forme de quatre diagrammes de classes UML ; seuls les attributs significatifs sont montrés, les identifiants (UUID) et dates techniques sont omis. Le losange plein indique une composition : la suppression du conteneur supprime ses composants.</p>
+
+  <h2 id="s3-2"><span class="mk">§H:s3-2§</span><span class="n">3.2</span>Diagramme de classes : noyau</h2>
+  <p>L'organisation porte les projets ; un projet porte ses cinq phases, chaque phase ses étapes, et chaque étape au plus un document, lui-même composé de ses versions publiées. Les personnes accèdent aux organisations et aux projets par leurs appartenances, qui portent les rôles.</p>
+  <figure><span class="mk">§F:3.1§</span>{{FIG:class_core}}
+    <figcaption><b>Figure 3.1 :</b> Diagramme de classes du noyau : utilisateurs, organisations, projets, étapes et documents.</figcaption></figure>
+  <ul>
+    <li><b>Trois niveaux de rôles</b> : <code>OrganizationMember.role</code> (propriétaire, administrateur, membre), <code>ProjectMember.privilege</code> (responsable, membre, auditeur) et <code>ProjectMemberIsoRole</code> (sept rôles ISO : direction, RSSI, propriétaire d'actif, chef de service, administrateur IT, auditeur interne, employé).</li>
+    <li><b><code>DocumentInstance</code></b> contient le texte courant (JSON Tiptap) et les données de maîtrise documentaire (code, confidentialité, propriétaire, approbateur, intervalle de revue) ; <b><code>DocumentVersion</code></b> fige chaque version approuvée avec son PDF.</li>
+    <li><b><code>TaskAssignment</code></b> relie une personne à un travail : tâche manuelle, approbation de document, ou tâche créée par un registre (action corrective, revue annuelle des risques…), identifiée par <code>activity_key</code> pour éviter les doublons.</li>
+  </ul>
+
+  <h2 id="s3-3"><span class="mk">§H:s3-3§</span><span class="n">3.3</span>Diagramme de classes : risques et Déclaration d'applicabilité</h2>
+  <p>Les registres de la phase 2 sont rattachés à leur étape. Un risque est la combinaison d'un actif, d'une vulnérabilité et d'une menace ; il est évalué (impact et vraisemblance de 0 à 2, niveau égal à leur somme, acceptable jusqu'à 2), traité par des mesures de l'Annexe A (association n–n par la table <code>RiskItemControl</code>), puis approuvé par son propriétaire. La SoA contient exactement 93 lignes, une par mesure du catalogue.</p>
+  <figure><span class="mk">§F:3.2§</span>{{FIG:class_risk}}
+    <figcaption><b>Figure 3.2 :</b> Diagramme de classes des registres d'étape : exigences, risques et SoA.</figcaption></figure>
+  <p>Ce modèle porte une règle d'audit vérifiée par le serveur : une mesure utilisée dans le traitement d'un risque ne peut pas être déclarée non applicable dans la SoA. Le plan de traitement ne peut être confirmé que lorsque chaque mesure applicable a un statut, et l'approbation des propriétaires de risques exige que les demandes de ressources aient été tranchées par la direction.</p>
+
+  <h2 id="s3-4"><span class="mk">§H:s3-4§</span><span class="n">3.4</span>Diagramme de classes : amélioration, audit et revue</h2>
+  <p>Les registres de la phase 4 sont rattachés au projet. Un constat d'audit interne en non-conformité crée automatiquement une <code>Nonconformity</code> ; un incident de sécurité peut aussi en créer une. Chaque non-conformité porte ses actions correctives, et chaque décision de revue de direction son responsable et son échéance.</p>
+  <figure><span class="mk">§F:3.3§</span>{{FIG:class_improvement}}
+    <figcaption><b>Figure 3.3 :</b> Diagramme de classes de l'amélioration continue, de l'audit interne et de la revue de direction.</figcaption></figure>
+  <p>Les formations (<code>Training</code>), les objectifs de sécurité (<code>SecurityObjective</code> et leurs mesures) et les preuves (<code>Evidence</code>, avec fichiers, liens vers les enregistrements et date d'expiration) suivent le même schéma de rattachement au projet.</p>
+
+  <h2 id="s3-5"><span class="mk">§H:s3-5§</span><span class="n">3.5</span>Diagramme de classes : IA et collaboration</h2>
+  <p>La base métier conserve les données d'IA qui appartiennent au projet et sont soumises à ses droits : les conversations de l'assistant (privées à leur auteur), les revues de documents et leurs constats, que l'utilisateur corrige ou écarte. Le journal technique des appels est, lui, dans la base <code>aptiso_ai</code> (section 6.7).</p>
+  <figure><span class="mk">§F:3.4§</span>{{FIG:class_ai}}
+    <figcaption><b>Figure 3.4 :</b> Diagramme de classes des données d'IA et de collaboration.</figcaption></figure>
+
+  <h2 id="s3-6"><span class="mk">§H:s3-6§</span><span class="n">3.6</span>Conventions, migrations et données de référence</h2>
+  <ul>
+    <li>Identifiants <b>UUID</b>, dates en <code>timestamp(6)</code>, tables en <code>snake_case</code> (<code>@@map</code>), modèles en <code>PascalCase</code>.</li>
+    <li><b>Suppressions en cascade</b> déclarées sur les relations de composition ; <code>SetNull</code> pour les références facultatives (une étape supprimée laisse ses tâches orphelines plutôt que de les détruire).</li>
+    <li><b>Contraintes d'unicité porteuses de règles</b> : une phase par ordre et par projet, une étape par clé et par phase, un seul document par étape, un rôle ISO une seule fois par membre.</li>
+    <li><b>Index</b> sur les accès fréquents, par exemple <code>(project_id, user_id, updated_at)</code> pour l'historique de l'assistant.</li>
+    <li><b>Champs JSON</b> pour le contenu riche : texte Tiptap, réponses des assistants, citations, métadonnées d'étape.</li>
+  </ul>
+  <p>Chaque évolution du schéma est une <b>migration SQL versionnée</b> (<code>prisma/migrations</code>, 49 à ce jour) appliquée par <code>prisma migrate deploy</code>. Après une migration écrite à la main, <code>prisma migrate diff</code> confirme qu'il n'y a aucun écart entre la base et le schéma. Les données de référence — catalogue des 25 exigences et 93 mesures de l'Annexe A (version <code>iso27001-2022@3</code>), modèles de documents et questions des assistants — sont insérées par migration ou au démarrage, avec un numéro de version.</p>
+
+  <h2 id="s3-7"><span class="mk">§H:s3-7§</span><span class="n">3.7</span>Progression calculée</h2>
+  <p>L'avancement n'est jamais stocké : il est <b>déduit des données</b>. Une étape est « en cours » dès qu'elle a un document, des enregistrements de registre, des tâches ou des demandes ; elle est « terminée » lorsqu'elle a été clôturée ; une phase suit ses étapes. Une fonction partagée (<code>project-progress.ts</code>) fait ce calcul pour la page du projet, la liste des projets et l'assistant IA, qui affichent donc toujours la même chose.</p>
+</section>
+
+<!-- ================= CHAPITRE 4 ================= -->
+<section class="chapter" id="ch4">
+  <span class="mk">§CH:4:Backend NestJS§</span><span class="mk">§H:ch4§</span>
+  <div class="cnum">Chapitre 4</div>
+  <h1>Backend NestJS</h1>
+
+  <h2 id="s4-1"><span class="mk">§H:s4-1§</span><span class="n">4.1</span>Organisation en modules</h2>
+  <p>Le backend est une API REST NestJS 11 (port 4000, préfixe <code>/api/v1</code>, documentation Swagger sur <code>/api/docs</code>). Chaque domaine est un module : un contrôleur expose les routes, un service porte la logique, des DTO décrivent et valident les entrées.</p>
+  <p class="tcap"><b>Tableau 4.1 :</b> Modules du backend par domaine.</p><span class="mk">§T:4.1§</span>
+  <table class="full"><colgroup><col style="width:24%"><col></colgroup>
+    <thead><tr><th>Domaine</th><th>Modules</th></tr></thead>
+    <tbody>
+      <tr><td>Comptes et accès</td><td><code>auth</code> (inscription, connexion, sessions, 2FA), <code>organizations</code>, <code>team</code>, <code>notifications</code>, <code>mail</code>, <code>digest</code></td></tr>
+      <tr><td>Projet</td><td><code>projects</code> (phases, étapes, progression), <code>frameworks</code>, <code>tasks</code>, <code>requests</code> (demandes de ressources)</td></tr>
+      <tr><td>Phase 1</td><td><code>documents</code> (assistants, bibliothèque, versions, export Word et PDF), <code>requirements</code></td></tr>
+      <tr><td>Phase 2</td><td><code>risk-register</code>, <code>soa</code></td></tr>
+      <tr><td>Phase 3</td><td><code>policies</code> (politiques générées depuis la SoA)</td></tr>
+      <tr><td>Phase 4</td><td><code>audit-prep</code> (formations, objectifs, audit interne, revue de direction, non-conformités, incidents), <code>evidence</code></td></tr>
+      <tr><td>Phase 5</td><td><code>maintenance</code> (activités récurrentes, programme d'audit)</td></tr>
+      <tr><td>Transverses</td><td><code>ai</code> (client du service d'IA, contexte, assistant, conversations), <code>exports</code> (Excel, ZIP), <code>connectors</code> (Google Drive), <code>whiteboard</code>, <code>prisma</code></td></tr>
+    </tbody></table>
+
+  <h2 id="s4-2"><span class="mk">§H:s4-2§</span><span class="n">4.2</span>Cycle de traitement d'une requête</h2>
+  <figure><span class="mk">§F:4.1§</span>{{FIG:request_pipeline}}
+    <figcaption><b>Figure 4.1 :</b> Cycle de traitement d'une requête dans le backend.</figcaption></figure>
+  <ol>
+    <li><b>Middlewares globaux</b> (<code>main.ts</code>) : <code>helmet</code> pour les en-têtes de sécurité, <code>cookie-parser</code>, CORS limité à l'origine du frontend avec transmission des cookies.</li>
+    <li><b>Guards</b> : <code>CsrfGuard</code> et <code>JwtAuthGuard</code> sont globaux (une route publique est marquée <code>@Public()</code>) ; selon la route, <code>OrganizationRoleGuard</code> ou <code>ProjectRoleGuard</code> avec <code>@ProjectRoles(…)</code>, et <code>ThrottlerGuard</code> sur les routes sensibles.</li>
+    <li><b>ValidationPipe</b> global : les DTO décorés avec <code>class-validator</code> refusent tout champ inconnu (<code>whitelist</code>, <code>forbidNonWhitelisted</code>) et convertissent les types.</li>
+    <li><b>Service</b> : <code>ProjectAccessService</code> relit en base le rôle du membre et calcule les droits fins (<code>canEdit</code>, <code>canDecide</code>), puis les règles métier s'appliquent avant l'écriture Prisma, souvent dans une transaction.</li>
+    <li><b>Filtre d'exceptions</b> : <code>PrismaExceptionFilter</code> traduit les erreurs de base (doublon, enregistrement absent) en réponses HTTP claires.</li>
+  </ol>
+
+  <h2 id="s4-3"><span class="mk">§H:s4-3§</span><span class="n">4.3</span>Règles métier appliquées par le serveur</h2>
+  <p>Les règles de la norme ne sont pas de simples indications à l'écran : elles sont vérifiées dans les services, avec un message d'erreur qui dit ce qui manque. Exemples :</p>
+  <ul>
+    <li>une étape obligatoire ne peut pas être ignorée ; une étape de registre ne se termine que lorsque sa liste de contrôle est complète <b>et</b> que son document généré est dans la bibliothèque ;</li>
+    <li>le registre des exigences (clause 4.2) ne peut pas être terminé vide ;</li>
+    <li>une mesure utilisée dans un traitement de risque ne peut pas être exclue de la SoA ; modifier le plan après son approbation réinitialise l'approbation des propriétaires ;</li>
+    <li>seule la direction (rôle ISO « direction » ou responsable de projet) approuve les ressources, les formations, les objectifs et la revue de direction ;</li>
+    <li>une formation ne passe à « réalisée » qu'avec une date et une preuve ; une non-conformité ne se clôt qu'avec correction, cause racine, actions terminées et revue d'efficacité ;</li>
+    <li>un auditeur en lecture seule peut réaliser un audit interne qui lui est attribué, mais pas en modifier le paramétrage.</li>
+  </ul>
+
+  <h2 id="s4-4"><span class="mk">§H:s4-4§</span><span class="n">4.4</span>Documents : génération, approbation et versions</h2>
+  <p>Les assistants de rédaction produisent un document à partir de modèles TypeScript (<code>documents/templates</code>) qui reçoivent les réponses du formulaire ; les politiques de la phase 3 sont générées section par section à partir des mesures applicables de la SoA. Le contenu est stocké en JSON Tiptap, ce qui permet l'édition riche, l'export Word (bibliothèque <code>docx</code>), le rendu PDF et l'indexation par l'IA. La figure 4.2 montre le cycle de vie d'un document.</p>
+  <figure><span class="mk">§F:4.2§</span>{{FIG:document_states}}
+    <figcaption><b>Figure 4.2 :</b> Diagramme d'états d'un document.</figcaption></figure>
+  <p>Le bloc de maîtrise documentaire (code, version, propriétaire, approbateur, historique des modifications) n'est jamais figé dans le texte : il est imprimé à l'export à partir des données de la bibliothèque, si bien qu'il reste toujours exact (clause 7.5.2). Un document qui a des versions publiées ne peut pas être supprimé.</p>
+
+  <h2 id="s4-5"><span class="mk">§H:s4-5§</span><span class="n">4.5</span>Tâches planifiées et notifications</h2>
+  <p>Les tâches planifiées utilisent <code>@nestjs/schedule</code>. Elles sont idempotentes : exécutées deux fois, elles ne créent pas de doublon.</p>
+  <p class="tcap"><b>Tableau 4.2 :</b> Tâches planifiées du backend.</p><span class="mk">§T:4.2§</span>
+  <table class="full"><colgroup><col style="width:20%"><col style="width:26%"><col></colgroup>
+    <thead><tr><th>Fréquence</th><th>Tâche</th><th>Effet</th></tr></thead>
+    <tbody>
+      <tr><td>Chaque nuit, 3 h</td><td>Maintenance du SMSI</td><td>crée les tâches des activités récurrentes arrivées à échéance (revues des risques, incidents, objectifs et documents ; audit interne ; revue de direction)</td></tr>
+      <tr><td>Chaque jour, 7 h</td><td>Renouvellement des preuves</td><td>crée une tâche quand une preuve approche de son expiration</td></tr>
+      <tr><td>Chaque jour, 8 h</td><td>Rappels d'échéance</td><td>notifie une seule fois la personne dont la tâche arrive à échéance</td></tr>
+      <tr><td>Chaque heure</td><td>Miroir Google Drive</td><td>copie les nouvelles versions publiées dans le Drive connecté de l'organisation</td></tr>
+      <tr><td>Lundi, 8 h</td><td>Récapitulatif hebdomadaire</td><td>un e-mail par personne sur l'ensemble de ses projets</td></tr>
+    </tbody></table>
+  <p>Chaque événement utile crée une <code>Notification</code> affichée dans la cloche de l'application. Les types qui demandent une action sont aussi envoyés par e-mail, sauf si la personne a désactivé les e-mails de notification ; personne n'est notifié de ses propres actions.</p>
+
+  <h2 id="s4-6"><span class="mk">§H:s4-6§</span><span class="n">4.6</span>E-mails et récapitulatif hebdomadaire</h2>
+  <p>Les e-mails sont envoyés par Nodemailer (SMTP, TLS) avec des gabarits Handlebars en CSS en ligne, lisibles dans les principales messageries. Le récapitulatif hebdomadaire illustre la répartition des rôles entre code et IA :</p>
+  <ol>
+    <li>le backend calcule les faits des sept derniers jours pour chaque projet de la personne (tâches et étapes terminées par l'équipe et par elle, tâches ouvertes et en retard, phase en cours, avancement) et ses prochaines actions ;</li>
+    <li>le service d'IA rédige le titre, les résumés, les prochaines étapes, un conseil lié à la phase et un mot d'encouragement ; tout nombre cité doit figurer dans les faits, sinon la réponse est refusée ;</li>
+    <li>sans IA, le même e-mail part avec des phrases simples et un conseil fixe par phase.</li>
+  </ol>
+
+  <h2 id="s4-7"><span class="mk">§H:s4-7§</span><span class="n">4.7</span>Documentation de l'API (Swagger / OpenAPI)</h2>
+  <p>La documentation de l'API est <b>générée à partir du code</b> au démarrage du backend, au format OpenAPI 3, et publiée par Swagger UI sur <code>/api/docs</code> [18]. Elle ne peut donc pas diverger des routes réelles.</p>
+  <ul>
+    <li><b>Source</b> : le module <code>@nestjs/swagger</code> lit les contrôleurs et leurs décorateurs : <code>@ApiTags</code> regroupe les routes par domaine (23 groupes : Authentication, Projects, Risk Register, Statement of Applicability, AI, Weekly digest…), <code>@ApiOperation</code> décrit chaque route, <code>@ApiResponse</code> ses codes de retour, et <code>@ApiProperty</code> sur les DTO décrit chaque champ avec son type, ses contraintes et un exemple.</li>
+    <li><b>Cohérence avec la validation</b> : les mêmes classes DTO servent à la documentation et à la validation (<code>class-validator</code>) ; un champ documenté est un champ vérifié.</li>
+    <li><b>Authentification</b> : le document déclare l'authentification par jeton (<code>addBearerAuth</code>) et les routes protégées portent <code>@ApiBearerAuth</code> ; l'option <code>persistAuthorization</code> conserve le jeton entre deux rechargements de la page de test.</li>
+    <li><b>Usage</b> : l'interface permet d'essayer chaque route directement depuis le navigateur ; le fichier OpenAPI peut aussi servir à générer un client ou à alimenter des tests de contrat.</li>
+  </ul>
+  <p>Le service d'IA, écrit avec FastAPI, expose de la même façon sa propre documentation OpenAPI, générée à partir des modèles Pydantic de ses requêtes et réponses ; elle n'est accessible que depuis la machine, comme le service.</p>
+</section>
+
+<!-- ================= CHAPITRE 5 ================= -->
+<section class="chapter" id="ch5">
+  <span class="mk">§CH:5:Frontend Next.js§</span><span class="mk">§H:ch5§</span>
+  <div class="cnum">Chapitre 5</div>
+  <h1>Frontend Next.js</h1>
+
+  <h2 id="s5-1"><span class="mk">§H:s5-1§</span><span class="n">5.1</span>Structure des routes</h2>
+  <p>Le frontend est une application Next.js 15 (App Router) en React 19 et TypeScript, stylisée avec Tailwind CSS 4 et des composants Radix UI. Il ne contient aucune règle métier ni aucun secret. Le routage suit l'arborescence du dossier <code>app/</code> ; les segments dynamiques portent les identifiants et des gabarits <code>layout.tsx</code> imbriqués fournissent la barre latérale, l'en-tête et, dans un projet, l'assistant IA.</p>
+  <p class="tcap"><b>Tableau 5.1 :</b> Principales routes du frontend.</p><span class="mk">§T:5.1§</span>
+  <table class="full"><colgroup><col style="width:38%"><col></colgroup>
+    <thead><tr><th>Route</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><code>/login</code>, <code>/register</code>, <code>/verify-email</code>, <code>/forgot-password</code>, <code>/reset-password</code>, <code>/accept-invitation</code></td><td>parcours d'authentification (pages publiques)</td></tr>
+      <tr><td><code>/dashboard</code>, <code>/dashboard/tasks</code>, <code>/dashboard/profile</code></td><td>espace personnel : tableau de bord, tâches, profil (2FA, préférences de notification)</td></tr>
+      <tr><td><code>/dashboard/organizations/[orgId]</code> (+ <code>members</code>, <code>library</code>)</td><td>organisation : membres, invitations, bibliothèque documentaire, intégration Google Drive</td></tr>
+      <tr><td><code>…/projects/[projectId]</code></td><td>projet : phases et étapes (<code>steps/[stepId]</code>, assistants), <code>documents</code>, <code>registers</code>, <code>audit</code>, <code>requests</code>, <code>maintenance</code>, <code>team</code>, <code>members</code>, <code>whiteboard</code></td></tr>
+    </tbody></table>
+
+  <h2 id="s5-2"><span class="mk">§H:s5-2§</span><span class="n">5.2</span>Communication avec l'API</h2>
+  <ul>
+    <li>Un client <b>axios</b> unique (<code>lib/api-client.ts</code>) envoie toutes les requêtes avec <code>withCredentials</code> : les jetons voyagent dans des cookies HttpOnly que le JavaScript de la page ne voit jamais.</li>
+    <li><b>Rafraîchissement automatique</b> : sur une réponse 401, un intercepteur appelle <code>/auth/refresh</code> une seule fois, met en file les requêtes en attente, puis les rejoue.</li>
+    <li>Un <b>jeton CSRF</b> est ajouté dans l'en-tête <code>x-csrf-token</code> des requêtes publiques qui modifient l'état.</li>
+    <li>Les appels sont regroupés par domaine (<code>lib/api.ts</code>, <code>lib/ai-api.ts</code>) avec leurs types TypeScript.</li>
+    <li>Les <b>réponses en flux</b> de l'IA (Server-Sent Events) sont lues au fil de l'eau grâce à <code>onDownloadProgress</code> d'axios, qui expose le texte reçu pendant le téléchargement ; un petit lecteur découpe les événements <code>delta</code>, <code>citations</code>, <code>done</code> et <code>error</code>.</li>
+  </ul>
+
+  <h2 id="s5-3"><span class="mk">§H:s5-3§</span><span class="n">5.3</span>Gestion de l'état et composants clés</h2>
+  <p>L'état global est réduit au minimum : un store <b>Zustand</b> garde l'utilisateur connecté (persisté sans les jetons). Le reste est de l'état local rechargé depuis l'API ; le hook <code>usePollWhile</code> interroge le serveur tant qu'un traitement IA est en cours.</p>
+  <ul>
+    <li><b>Éditeur de documents</b> basé sur Tiptap (ProseMirror) : sections, tableaux, amélioration d'un paragraphe par l'IA (plus clair, plus formel, plus court).</li>
+    <li><b>Assistant ISO</b> (<code>components/ai/companion-chat.tsx</code>) : réponses en flux, sources cliquables, historique des conversations, prochaines actions en accueil.</li>
+    <li><b>Registres interactifs</b> : registre des risques par étapes (actifs, vulnérabilités, menaces, évaluation, traitement), SoA, audit interne, revue de direction.</li>
+    <li><b>Tableau blanc</b> du projet avec tldraw 4, sauvegardé en instantané JSON.</li>
+  </ul>
+</section>
+
+<!-- ================= CHAPITRE 6 ================= -->
+<section class="chapter" id="ch6">
+  <span class="mk">§CH:6:Service d'intelligence artificielle§</span><span class="mk">§H:ch6§</span>
+  <div class="cnum">Chapitre 6</div>
+  <h1>Service d'intelligence artificielle</h1>
+
+  <h2 id="s6-1"><span class="mk">§H:s6-1§</span><span class="n">6.1</span>Rôle et isolement</h2>
+  <p>Toute l'IA est isolée dans un service Python FastAPI (<code>apps/ai</code>, port 8000). Il n'écoute que sur l'interface locale, exige un jeton de service (<code>X-Service-Token</code>) et ne lit jamais la base métier. Le backend, qui connaît les droits de la personne, construit pour chaque appel un contexte limité à ce qu'elle peut voir ; les contenus fournis par les utilisateurs y sont balisés comme données non fiables pour se prémunir contre l'injection d'instructions.</p>
+
+  <h2 id="s6-2"><span class="mk">§H:s6-2§</span><span class="n">6.2</span>Modèles et registre de capacités</h2>
+  <p>Les modèles sont appelés par l'API NVIDIA Build avec le SDK OpenAI ; chacun est configurable par variable d'environnement.</p>
+  <p class="tcap"><b>Tableau 6.1 :</b> Modèles par défaut.</p><span class="mk">§T:6.1§</span>
+  <table class="full"><colgroup><col style="width:34%"><col></colgroup>
+    <thead><tr><th>Rôle</th><th>Modèle</th></tr></thead>
+    <tbody>
+      <tr><td>Principal (texte, raisonnement)</td><td><code>nvidia/nemotron-3-super-120b-a12b</code></td></tr>
+      <tr><td>Secours</td><td><code>openai/gpt-oss-20b</code></td></tr>
+      <tr><td>Embeddings</td><td><code>nvidia/nemotron-3-embed-1b</code> (2048 dimensions)</td></tr>
+      <tr><td>Lecture de scans (OCR)</td><td><code>nemotron-3-nano-omni-30b-a3b-reasoning</code>, secours <code>nemotron-3.5-super-vl-120b-a12b</code></td></tr>
+      <tr><td>Contre-lecture visuelle</td><td><code>meta/llama-3.2-11b-vision-instruct</code></td></tr>
+    </tbody></table>
+  <p>Une fonctionnalité ne nomme jamais un modèle mais une <b>capacité</b>. Chaque capacité fixe les modèles essayés dans l'ordre, la température, la limite de jetons, le délai, les nouvelles tentatives (sur erreurs transitoires seulement), le mode JSON et l'activation du raisonnement, coûteux en latence, réservé aux tâches qui en ont besoin.</p>
+  <p class="tcap"><b>Tableau 6.2 :</b> Registre des capacités (extrait).</p><span class="mk">§T:6.2§</span>
+  <table class="full"><colgroup><col style="width:21%"><col style="width:15%"><col style="width:11%"><col style="width:8%"><col style="width:17%"><col></colgroup>
+    <thead><tr><th>Capacité</th><th>Température</th><th>Jetons max</th><th>Délai</th><th>Raisonnement</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><code>wizard_suggest</code></td><td>0,2</td><td>3 000</td><td>40 s</td><td>oui</td><td>suggestion de réponse d'assistant, JSON</td></tr>
+      <tr><td><code>paragraph_improve</code></td><td>0,3</td><td>1 200</td><td>30 s</td><td>non</td><td>réécriture d'un passage, en flux</td></tr>
+      <tr><td><code>companion_chat</code></td><td>0,3</td><td>1 500</td><td>45 s</td><td>non</td><td>assistant ISO, en flux</td></tr>
+      <tr><td><code>document_review</code></td><td>0,1</td><td>4 000</td><td>90 s</td><td>oui</td><td>revue d'un document, JSON</td></tr>
+      <tr><td><code>evidence_analyze</code></td><td>0,1</td><td>1 500</td><td>90 s</td><td>non</td><td>analyse d'une preuve, JSON</td></tr>
+      <tr><td><code>next_actions</code></td><td>0,2</td><td>800</td><td>25 s</td><td>non</td><td>classement des prochaines actions</td></tr>
+      <tr><td><code>weekly_digest</code></td><td>0,5</td><td>1 500</td><td>45 s</td><td>non</td><td>rédaction du récapitulatif</td></tr>
+    </tbody></table>
+
+  <h2 id="s6-3"><span class="mk">§H:s6-3§</span><span class="n">6.3</span>Sortie structurée et validation</h2>
+  <p>Toute réponse que le programme exploite suit le même chemin (figure 6.1). Le modèle doit rendre un JSON, qui est réparé si besoin, validé par un schéma Pydantic, puis soumis à des <b>contrôles métier</b> propres à chaque fonction : identifiants cités réellement fournis, citations mot pour mot présentes dans les données, aucun nom de produit ou de lieu absent des faits, aucun chiffre inventé, aucun numéro de mesure de l'ancienne version 2013. En cas d'échec, une seule nouvelle tentative est faite avec la liste exacte des erreurs ; au second échec, la réponse est rejetée et le backend applique son comportement sans IA. Les invites sont du code versionné (<code>wizard-suggest@4</code>, <code>companion-chat@2</code>…) et leur version est journalisée avec chaque appel.</p>
+  <figure><span class="mk">§F:6.1§</span>{{FIG:structured_output}}
+    <figcaption><b>Figure 6.1 :</b> Chemin de validation d'une sortie structurée.</figcaption></figure>
+
+  <h2 id="s6-4"><span class="mk">§H:s6-4§</span><span class="n">6.4</span>Recherche documentaire hybride</h2>
+  <p>Les documents publiés et les preuves analysées sont découpés en passages d'environ 1 500 caractères, coupés entre paragraphes, et stockés dans <code>knowledge_chunks</code> avec un vecteur <code>halfvec(2048)</code> (index HNSW, distance cosinus) et une colonne plein texte <code>tsvector</code>. La recherche produit trois classements — par sens (vecteurs), par mots (plein texte) et par identifiants de clauses ou de mesures cités dans la question (par exemple « A.8.13 ») — combinés par <b>Reciprocal Rank Fusion</b> [9] :</p>
+  <div class="formula">score(d) = Σ<sub>r ∈ {vecteur, texte, identifiants}</sub> 1 / (k + rang<sub>r</sub>(d) + 1), avec k = 60</div>
+  <p>Les résultats sont filtrés par projet et par visibilité : un auditeur ne voit que les documents de la bibliothèque, un éditeur voit aussi les brouillons. Pour une question de suivi (« et à quelle fréquence ? »), la question précédente est ajoutée à la requête.</p>
+  <figure><span class="mk">§F:6.2§</span>{{FIG:rag}}
+    <figcaption><b>Figure 6.2 :</b> Recherche hybride : proximité vectorielle et plein texte fusionnées (le classement par identifiants cités s'y ajoute).</figcaption></figure>
+
+  <h2 id="s6-5"><span class="mk">§H:s6-5§</span><span class="n">6.5</span>Assistant ISO : contexte et flux</h2>
+  <p>Pour chaque question, le backend vérifie les droits, ouvre ou reprend la conversation et charge ses six derniers messages depuis la base (jamais depuis le navigateur). Il obtient du service d'IA les passages pertinents, puis ajoute des <b>faits</b> tirés des registres : la progression du projet (phases, étapes non terminées, date de certification), et pour les clauses et mesures citées, les lignes de SoA, les risques et les documents correspondants. La réponse est diffusée en flux et enregistrée une fois terminée (figure 6.3). Seules les citations qui renvoient à un passage ou à un fait réellement fourni sont conservées.</p>
+  <p><b>Récupération structurée par parcours des relations.</b> Les passages de texte ne suffisent pas pour une question comme « sommes-nous prêts pour A.8.13 ? » : la réponse dépend d'enregistrements liés entre eux. À partir des identifiants de clauses et de mesures renvoyés par la recherche, le backend parcourt donc les relations du modèle de données — mesure → ligne de SoA (applicabilité, statut, responsable, échéance) → risques qu'elle traite (propriétaire, niveau) → documents qui la couvrent (version, approbateur) → preuves associées — et fournit ces enregistrements à l'assistant comme <b>faits</b> numérotés ([F1], [F2]…), à côté des passages ([S1]…). Il s'agit d'une récupération de type graphe, légère : le graphe est le schéma relationnel lui-même, parcouru avec Prisma, sans base de graphe dédiée ni graphe construit par l'IA (GraphRAG). Les faits sont toujours filtrés par les droits de la personne (un auditeur ne voit que les documents publiés).</p>
+  <figure><span class="mk">§F:6.3§</span>{{FIG:seq_chat}}
+    <figcaption><b>Figure 6.3 :</b> Diagramme de séquence d'une question à l'assistant.</figcaption></figure>
+
+  <h2 id="s6-6"><span class="mk">§H:s6-6§</span><span class="n">6.6</span>Traitements asynchrones</h2>
+  <p>La revue d'un document et la lecture d'une preuve (couche texte avec PyMuPDF, sinon OCR avec contre-lecture par un second modèle) peuvent prendre plusieurs minutes. Elles passent par une file durable : la tâche est enregistrée dans <code>ai_jobs</code> avec une <b>clé d'idempotence</b> (empreinte du contenu et version de l'invite), si bien que deux demandes identiques renvoient la même tâche. Le worker arq l'exécute avec un bail et au plus trois tentatives ; un balayage périodique relance les tâches dont le bail a expiré.</p>
+  <figure><span class="mk">§F:6.4§</span>{{FIG:seq_job}}
+    <figcaption><b>Figure 6.4 :</b> Diagramme de séquence de la revue IA d'un document.</figcaption></figure>
+
+  <h2 id="s6-7"><span class="mk">§H:s6-7§</span><span class="n">6.7</span>Base <code>aptiso_ai</code> et points d'entrée</h2>
+  <p>La base du service d'IA (SQLAlchemy 2 asynchrone, migrations Alembic) contient trois tables : <code>ai_runs</code> (journal de chaque appel : capacité, modèle, version de l'invite, durée, jetons, résultat et décision humaine), <code>ai_jobs</code> (file durable) et <code>knowledge_chunks</code> (index de recherche).</p>
+  <p class="tcap"><b>Tableau 6.3 :</b> Points d'entrée du service d'IA (préfixe /v1).</p><span class="mk">§T:6.3§</span>
+  <table class="full"><colgroup><col style="width:36%"><col></colgroup>
+    <thead><tr><th>Route</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /wizard/suggest</code></td><td>suggestion de réponse pour une question d'assistant, avec ses sources</td></tr>
+      <tr><td><code>POST /improve</code></td><td>réécriture d'un paragraphe (flux SSE)</td></tr>
+      <tr><td><code>POST /next-actions</code>, <code>POST /weekly-digest</code></td><td>classement des actions, rédaction du récapitulatif</td></tr>
+      <tr><td><code>POST /jobs</code>, <code>GET /jobs/{id}</code></td><td>création (202) et suivi des traitements longs</td></tr>
+      <tr><td><code>PUT|DELETE /index/documents/{id}</code></td><td>indexation et suppression d'un document dans la recherche</td></tr>
+      <tr><td><code>POST /search</code>, <code>POST /chat</code></td><td>recherche hybride ; réponse de l'assistant (flux SSE)</td></tr>
+      <tr><td><code>POST /runs/{id}/outcome</code></td><td>enregistrement de la décision humaine sur une proposition</td></tr>
+      <tr><td><code>GET /health/live</code>, <code>GET /health/ready</code></td><td>santé du service, de la base, de pgvector et de Redis</td></tr>
+      <tr><td><code>GET /metrics</code></td><td>statistiques d'usage réel par capacité et versions des invites en service (section 6.9)</td></tr>
+    </tbody></table>
+
+  <h2 id="s6-8"><span class="mk">§H:s6-8§</span><span class="n">6.8</span>Base de connaissances ISO</h2>
+  <p>Pour enseigner la norme et pas seulement la citer, l'assistant dispose d'une <b>base de connaissances propre à APTISO</b> : un guide de mise en œuvre pour chacune des 25 exigences des clauses 4 à 10 et des 93 mesures de l'Annexe A, soit <b>118 guides</b>. Chaque guide contient :</p>
+  <ul>
+    <li>l'<b>objectif</b> de l'exigence et le risque qu'elle traite ;</li>
+    <li><b>ce que vérifie l'auditeur</b> (3 à 5 points) ;</li>
+    <li>des <b>exemples de preuves</b> (enregistrements, documents, journaux) ;</li>
+    <li>les <b>erreurs fréquentes</b> relevées en audit.</li>
+  </ul>
+  <p><b>Production.</b> Les guides ont été rédigés une seule fois par le modèle principal, par lots de six, avec une invite qui impose de reformuler et interdit de reproduire le texte de la norme. Chaque lot est validé (schéma Pydantic, nombre d'éléments, longueur, refus de toute numérotation de 2013) et refait une fois avec la liste exacte des erreurs ; un lot refusé deux fois est repris exigence par exigence. Le résultat est un fichier versionné (<code>catalog/guides.json</code>, version <code>guides@1</code>) relu et intégré au dépôt : aucun guide n'est généré pendant l'utilisation.</p>
+  <p><b>Indexation.</b> Les guides sont ajoutés au catalogue (titres exacts et questions d'audit) dans <code>knowledge_chunks</code> comme connaissance <b>partagée</b> entre tous les projets (<code>project_id</code> nul, type <code>iso</code>). La version de cette connaissance combine celle du catalogue et celle des guides (<code>iso27001-2022@3+g1</code>) : une nouvelle version déclenche automatiquement la réindexation. La recherche hybride retourne ainsi, pour une question, à la fois les passages des documents du projet et le guide de l'exigence concernée.</p>
+  <p><b>Utilisation.</b> L'invite de l'assistant (<code>companion-chat@3</code>) présente ces guides comme une explication générale, distincte des faits de l'organisation : l'assistant les cite lorsqu'il enseigne (ce que vérifie l'auditeur, les preuves attendues, les erreurs à éviter), puis relie l'explication aux documents et registres du projet. Le texte officiel de la norme, protégé par le droit d'auteur et diffusé sous licence nominative, n'est pas intégré ; le même mécanisme d'indexation permettrait d'ajouter la copie d'une organisation qui détient sa propre licence, visible de ses seuls projets.</p>
+
+  <h2 id="s6-9"><span class="mk">§H:s6-9§</span><span class="n">6.9</span>Évaluation de la qualité de l'IA</h2>
+  <p>La qualité de l'IA est mesurée de deux façons complémentaires : un <b>jeu de cas annotés</b> exécuté sur la vraie plateforme, et des <b>statistiques d'usage réel</b> tirées du journal <code>ai_runs</code>.</p>
+  <h3>Jeu de cas annotés</h3>
+  <p>Le script <code>test/ai-eval.js</code> exécute 28 cas sur le projet de démonstration NovaTeck et les note <b>sans aucun modèle</b> (pas d'« IA qui juge l'IA »), par des règles déterministes :</p>
+  <ul>
+    <li><b>Assistant (24 cas)</b> : 15 questions sur les faits du projet, avec les éléments que la réponse doit contenir (« Sarra Mansouri », « 2026-12-15 »…) ; 3 pièges dont la réponse n'existe pas dans les données (chiffre d'affaires, fournisseur du pare-feu, produit SIEM), où toute réponse inventée est comptée comme hallucination ; 6 questions d'apprentissage de la norme, dont un piège avec un numéro de mesure de 2013. Chaque question est posée par l'API réelle, comme le ferait l'utilisateur, puis la conversation est supprimée.</li>
+    <li><b>Revue de documents (4 cas)</b> : trois documents contenant des <b>défauts volontairement introduits</b> (formulation invérifiable, exigence manquante, contradiction avec la SoA) et un document correct, qui ne doit recevoir aucun constat grave.</li>
+  </ul>
+  <p>Les indicateurs sont le taux de cas réussis, le rappel des faits attendus, la présence d'une source valide, l'exactitude des refus, le nombre de réponses contenant un fait inventé, le rappel et la précision des constats de revue, les fausses alertes et la latence. Chaque exécution enregistre ses résultats (<code>test/eval/results</code>) avec les versions des invites mesurées ; un mode de re-notation recalcule les scores d'exécutions passées lorsqu'un cas est corrigé, pour que les comparaisons restent justes.</p>
+  <p class="tcap"><b>Tableau 6.4 :</b> Résultats de l'évaluation, avant et après les évolutions.</p><span class="mk">§T:6.4§</span>
+  <table class="full"><colgroup><col style="width:40%"><col style="width:20%"><col style="width:20%"><col></colgroup>
+    <thead><tr><th>Indicateur</th><th>Référence (invite v2)</th><th>Guides + invite v3</th><th>+ registres</th></tr></thead>
+    <tbody>
+      <tr><td>Assistant : cas réussis</td><td>23 / 24</td><td>23 / 24</td><td>23 / 24</td></tr>
+      <tr><td>Assistant : rappel des faits attendus</td><td>95 %</td><td>95 %</td><td><b>100 %</b></td></tr>
+      <tr><td>Réponses avec une source valide (si exigée)</td><td>100 %</td><td>100 %</td><td>94 %</td></tr>
+      <tr><td>Refus corrects (information absente)</td><td>100 %</td><td>100 %</td><td>100 %</td></tr>
+      <tr><td>Réponses contenant un fait inventé</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><td>Latence médiane / 95e centile</td><td>2,9 s / 10,4 s</td><td>6,3 s / 14,2 s</td><td>4,6 s / 12,1 s</td></tr>
+      <tr><td>Revue : défauts introduits trouvés (rappel)</td><td>100 % (8/8)</td><td>100 % (8/8)</td><td>—</td></tr>
+      <tr><td>Revue : constats correspondant à un défaut (précision)</td><td>73 %</td><td>87 %</td><td>—</td></tr>
+      <tr><td>Revue : fausses alertes graves (document correct)</td><td>0</td><td>0</td><td>—</td></tr>
+    </tbody></table>
+  <p><b>Lecture.</b> Sur les questions de faits, l'assistant ne fabrique aucune information et refuse correctement lorsque la donnée n'existe pas. Les guides n'ont pas changé le score des questions de faits, ce qui est attendu, mais ils ont transformé les réponses d'apprentissage : pour la mesure A.8.13, l'assistant cite désormais le guide et précise ce que l'auditeur vérifie et les erreurs fréquentes (« sauvegardes jamais testées en restauration »). La précision de la revue est passée de 73 % à 87 %, et les constats non comptés sont pour la plupart justifiés (par exemple un chiffrement des sauvegardes exigé par la SoA mais absent de la politique). L'évaluation a enfin révélé une <b>lacune réelle</b> : l'assistant ne voyait pas les registres d'incidents et de non-conformités, qui ne sont pas des documents. Ils lui sont désormais fournis comme faits du projet : le rappel des faits atteint 100 % (dernière colonne). Le seul cas encore en échec contient les bons faits mais cite sa source au mauvais format (« (F7) » au lieu de « [F7] ») : la citation n'est donc pas reconnue. Le coût de ces contextes plus riches est une latence plus élevée.</p>
+  <h3>Statistiques d'usage réel</h3>
+  <p>Le point d'entrée <code>GET /v1/metrics</code> du service d'IA agrège le journal <code>ai_runs</code> par capacité, sur une période choisie : nombre d'appels, taux de réponses valides au premier essai et de réponses rejetées après validation, recours au modèle de secours, latence moyenne et 95e centile, jetons consommés, et surtout <b>taux d'acceptation des propositions par les utilisateurs</b> (décisions acceptées ou écartées). Sur les données de développement, par exemple, 57 % des suggestions des assistants de rédaction ont été acceptées et 4,3 % des réponses ont été rejetées par la validation. Ces chiffres complètent le jeu de cas : l'un mesure la qualité sur des cas connus, l'autre la confiance des utilisateurs en conditions réelles.</p>
+</section>
+
+<!-- ================= CHAPITRE 7 ================= -->
+<section class="chapter" id="ch7">
+  <span class="mk">§CH:7:Sécurité§</span><span class="mk">§H:ch7§</span>
+  <div class="cnum">Chapitre 7</div>
+  <h1>Sécurité</h1>
+
+  <h2 id="s7-1"><span class="mk">§H:s7-1§</span><span class="n">7.1</span>Authentification et sessions</h2>
+  <ul>
+    <li>Mots de passe hachés avec <b>Argon2</b> ; un compte n'est actif qu'après vérification de l'adresse e-mail.</li>
+    <li>Deux <b>JWT</b> : un jeton d'accès de 15 minutes et un jeton de rafraîchissement de 7 jours, chacun dans un <b>cookie HttpOnly</b> (<code>Secure</code> et <code>SameSite=Strict</code> en production) ; le cookie de rafraîchissement n'est envoyé qu'aux routes <code>/api/v1/auth</code>.</li>
+    <li><b>Sessions</b> enregistrées en base (appareil, adresse IP, dernière activité) : la personne les consulte et peut en révoquer une ou toutes.</li>
+    <li><b>Protection CSRF</b> par un guard global et un jeton dans l'en-tête des requêtes publiques qui modifient l'état.</li>
+  </ul>
+
+  <h2 id="s7-2"><span class="mk">§H:s7-2§</span><span class="n">7.2</span>Double authentification TOTP</h2>
+  <p>La double authentification est facultative et proposée par une notification à chaque nouveau compte. Elle suit la RFC 6238 [12] (SHA-1, 6 chiffres, pas de 30 secondes, tolérance d'un pas), compatible avec Microsoft et Google Authenticator. Le secret est chiffré en base (AES-256-GCM) ; les dix codes de secours ne sont conservés que sous forme d'empreinte SHA-256 et servent une seule fois. Le dernier pas utilisé est mémorisé, ce qui empêche de rejouer un code pendant sa période de validité.</p>
+  <figure><span class="mk">§F:7.1§</span>{{FIG:seq_login}}
+    <figcaption><b>Figure 7.1 :</b> Diagramme de séquence de la connexion avec double authentification.</figcaption></figure>
+  <p>Après le bon mot de passe, le serveur ne pose aucun cookie : il rend un <b>jeton de défi</b> de 5 minutes, dont l'unique usage est la seconde étape. Les cookies de session ne sont posés qu'après un code valide.</p>
+
+  <h2 id="s7-3"><span class="mk">§H:s7-3§</span><span class="n">7.3</span>Modèle d'autorisation</h2>
+  <p class="tcap"><b>Tableau 7.1 :</b> Niveaux de rôles et exemples de règles.</p><span class="mk">§T:7.1§</span>
+  <table class="full"><colgroup><col style="width:16%"><col style="width:36%"><col></colgroup>
+    <thead><tr><th>Niveau</th><th>Rôles</th><th>Exemple de règle</th></tr></thead>
+    <tbody>
+      <tr><td>Organisation</td><td>propriétaire, administrateur, membre</td><td>seuls propriétaire et administrateurs gèrent les membres et l'intégration Google Drive</td></tr>
+      <tr><td>Projet</td><td>responsable, membre, auditeur</td><td>l'auditeur est en lecture seule ; le responsable gère l'équipe, les tâches et la clôture des étapes</td></tr>
+      <tr><td>Rôles ISO</td><td>direction, RSSI, propriétaire d'actif, chef de service, administrateur IT, auditeur interne, employé</td><td>seule la direction (ou le responsable) approuve ressources, formations, objectifs et revue de direction</td></tr>
+    </tbody></table>
+  <p>Les données personnelles restent privées : la conversation d'un membre avec l'assistant est invisible pour les autres, y compris le responsable du projet (réponse 404).</p>
+
+  <h2 id="s7-4"><span class="mk">§H:s7-4§</span><span class="n">7.4</span>Protection des données et de l'API</h2>
+  <ul>
+    <li><b>Limitation de débit</b> : 10 tentatives de connexion par minute, 5 par minute pour les codes 2FA et l'envoi manuel du récapitulatif.</li>
+    <li><b>Journal d'audit</b> de toutes les actions sensibles : connexion, approbation, modification de registre, avec utilisateur, date et adresse IP.</li>
+    <li><b>Secrets chiffrés</b> en base (AES-256-GCM) : secret TOTP et jetons OAuth Google Drive, avec la clé <code>CONNECTOR_SECRET_KEY</code>.</li>
+    <li><b>Service d'IA non exposé</b> (127.0.0.1) et protégé par jeton ; contenus utilisateur balisés comme données non fiables dans les invites.</li>
+    <li><b>Validation stricte des entrées</b> (DTO, schémas Pydantic) et en-têtes de sécurité HTTP (<code>helmet</code>), conformément aux recommandations de l'OWASP [13].</li>
+  </ul>
+</section>
+
+<!-- ================= CHAPITRE 8 ================= -->
+<section class="chapter" id="ch8">
+  <span class="mk">§CH:8:Infrastructure et déploiement§</span><span class="mk">§H:ch8§</span>
+  <div class="cnum">Chapitre 8</div>
+  <h1>Infrastructure et déploiement</h1>
+
+  <h2 id="s8-1"><span class="mk">§H:s8-1§</span><span class="n">8.1</span>Conteneurs Docker</h2>
+  <p>Les services d'infrastructure sont décrits dans un unique <code>docker-compose.yml</code>. En développement, le frontend et le backend tournent directement sur la machine avec rechargement à chaud.</p>
+  <p class="tcap"><b>Tableau 8.1 :</b> Services Docker Compose.</p><span class="mk">§T:8.1§</span>
+  <table class="full"><colgroup><col style="width:17%"><col style="width:27%"><col style="width:15%"><col></colgroup>
+    <thead><tr><th>Service</th><th>Image</th><th>Port</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><code>postgres</code></td><td><code>pgvector/pgvector:0.8.0-pg16</code></td><td>5432</td><td>bases <code>aptiso</code> et <code>aptiso_ai</code> (rôle dédié)</td></tr>
+      <tr><td><code>redis</code></td><td><code>redis:7.4-alpine</code></td><td>6379</td><td>file des traitements IA</td></tr>
+      <tr><td><code>ai</code> (profil <code>ai</code>)</td><td>construite depuis <code>apps/ai</code></td><td>127.0.0.1:8000</td><td>API du service d'IA</td></tr>
+      <tr><td><code>ai-worker</code> (profil <code>ai</code>)</td><td>même image</td><td>—</td><td>worker arq</td></tr>
+    </tbody></table>
+  <ul>
+    <li><b>Volumes nommés</b> : les données survivent à la recréation des conteneurs.</li>
+    <li><b>Contrôles de santé</b> (<code>pg_isready</code>, <code>redis-cli ping</code>) et <code>depends_on: condition: service_healthy</code> : le service d'IA ne démarre qu'une fois la base et Redis prêts.</li>
+    <li><b><code>restart: unless-stopped</code></b> : un conteneur arrêté est relancé et le worker se reconnecte à Redis.</li>
+    <li><b>Profils</b> : <code>docker compose up -d</code> lance PostgreSQL et Redis ; le profil <code>ai</code> ajoute le service d'IA et son worker.</li>
+    <li><b>Image du service d'IA</b> : base <code>python:3.12-slim</code>, dépendances figées, utilisateur non root, contrôle de santé sur <code>/v1/health/live</code> ; au démarrage, <code>alembic upgrade head</code> puis <code>uvicorn</code>.</li>
+  </ul>
+
+  <h2 id="s8-2"><span class="mk">§H:s8-2§</span><span class="n">8.2</span>Diagramme de déploiement</h2>
+  <figure><span class="mk">§F:8.1§</span>{{FIG:deployment}}
+    <figcaption><b>Figure 8.1 :</b> Diagramme de déploiement de l'environnement de développement.</figcaption></figure>
+  <p>Dans le réseau Docker, le service d'IA joint PostgreSQL et Redis par leur nom de service (<code>AI_DB_HOST=postgres</code>, <code>REDIS_URL=redis://redis:6379</code>) ; seul son port d'API est publié, et uniquement sur l'interface locale.</p>
+
+  <h2 id="s8-3"><span class="mk">§H:s8-3§</span><span class="n">8.3</span>Configuration et secrets</h2>
+  <p>La configuration passe par des variables d'environnement, chargées depuis des fichiers <code>.env</code> exclus de Git : URL des bases, secrets JWT, paramètres SMTP, jeton de service et URL du service d'IA, clé de chiffrement des connecteurs, identifiants OAuth Google, clé de l'API NVIDIA et noms des modèles. Un fichier <code>.env.example</code> documente chaque variable sans valeur sensible.</p>
+
+  <h2 id="s8-4"><span class="mk">§H:s8-4§</span><span class="n">8.4</span>Démarrage de l'environnement</h2>
+  <div class="code">docker compose --profile ai up -d --build    # PostgreSQL, Redis, service IA, worker
+cd apps/backend && npx prisma migrate deploy  # schéma de la base métier
+cd ../.. && npm run dev                       # frontend :3000 + backend :4000</div>
+</section>
+
+<!-- ================= CHAPITRE 9 ================= -->
+<section class="chapter" id="ch9">
+  <span class="mk">§CH:9:Tests et qualité§</span><span class="mk">§H:ch9§</span>
+  <div class="cnum">Chapitre 9</div>
+  <h1>Tests et qualité</h1>
+
+  <h2 id="s9-1"><span class="mk">§H:s9-1§</span><span class="n">9.1</span>Stratégie : tester avec les vrais composants</h2>
+  <p>Les tests utilisent une vraie base PostgreSQL, le vrai service d'IA et les vrais modèles plutôt que des simulations : un test doit échouer quand l'application échouerait pour un utilisateur. Le scénario de bout en bout appelle les services du backend comme le feraient les contrôleurs, dans une base dédiée (<code>aptiso_test</code>) migrée avant chaque exécution ; seul l'envoi réel des e-mails est intercepté, pour vérifier ce qui serait parti.</p>
+
+  <h2 id="s9-2"><span class="mk">§H:s9-2§</span><span class="n">9.2</span>Suites de tests</h2>
+  <p class="tcap"><b>Tableau 9.1 :</b> Suites de tests et contrôles de qualité.</p><span class="mk">§T:9.1§</span>
+  <table class="full"><colgroup><col style="width:22%"><col style="width:27%"><col></colgroup>
+    <thead><tr><th>Suite</th><th>Commande</th><th>Contenu</th></tr></thead>
+    <tbody>
+      <tr><td>Scénario de bout en bout</td><td><code>npm run test:scenario</code></td><td><b>202 vérifications</b> : un projet complet à travers les cinq phases, les règles d'audit, les tâches, notifications, demandes, preuves, exports et le miroir Drive simulé</td></tr>
+      <tr><td>Contrôles IA réels</td><td><code>npm run test:ai</code></td><td>constructeur de contexte, joignabilité du service avec son jeton, refus d'un mauvais jeton, erreur 503 quand le service est injoignable</td></tr>
+      <tr><td>Évaluation de l'IA</td><td><code>node test/ai-eval.js</code></td><td>28 cas annotés (assistant et revue), notés sans modèle ; tableau de résultats et comparaison entre versions d'invites (section 6.9)</td></tr>
+      <tr><td>Service d'IA</td><td><code>pytest</code> (<code>apps/ai</code>)</td><td>santé de l'API, de la base, de pgvector et de Redis</td></tr>
+      <tr><td>Typage et style</td><td><code>npm run typecheck</code>, <code>npm run lint</code></td><td><code>tsc --noEmit</code> et ESLint sur le frontend et le backend</td></tr>
+    </tbody></table>
+  <p>Chaque évolution passe le typage, le lint et le scénario ; une évolution de l'IA est en plus essayée réellement, par exemple l'assistant interrogé sur le projet de démonstration et la vérification qu'un autre membre ne peut pas lire une conversation privée.</p>
+
+  <h2 id="s9-3"><span class="mk">§H:s9-3§</span><span class="n">9.3</span>Données de démonstration</h2>
+  <p>Deux scripts (<code>test/novateck.seed.js</code> et <code>test/novateck.finish.js</code>) construisent une entreprise fictive réaliste, <i>NovaTeck</i> (140 salariés, plateforme SaaS de paie), en passant par les <b>services réels</b> de l'application, si bien que toutes les règles métier s'appliquent : 10 comptes couvrant les sept rôles ISO, 8 exigences légales et contractuelles, 15 actifs et 21 risques approuvés par leurs propriétaires, une SoA de 93 mesures, 21 politiques approuvées, des formations, objectifs, incidents, non-conformités, un audit interne et une première revue de direction, soit 39 étapes sur 40. Ces scripts ont révélé deux règles manquantes, corrigées depuis : l'ouverture préalable des objectifs par défaut et l'obligation de publier dans la bibliothèque le document d'une étape de registre.</p>
+</section>
+
+<!-- ================= CHAPITRE 10 ================= -->
+<section class="chapter" id="ch10">
+  <span class="mk">§CH:10:Limites et perspectives§</span><span class="mk">§H:ch10§</span>
+  <div class="cnum">Chapitre 10</div>
+  <h1>Limites et perspectives</h1>
+
+  <h2 id="s10-1"><span class="mk">§H:s10-1§</span><span class="n">10.1</span>Limites</h2>
+  <ul>
+    <li><b>Corpus d'évaluation encore restreint.</b> Les 28 cas annotés couvrent les fonctions principales sur un seul projet de démonstration ; ils ne suffisent pas à garantir la qualité sur des organisations très différentes ni pour la lecture de preuves numérisées.</li>
+    <li><b>Dépendance à un fournisseur de modèles externe.</b> Les extraits envoyés aux modèles quittent l'infrastructure de l'organisation, et l'API impose des quotas et une latence variable. Le modèle de secours et les comportements sans IA limitent l'impact d'une panne, sans supprimer la dépendance.</li>
+    <li><b>Validation en environnement de développement uniquement.</b> L'application n'a pas encore été déployée en production ni soumise à des tests de charge.</li>
+  </ul>
+
+  <h2 id="s10-2"><span class="mk">§H:s10-2§</span><span class="n">10.2</span>Perspectives</h2>
+  <ul>
+    <li><b>Texte officiel de la norme sous licence</b> : permettre à une organisation qui détient sa propre licence de téléverser sa copie, indexée et visible de ses seuls projets, par le mécanisme de connaissance partagée déjà en place.</li>
+    <li><b>Évaluation continue</b> : élargir le jeu de cas (autres secteurs, preuves numérisées, assistants de rédaction), l'exécuter automatiquement à chaque changement d'invite dans la chaîne d'intégration, et afficher les statistiques de <code>/v1/metrics</code> dans un tableau de bord.</li>
+    <li><b>Industrialisation</b> : images Docker du frontend et du backend, pipeline CI/CD (typage, lint, scénario), HTTPS, sauvegardes et supervision.</li>
+    <li><b>Stockage objet des preuves</b> (S3 ou MinIO) à la place du disque local, pour la redondance et la montée en charge.</li>
+    <li><b>Modèles hébergés par l'organisation</b> (modèles ouverts sur ses propres serveurs) pour les clients qui exigent que les données ne quittent pas leur infrastructure ; le registre de capacités le permet sans modifier les fonctionnalités.</li>
+    <li><b>Tests d'interface automatisés</b> (Playwright) et utilisation effective du paquet <code>@aptiso/shared-types</code> par les deux applications.</li>
+    <li><b>Autres référentiels</b> (ISO 9001, ISO/IEC 27701) sur le même moteur de phases, grâce au modèle <code>ComplianceFramework</code>, et interface bilingue français / anglais.</li>
+  </ul>
+</section>
+
+<!-- ================= CONCLUSION ================= -->
+<section class="unnum" id="conclusion">
+  <span class="mk">§UN:Conclusion générale§</span><span class="mk">§H:conclusion§</span>
+  <h1>Conclusion générale</h1>
+  <p>APTISO couvre le cycle complet d'un projet ISO/IEC 27001, de la préparation à la maintenance après certification. Son architecture sépare clairement trois responsabilités : un frontend sans logique métier, un backend qui détient les données et applique les règles de la norme, et un service d'IA isolé qui ne voit que ce que la personne a le droit de voir.</p>
+  <p>Le principe directeur du projet est que l'IA est utile lorsqu'elle est encadrée par une ingénierie déterministe : le modèle lit, résume et propose ; le code valide, trace et refuse ce qui n'est pas fondé ; la personne décide. Ce principe se retrouve dans la validation des sorties structurées, la vérification des citations, la journalisation de chaque appel et l'existence d'un repli sans IA pour chaque fonction. Il est désormais mesuré : un jeu de cas annotés montre que l'assistant ne fabrique aucune information sur les cas évalués et que la revue détecte tous les défauts introduits, et une base de 118 guides rédigés pour APTISO lui permet d'enseigner la norme sans en reproduire le texte.</p>
+  <p>Le projet de démonstration NovaTeck, construit par les services réels et vérifié par un scénario de 202 contrôles, montre que la plateforme tient sur un cas réaliste. Les prochaines étapes portent sur l'enrichissement de la connaissance de la norme, la mesure de la qualité de l'IA et l'industrialisation du déploiement.</p>
+</section>
+
+<!-- ================= BIBLIOGRAPHIE ================= -->
+<section class="unnum bib" id="biblio">
+  <span class="mk">§UN:Bibliographie§</span><span class="mk">§H:biblio§</span>
+  <h1>Bibliographie</h1>
+  <p>[1] ISO/IEC. <i>ISO/IEC 27001:2022 — Sécurité de l'information, cybersécurité et protection de la vie privée — Systèmes de management de la sécurité de l'information — Exigences</i>. ISO, 2022.</p>
+  <p>[2] ISO/IEC. <i>ISO/IEC 27002:2022 — Mesures de sécurité de l'information</i>. ISO, 2022.</p>
+  <p>[3] Advisera. <i>Conformio — ISO 27001 compliance software</i>. https://advisera.com/conformio/</p>
+  <p>[4] Vercel. <i>Next.js Documentation</i>. https://nextjs.org/docs</p>
+  <p>[5] NestJS. <i>NestJS Documentation</i>. https://docs.nestjs.com</p>
+  <p>[6] Prisma. <i>Prisma ORM Documentation</i>. https://www.prisma.io/docs</p>
+  <p>[7] S. Ramírez. <i>FastAPI Documentation</i>. https://fastapi.tiangolo.com</p>
+  <p>[8] pgvector. <i>Open-source vector similarity search for Postgres</i>. https://github.com/pgvector/pgvector</p>
+  <p>[9] G. V. Cormack, C. L. A. Clarke, S. Büttcher. <i>Reciprocal Rank Fusion outperforms Condorcet and individual rank learning methods</i>. SIGIR, 2009.</p>
+  <p>[10] NVIDIA. <i>NVIDIA API Catalog</i>. https://build.nvidia.com</p>
+  <p>[11] S. Colvin. <i>arq — job queues and RPC in Python with asyncio and Redis</i>. https://arq-docs.helpmanual.io</p>
+  <p>[12] D. M'Raihi et al. <i>RFC 6238 — TOTP: Time-Based One-Time Password Algorithm</i>. IETF, 2011.</p>
+  <p>[13] OWASP Foundation. <i>OWASP Top 10 et Application Security Verification Standard</i>. https://owasp.org</p>
+  <p>[14] Pydantic. <i>Data validation using Python type hints</i>. https://docs.pydantic.dev</p>
+  <p>[15] Tiptap. <i>Tiptap Editor Documentation</i>. https://tiptap.dev</p>
+  <p>[16] tldraw. <i>tldraw SDK Documentation</i>. https://tldraw.dev</p>
+  <p>[17] Docker. <i>Docker Compose Documentation</i>. https://docs.docker.com/compose/</p>
+  <p>[18] OpenAPI Initiative. <i>OpenAPI Specification 3</i>. https://spec.openapis.org/oas/latest.html ; NestJS, <i>OpenAPI (Swagger)</i>. https://docs.nestjs.com/openapi/introduction</p>
+  <p>[19] A. Bayoudh. <i>APTISO — code source</i>. https://github.com/aminaoamina/APTISO</p>
+</section>
+
+</body>
+</html>
