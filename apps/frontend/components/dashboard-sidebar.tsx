@@ -286,12 +286,19 @@ export function DashboardSidebar() {
               <NavRow
                 item={{
                   label: 'Document Library',
-                  href: `/dashboard/organizations/${orgId}/library`,
+                  href: `/dashboard/organizations/${orgId}/library${projectId ? `?project=${projectId}` : ''}`,
                   icon: BookOpen,
                 }}
                 isActive={pathname.startsWith(`/dashboard/organizations/${orgId}/library`)}
               />
-              <NavRow item={{ label: 'Whiteboard', icon: Presentation, soon: true }} />
+              <NavRow
+                item={{
+                  label: 'Whiteboard',
+                  href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}/whiteboard` : undefined,
+                  icon: Presentation,
+                }}
+                isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/whiteboard`)}
+              />
             </div>
 
             <NavSectionTitle>People & Tasks</NavSectionTitle>
@@ -306,7 +313,14 @@ export function DashboardSidebar() {
                 isActive={pathname === '/dashboard/tasks'}
               />
               {isLead && (
-                <NavRow item={{ label: 'Team Management', icon: UserCog, soon: true }} />
+                <NavRow
+                  item={{
+                    label: 'Team',
+                    href: projectId ? `/dashboard/organizations/${orgId}/projects/${projectId}/team` : undefined,
+                    icon: UserCog,
+                  }}
+                  isActive={Boolean(projectId) && pathname.startsWith(`/dashboard/organizations/${orgId}/projects/${projectId}/team`)}
+                />
               )}
               <NavRow
                 item={{

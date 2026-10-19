@@ -18,6 +18,9 @@ import { MailService } from '../mail/mail.service';
 import { SecurityUtil } from '../common/utils/security.util';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { SessionService } from '../common/services/session.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import type { User } from '@prisma/client';
+import { TwoFactorService } from './two-factor.service';
 import {
   RegisterDto,
   LoginDto,
@@ -30,6 +33,7 @@ import {
   UserPayload,
   RegisterResponse,
   LoginResponse,
+  TwoFactorChallenge,
   PublicUser,
 } from './interfaces/auth.interface';
 import {
@@ -51,6 +55,8 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly auditLogService: AuditLogService,
     private readonly sessionService: SessionService,
+    private readonly twoFactor: TwoFactorService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async register(
@@ -176,7 +182,7 @@ export class AuthService {
     loginDto: LoginDto,
     ipAddress?: string,
     userAgent?: string,
-  ): Promise<LoginResponse> {
+  ): Promise<LoginResponse | TwoFactorChallenge> {
     this.logger.log(`[LOGIN] Attempting login for email: ${loginDto.email}`);
 
     const user = await this.prisma.user.findUnique({
@@ -212,6 +218,23 @@ export class AuthService {
       );
     }
 
+    // Two-step verification on: the session is opened only after the code.
+    if (await this.twoFactor.isEnabled(user.id)) {
+      return { two_factor_required: true, challenge_token: this.twoFactor.challenge(user.id) };
+    }
+    return this.startSession(user, ipAddress, userAgent);
+  }
+
+  /** Second step of the login: the code from the authenticator app (or a recovery code). */
+  async loginWithSecondFactor(challengeToken: string, code: string, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
+    const userId = await this.twoFactor.completeLogin(challengeToken, code);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.is_active || !user.is_email_verified) throw new UnauthorizedException('Invalid credentials');
+    return this.startSession(user, ipAddress, userAgent);
+  }
+
+  /** Tokens, session and audit entry for a user whose credentials (and second step, when on) are verified. */
+  private async startSession(user: User, ipAddress?: string, userAgent?: string): Promise<LoginResponse> {
     const tokens = await this.generateTokens(user.id, user.email);
 
     const session = await this.sessionService.createSession({
@@ -365,6 +388,9 @@ export class AuthService {
           data: { status: VerificationStatus.VERIFIED },
         }),
       ]);
+
+      // A new account is invited (not forced) to turn on two-step verification.
+      await this.notifications.notify({ userId: verification.user_id, type: NotificationType.TWO_FACTOR_SUGGESTED }).catch(() => undefined);
 
       await this.auditLogService.log({
         userId: verification.user_id,

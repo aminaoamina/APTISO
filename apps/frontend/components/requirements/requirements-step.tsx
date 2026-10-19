@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { requirementsApi, Requirement, CreateRequirementData, DocumentInstance } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ExcelButton } from '@/components/exports/export-buttons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -258,6 +259,7 @@ export default function RequirementsStep({
               )}
               {document ? 'Edit Report' : 'Create Report'}
             </Button>
+            <ExcelButton projectId={projectId} register="requirements" />
             <Button size="sm" variant="outline" onClick={openNew}>
               <Plus className="h-4 w-4 mr-2" />New Requirement
             </Button>

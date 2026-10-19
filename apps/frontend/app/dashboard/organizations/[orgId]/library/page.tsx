@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { BookOpen, ChevronDown, ChevronRight, Download, FileText, Folder, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { documentsApi, LibraryDocument } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
+import { ExcelButton, LibraryZipButton } from '@/components/exports/export-buttons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,8 @@ function groupDocuments(docs: LibraryDocument[]) {
 export default function LibraryPage() {
   const params = useParams();
   const orgId = params.orgId as string;
+  // Opened from a project's sidebar: only that project's documents.
+  const projectFilter = useSearchParams().get('project');
   const [docs, setDocs] = useState<LibraryDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -46,8 +49,10 @@ export default function LibraryPage() {
 
   const grouped = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return groupDocuments(q ? docs.filter((d) => `${d.title} ${d.step.title}`.toLowerCase().includes(q)) : docs);
-  }, [docs, query]);
+    const inProject = projectFilter ? docs.filter((d) => d.step.phase.project.id === projectFilter) : docs;
+    return groupDocuments(q ? inProject.filter((d) => `${d.title} ${d.step.title}`.toLowerCase().includes(q)) : inProject);
+  }, [docs, query, projectFilter]);
+  const filteredProject = projectFilter ? docs.find((d) => d.step.phase.project.id === projectFilter)?.step.phase.project.name : null;
 
   const download = async (doc: LibraryDocument, version: string) => {
     try {
@@ -71,10 +76,16 @@ export default function LibraryPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5">
             <BookOpen className="h-6 w-6 text-primary" />
-            Document Library
+            {filteredProject ? `${filteredProject} · Document Library` : 'Document Library'}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Controlled documents submitted from the implementation steps. Every version is kept.
+            {projectFilter && (
+              <>
+                {' '}
+                <Link href={`/dashboard/organizations/${orgId}/library`} className="text-primary hover:underline">Show all projects</Link>
+              </>
+            )}
           </p>
         </div>
         {docs.length > 0 && (
@@ -100,7 +111,13 @@ export default function LibraryPage() {
       ) : (
         grouped.map(([projectId, project]) => (
           <section key={projectId} className="space-y-4">
-            <h2 className="text-base font-semibold flex items-center gap-2"><Folder className="h-4 w-4 text-primary" />{project.name}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-base font-semibold flex items-center gap-2"><Folder className="h-4 w-4 text-primary" />{project.name}</h2>
+              <div className="flex gap-2">
+                <ExcelButton projectId={projectId} register="documents" label="Master list (Excel)" />
+                <LibraryZipButton projectId={projectId} />
+              </div>
+            </div>
             {[...project.phases.entries()].map(([phase, phaseDocs]) => (
               <Card key={phase}>
                 <CardContent className="py-3 px-5">

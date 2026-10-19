@@ -1,0 +1,100 @@
+{
+  "label": "baseline-review",
+  "prompts": [
+    "wizard-suggest@4",
+    "improve-paragraph@1",
+    "companion-chat@2",
+    "document-review@1",
+    "evidence-analysis@1",
+    "next-actions@2",
+    "weekly-digest@1"
+  ],
+  "review": {
+    "rows": [
+      {
+        "id": "backup-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 0,
+        "ok": true,
+        "expected": 3,
+        "found": 3,
+        "missed": [],
+        "findings": 6,
+        "matching_findings": 5,
+        "false_alarms_high": null,
+        "detail": [
+          "high missing A.8.13: The SoA requires backups to be encrypted, but the document does not mention encryption of backups.",
+          "high missing A.8.13: The SoA requires daily encrypted RDS snapshots copied to a second AWS region, but the document does not mention copying snapshots to a second region.",
+          "high missing A.8.13: The SoA requires a restore test every quarter, but the document does not mention any restore testing.",
+          "high missing A.8.13: The SoA requires daily backups, but the document only states that backups are performed 'regularly' without specifying frequency.",
+          "high contradiction A.8.13: This contradicts the SoA which requires backups to be copied to a second AWS region for offsite storage; keeping them only on the same server fails to meet that requirement.",
+          "medium vague A.8.13: The term 'regularly' is vague without a defined frequency, making it unauditable."
+        ]
+      },
+      {
+        "id": "access-control-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 0,
+        "ok": true,
+        "expected": 3,
+        "found": 3,
+        "missed": [],
+        "findings": 4,
+        "matching_findings": 4,
+        "false_alarms_high": null,
+        "detail": [
+          "high contradiction A.5.16: The Statement of Applicability for A.5.16 requires one personal account per person managed in Microsoft Entra ID. Sharing an administrator account contradicts this requirement.",
+          "medium vague A.5.18: The phrase 'when necessary' is vague and not auditable; the SoA requires a quarterly access review signed by managers.",
+          "medium missing A.5.18: The document does not state that access reviews are conducted quarterly and signed by managers as required by the SoA.",
+          "medium missing A.5.18: The document does not mention that user accounts are removed on the last day of employment as required by the SoA."
+        ]
+      },
+      {
+        "id": "incident-procedure",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 0,
+        "ok": true,
+        "expected": 2,
+        "found": 2,
+        "missed": [],
+        "findings": 6,
+        "matching_findings": 2,
+        "false_alarms_high": null,
+        "detail": [
+          "high missing A.5.24: The procedure does not address planning and preparation elements required by A.5.24, such as defining the incident management team, assigning roles and responsibilities, allocating resources, providing training, establishing communication plans, or testing the incident management process.",
+          "high missing A.5.25: The procedure lacks documented criteria for assessing and deciding on information security events, including classification, prioritization, and escalation thresholds required by A.5.25.",
+          "high missing A.5.26: The procedure does not detail the response activities required by A.5.26, such as containment, eradication, recovery, evidence preservation, stakeholder communication, and coordination with external parties.",
+          "high missing A.5.27: The procedure omits learning from incidents as required by A.5.27, including post‑incident review, lessons learned, updating of controls, and measurement of effectiveness.",
+          "high missing A.6.8: The procedure does not specify what information must be included in event reports, to whom reports must be escalated (e.g., management, regulatory bodies), or retention requirements for reports, as required by A.6.8.",
+          "low vague A.6.8: The term 'promptly' is not measurable; an auditor cannot verify whether reporting meets this requirement without a defined timeframe."
+        ]
+      },
+      {
+        "id": "clean-transfer-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 0,
+        "ok": false,
+        "expected": 0,
+        "found": 0,
+        "missed": [],
+        "findings": 1,
+        "matching_findings": 0,
+        "false_alarms_high": 1,
+        "detail": [
+          "high contradiction A.5.14: The Statement of Applicability requires that all information transfers be conducted only through the client portal (TLS). Limiting this rule to payroll files only leaves other transfer methods unspecified, contradicting the SoA's requirement."
+        ]
+      }
+    ],
+    "summary": {
+      "documents": 4,
+      "passed": 3,
+      "recall": 1,
+      "precision": 0.6875,
+      "clean_false_alarms_high": 1
+    }
+  }
+}

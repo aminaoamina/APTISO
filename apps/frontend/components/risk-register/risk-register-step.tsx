@@ -14,6 +14,7 @@ import {
 import { ApprovalStage, EvaluationStage, ReviewStage, TreatmentStage } from './risk-stages';
 import { CustomThreat, ThreatStage, threatPairKey } from './threat-stage';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { ExcelButton } from '@/components/exports/export-buttons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -465,6 +466,7 @@ export default function RiskRegisterStep({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end"><ExcelButton projectId={projectId} register="risks" label="Risk register (Excel)" /></div>
       {/* Register information (Conformio: number of risks / unacceptable risks) */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {([

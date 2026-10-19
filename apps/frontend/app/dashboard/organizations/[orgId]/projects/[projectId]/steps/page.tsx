@@ -44,7 +44,6 @@ export default function ImplementationStepsPage() {
   }
 
   const framework = currentProject.compliance_framework;
-  const phasesWithSteps = phases.filter((p) => (p.steps?.length ?? 0) > 0);
 
   return (
     <div className="space-y-6">
@@ -170,12 +169,6 @@ export default function ImplementationStepsPage() {
         );
       })}
 
-      {/* Future phases note */}
-      {phasesWithSteps.length > 0 && phases.some((p) => (p.steps?.length ?? 0) === 0) && (
-        <p className="text-xs text-muted-foreground text-center pt-2">
-          Remaining phases are being prepared and will unlock as the implementation progresses.
-        </p>
-      )}
     </div>
   );
 }

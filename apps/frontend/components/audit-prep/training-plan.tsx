@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Check, Download, Plus, Trash2 } from 'lucide-react';
 import { trainingsApi, Training, TrainingStatus, TrainingsState } from '@/lib/audit-prep-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ExcelButton } from '@/components/exports/export-buttons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -65,7 +66,7 @@ export default function TrainingPlan({ stepId, orgId, projectId, onCompletionCha
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Trainings</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2"><CardTitle className="text-base">Trainings</CardTitle><ExcelButton projectId={projectId} register="trainings" /></div>
           <CardDescription className="max-w-3xl leading-relaxed">
             Define which people will need to attend which security trainings. Top management approves each training; then schedule it,
             and once performed record the evidence (attendance list, certificates) and evaluate its effectiveness (clause 7.2).

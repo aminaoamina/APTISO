@@ -1,5 +1,5 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsEnum, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
 import { ReviewFrequency } from '@prisma/client';
 
 const NULLABLE = (_: object, v: unknown) => v !== null;
@@ -20,4 +20,22 @@ export class UpdateMaintenanceDto {
 
   @ApiPropertyOptional({ enum: ReviewFrequency }) @IsOptional() @IsEnum(ReviewFrequency)
   training_review_frequency?: ReviewFrequency;
+}
+
+export class UpdateAuditProgramDto {
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(3000) objectives?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(3000) criteria?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(3000) methods?: string;
+}
+
+export class CreateProgramAuditDto {
+  @ApiProperty({ description: 'Any date in the planned month' }) @IsDateString() planned_month!: string;
+  @ApiProperty() @IsUUID() auditor_id!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(3000) scope?: string;
+}
+
+export class UpdateProgramAuditDto {
+  @ApiPropertyOptional() @IsOptional() @IsDateString() planned_month?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() auditor_id?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(3000) scope?: string;
 }

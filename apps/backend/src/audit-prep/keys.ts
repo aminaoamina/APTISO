@@ -12,6 +12,7 @@ export const P4 = {
 export const RISK_REGISTER_KEY = 'iso27001.p2s2.risk-register';
 export const SOA_KEY = 'iso27001.p2s3.statement-of-applicability';
 export const REQUIREMENTS_KEY = 'iso27001.p1s5.legal-requirements';
+export const MAINTENANCE_STEP_KEY = 'iso27001.p5s1.maintenance';
 
 export const FREQUENCY_MONTHS = { MONTHLY: 1, QUARTERLY: 3, SEMI_ANNUALLY: 6, YEARLY: 12 } as const;
 export const FREQUENCY_LABELS = { MONTHLY: 'Every month', QUARTERLY: 'Every quarter', SEMI_ANNUALLY: 'Every 6 months', YEARLY: 'Every year' } as const;

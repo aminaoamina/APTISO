@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, LogIn, Loader2, Mail } from 'lucide-react';
+import { Eye, EyeOff, LogIn, Loader2, Mail, ShieldCheck } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,10 @@ import { getErrorMessage } from '@/lib/utils';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login } = useAuthStore();
+  const { login, loginSecondFactor } = useAuthStore();
+  // Set when the password was right and the account has two-step verification on.
+  const [challenge, setChallenge] = useState<string | null>(null);
+  const [code, setCode] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -67,7 +70,15 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
-      await login(formData.email.trim(), formData.password);
+      if (challenge) {
+        await loginSecondFactor(challenge, code.trim());
+      } else {
+        const challengeToken = await login(formData.email.trim(), formData.password);
+        if (challengeToken) {
+          setChallenge(challengeToken);
+          return;
+        }
+      }
 
       // Small delay to ensure store is updated before redirect
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -175,6 +186,35 @@ function LoginForm() {
               </div>
             )}
 
+            {challenge ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <ShieldCheck className="h-4 w-4 text-primary" /> Two-step verification
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Enter the 6-digit code from your authenticator app, or one of your recovery codes.
+                </p>
+                <Label htmlFor="code">Code</Label>
+                <Input
+                  id="code"
+                  value={code}
+                  onChange={(e) => { setCode(e.target.value); setError(''); }}
+                  placeholder="123456"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoFocus
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  className="text-sm text-primary hover:underline"
+                  onClick={() => { setChallenge(null); setCode(''); setError(''); }}
+                >
+                  Back to email and password
+                </button>
+              </div>
+            ) : (<>
             <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-500 delay-600">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -225,6 +265,7 @@ function LoginForm() {
                 </button>
               </div>
             </div>
+            </>)}
           </CardContent>
 
           <CardFooter className="flex flex-col space-y-4 px-6 pt-6 pb-6 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-800">
@@ -241,7 +282,7 @@ function LoginForm() {
               ) : (
                 <>
                   <LogIn className="h-4 w-4 mr-2" />
-                  Sign In
+                  {challenge ? 'Verify' : 'Sign In'}
                 </>
               )}
             </Button>

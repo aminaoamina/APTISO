@@ -4,10 +4,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditLogService } from '../common/services/audit-log.service';
 import { TasksService } from '../tasks/tasks.service';
 import { ProjectAccessService } from '../common/services/project-access.service';
-import { FREQUENCY_MONTHS, P4, RISK_REGISTER_KEY, checklist } from '../audit-prep/keys';
+import { FREQUENCY_MONTHS, MAINTENANCE_STEP_KEY, P4, RISK_REGISTER_KEY, checklist } from '../audit-prep/keys';
 import { UpdateMaintenanceDto } from './maintenance.dto';
+import { AuditProgramService } from './audit-program.service';
+import { addMonths, cycleStart } from './cycle';
 
-export const MAINTENANCE_STEP_KEY = 'iso27001.p5s1.maintenance';
+export { MAINTENANCE_STEP_KEY };
 
 /** A task is created this many days before an activity is due. */
 const DUE_SOON_DAYS = 14;
@@ -39,11 +41,6 @@ interface Due {
   suppressReminder?: boolean;
 }
 
-const addMonths = (d: Date, months: number) => {
-  const r = new Date(d);
-  r.setMonth(r.getMonth() + months);
-  return r;
-};
 const maxDate = (...dates: (Date | null | undefined)[]) =>
   dates.filter((d): d is Date => !!d).reduce<Date | null>((m, d) => (!m || d > m ? d : m), null);
 const minDate = (dates: (Date | null)[]) =>
@@ -69,6 +66,7 @@ export class MaintenanceService {
     private readonly auditLog: AuditLogService,
     private readonly tasks: TasksService,
     private readonly access: ProjectAccessService,
+    private readonly program: AuditProgramService,
   ) {}
 
   // ─── Page ──────────────────────────────────────────────────────
@@ -142,6 +140,7 @@ export class MaintenanceService {
     });
 
     const internalAudit = activities.find(a => a.key === 'internal_audit')!;
+    const maintenanceStep = await this.access.stepByKey(projectId, MAINTENANCE_STEP_KEY);
     return {
       setup,
       dates: {
@@ -149,6 +148,9 @@ export class MaintenanceService {
         next_internal_audit: internalAudit.next_scheduled,
       },
       activities,
+      audit_program: await this.program.view(projectId, setup.certification_date),
+      members: await this.access.members(projectId),
+      documents: maintenanceStep ? await this.prisma.documentInstance.findMany({ where: { step_id: maintenanceStep.id }, select: { id: true, title: true, status: true } }) : [],
       completion: await this.completionFor(projectId, activities.filter(a => a.status === 'LATE').length, setup.certification_date),
       permissions: { canEdit: access.canEdit, canDecide: access.canDecide, userId: access.userId },
     };
@@ -159,9 +161,7 @@ export class MaintenanceService {
     if (!certification) {
       return { certification_date: null, next_surveillance_audit: null, next_recertification: null, cycle: [] as { label: string; date: Date }[] };
     }
-    // Re-certification restarts the 3-year cycle.
-    let start = new Date(certification);
-    while (addMonths(start, 36) <= now) start = addMonths(start, 36);
+    const start = cycleStart(certification, now);
     const cycle = [
       { label: 'Surveillance audit 1', date: addMonths(start, 12) },
       { label: 'Surveillance audit 2', date: addMonths(start, 24) },
@@ -236,8 +236,9 @@ export class MaintenanceService {
   /** Next date of every activity, derived from the ISMS modules. */
   private async compute(projectId: string) {
     const setup = await this.ensureSetup(projectId);
+    if (setup.certification_date) await this.program.ensure(projectId, setup.certification_date);
     const lead = (await this.lead(projectId)) ?? '';
-    const [tasks, riskStep, audits, reviewSetup, openReview, objectives, documents] = await Promise.all([
+    const [tasks, riskStep, audits, reviewSetup, openReview, objectives, documents, plannedAudit] = await Promise.all([
       this.prisma.taskAssignment.findMany({
         where: { project_id: projectId, type: { in: MAINTENANCE_TYPES } },
         select: { type: true, status: true, activity_key: true, completed_at: true, deadline: true },
@@ -254,6 +255,7 @@ export class MaintenanceService {
         where: { status: 'PUBLISHED', step: { phase: { project_id: projectId } } },
         select: { id: true, title: true, update_interval: true, owner_id: true, updated_at: true, versions: { select: { published_at: true }, orderBy: { published_at: 'desc' }, take: 1 } },
       }),
+      this.program.nextPlanned(projectId),
     ]);
     const lastDone = (type: TaskType, key?: string) =>
       maxDate(...tasks.filter(t => t.type === type && t.status === 'COMPLETED' && (!key || t.activity_key === key)).map(t => t.completed_at));
@@ -274,17 +276,17 @@ export class MaintenanceService {
       });
     }
 
-    // Internal audit: a scheduled audit drives the date; otherwise one year after the last approved one.
+    // Internal audit: a scheduled audit drives the date; then the audit program; otherwise one year after the last approved one.
     const active = audits.filter(a => a.status !== 'APPROVED').sort((a, b) => +a.start_date - +b.start_date)[0];
     const lastApproved = maxDate(...audits.filter(a => a.status === 'APPROVED').map(a => a.end_date));
-    if (active || lastApproved) {
+    if (active || plannedAudit || lastApproved) {
       dues.push({
         activity: 'internal_audit',
         type: TaskType.INTERNAL_AUDIT,
         key: 'internal_audit',
-        next: active ? active.start_date : addMonths(lastApproved!, 12),
+        next: active ? active.start_date : plannedAudit ?? addMonths(lastApproved!, 12),
         assignee: lead,
-        notes: 'The next internal audit is due: schedule it in the Internal Audit module (Phase 4) with an impartial auditor. The whole ISMS must be audited at least once a year (clause 9.2).',
+        notes: 'The next internal audit is due: start it from the Internal Audit Program (ISMS Maintenance) with an impartial auditor. The whole ISMS must be audited at least once a year (clause 9.2).',
         suppressReminder: !!active,
       });
     }
@@ -363,9 +365,12 @@ export class MaintenanceService {
     return this.completionFor(projectId, late, setup.certification_date);
   }
 
-  private async completionFor(_projectId: string, late: number, certification: Date | null) {
+  private async completionFor(projectId: string, late: number, certification: Date | null) {
+    const step = await this.access.stepByKey(projectId, MAINTENANCE_STEP_KEY);
+    const program = step ? await this.program.approved(projectId, step.id) : { done: false, detail: 'No maintenance step' };
     return checklist([
       { key: 'certified', label: 'The certification date is recorded', done: !!certification, detail: 'Enter the date of certification once the certification audit is passed' },
+      { key: 'program', label: 'The Internal Audit Program is approved (in the library)', done: program.done, detail: program.detail },
       { key: 'late', label: 'No maintenance activity is late', done: late === 0, detail: `${late} activit(ies) late` },
     ]);
   }

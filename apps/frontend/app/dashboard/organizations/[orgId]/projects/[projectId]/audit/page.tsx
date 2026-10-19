@@ -11,10 +11,12 @@ import { getErrorMessage } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth-store';
 import { useProjectStore } from '@/store/project-store';
 import { EvidencePanel, ACCEPT, KIND_ICON, MAX_MB, NewEvidenceForm, validity } from '@/components/evidence/evidence-panel';
+import { EvidenceAnalysisView } from '@/components/ai/evidence-analysis';
 import { STATUS_LABELS } from '@/components/soa/soa-stages';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { ExcelButton, LibraryZipButton } from '@/components/exports/export-buttons';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -55,11 +57,17 @@ export default function AuditEvidencePage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5"><ShieldCheck className="h-6 w-6 text-primary" />Audit &amp; Evidence</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          What the certification auditor will check: for each requirement, the approved documents, the records of your registers and the evidence that it works.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2.5"><ShieldCheck className="h-6 w-6 text-primary" />Audit &amp; Evidence</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            What the certification auditor will check: for each requirement, the approved documents, the records of your registers and the evidence that it works.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <ExcelButton projectId={projectId} register="all" label="All registers (Excel)" />
+          <LibraryZipButton projectId={projectId} />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -211,6 +219,7 @@ function EvidenceLibrary({ projectId, canEdit, isLead }: { projectId: string; ca
             {{ all: 'All', expiring: 'Expiring in 30 days', expired: 'Expired', unlinked: 'Not linked' }[f]}
           </Button>
         ))}
+        <ExcelButton projectId={projectId} register="evidence" />
         {canEdit && !adding && <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4 mr-1" />Add evidence</Button>}
       </div>
 
@@ -220,12 +229,12 @@ function EvidenceLibrary({ projectId, canEdit, isLead }: { projectId: string; ca
         <Card className="border-dashed"><CardContent className="py-10 text-center text-sm text-muted-foreground">
           {items.length ? 'Nothing matches.' : 'No evidence yet. Add it here or directly on a clause, a control or a task.'}
         </CardContent></Card>
-      ) : shown.map((e) => <LibraryItem key={e.id} evidence={e} canEdit={canEdit} isLead={isLead} onChanged={load} />)}
+      ) : shown.map((e) => <LibraryItem key={e.id} projectId={projectId} evidence={e} canEdit={canEdit} isLead={isLead} onChanged={load} />)}
     </div>
   );
 }
 
-function LibraryItem({ evidence: e, canEdit, isLead, onChanged }: { evidence: Evidence; canEdit: boolean; isLead: boolean; onChanged: () => Promise<void> }) {
+function LibraryItem({ projectId, evidence: e, canEdit, isLead, onChanged }: { projectId: string; evidence: Evidence; canEdit: boolean; isLead: boolean; onChanged: () => Promise<void> }) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(e.title);
   const [validUntil, setValidUntil] = useState(e.valid_until?.slice(0, 10) ?? '');
@@ -283,6 +292,7 @@ function LibraryItem({ evidence: e, canEdit, isLead, onChanged }: { evidence: Ev
                 ))}
               </ul>
             )}
+            {e.files[0] && <EvidenceAnalysisView projectId={projectId} evidenceId={e.id} fileId={e.files[0].id} canEdit={canEdit} onApplied={onChanged} />}
           </div>
           {canEdit && (
             <div className="flex shrink-0 gap-1">

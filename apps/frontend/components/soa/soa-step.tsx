@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { soaApi, RiskRegisterCompletion, SoaControlUpdate, SoaState } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
+import { ExcelButton } from '@/components/exports/export-buttons';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
@@ -103,6 +104,10 @@ export default function SoaStep({
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap justify-end gap-2">
+        <ExcelButton projectId={projectId} register="soa" label="SoA (Excel)" />
+        <ExcelButton projectId={projectId} register="treatment-plan" label="Risk Treatment Plan (Excel)" />
+      </div>
       {/* Register information (Conformio: applicable controls / not yet implemented controls) */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {([

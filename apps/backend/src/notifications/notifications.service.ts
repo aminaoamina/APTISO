@@ -31,7 +31,7 @@ const LIST_LIMIT = 30;
 
 const NOTIFICATION_INCLUDE = {
   actor: PERSON,
-  user: { select: { email: true, first_name: true } },
+  user: { select: { email: true, first_name: true, email_notifications: true } },
   organization: { select: { id: true, name: true } },
   join_request: { select: { id: true, role: true, status: true } },
   task_assignment: {
@@ -98,11 +98,19 @@ export class NotificationsService {
       },
       include: NOTIFICATION_INCLUDE,
     });
-    if (EMAILED.has(n.type) && !ownAction) {
+    if (EMAILED.has(n.type) && !ownAction && notification.user.email_notifications) {
       // E-mail is best effort: a mail server problem must never block the action that triggered it.
       this.email(notification).catch((e: Error) => this.logger.warn(`Notification e-mail not sent: ${e.message}`));
     }
     return notification;
+  }
+
+  async settings(userId: string) {
+    return this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { email_notifications: true, weekly_digest: true } });
+  }
+
+  updateSettings(userId: string, data: { email_notifications?: boolean; weekly_digest?: boolean }) {
+    return this.prisma.user.update({ where: { id: userId }, data, select: { email_notifications: true, weekly_digest: true } });
   }
 
   /** The latest notifications with everything the bell needs to write the message and link to the item. */

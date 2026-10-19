@@ -328,10 +328,15 @@ export interface TaskAssignment {
 /** The task fields a notification carries, enough to describe it and link to it. */
 export type NotificationTask = Pick<TaskAssignment, 'id' | 'type' | 'status' | 'deadline' | 'notes' | 'completion_notes' | 'project_id' | 'step_id' | 'document_instance_id' | 'project' | 'step' | 'document'>;
 
+export interface NotificationSettings {
+  email_notifications: boolean;
+  weekly_digest: boolean;
+}
+
 export interface AppNotification {
   id: string;
   type: 'ORGANIZATION_JOIN_REQUEST' | 'TASK_ASSIGNED' | 'TASK_COMPLETED' | 'TASK_DUE_SOON' | 'TASK_CANCELLED'
-    | 'REQUEST_RECEIVED' | 'REQUEST_DECIDED';
+    | 'REQUEST_RECEIVED' | 'REQUEST_DECIDED' | 'TWO_FACTOR_SUGGESTED';
   read_at: string | null;
   created_at: string;
   actor: Person | null;
@@ -1212,6 +1217,28 @@ export const connectorsApi = {
   disconnect: async (orgId: string): Promise<{ message: string }> => (await apiClient.delete(`/organizations/${orgId}/connectors`)).data,
 };
 
+export type RegisterKey =
+  | 'documents' | 'requirements' | 'risks' | 'soa' | 'treatment-plan' | 'nonconformities'
+  | 'incidents' | 'trainings' | 'objectives' | 'audit-program' | 'internal-audits' | 'evidence';
+
+export const exportsApi = {
+  /** One register as Excel, or "all" for every register (one sheet each). */
+  register: async (projectId: string, register: RegisterKey | 'all'): Promise<void> => {
+    const response = await apiClient.get(`/projects/${projectId}/exports/registers/${register}`, { responseType: 'blob', timeout: 60_000 });
+    saveBlob(response.data, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', response.headers['content-disposition'], 'registers.xlsx');
+  },
+
+  /** The library as a ZIP: PDF + Word of each approved document, master list and registers. */
+  library: async (projectId: string, options: { earlierVersions: boolean; evidence: boolean }): Promise<void> => {
+    const response = await apiClient.get(`/projects/${projectId}/exports/library`, {
+      params: { earlier_versions: options.earlierVersions, evidence: options.evidence },
+      responseType: 'blob',
+      timeout: 0,
+    });
+    saveBlob(response.data, 'application/zip', response.headers['content-disposition'], 'library.zip');
+  },
+};
+
 export const notificationsApi = {
   list: async (): Promise<{ items: AppNotification[]; unread_count: number }> => (await apiClient.get('/notifications')).data,
 
@@ -1224,10 +1251,37 @@ export const notificationsApi = {
 // ============================================================
 
 export const authApi = {
-  login: async (data: { email: string; password: string }): Promise<{ user: User }> => {
+  /** With two-step verification on, the password step returns a challenge instead of the user. */
+  login: async (data: { email: string; password: string }): Promise<{ user: User } | { two_factor_required: true; challenge_token: string }> => {
     const response = await apiClient.post('/auth/login', data);
     return response.data;
   },
+
+  loginSecondFactor: async (challenge_token: string, code: string): Promise<{ user: User }> =>
+    (await apiClient.post('/auth/login/2fa', { challenge_token, code })).data,
+
+  notificationSettings: async (): Promise<NotificationSettings> => (await apiClient.get('/notifications/settings')).data,
+
+  updateNotificationSettings: async (data: Partial<NotificationSettings>): Promise<NotificationSettings> =>
+    (await apiClient.put('/notifications/settings', data)).data,
+
+  /** Sends this week's digest now; sent is false when there was nothing to tell. */
+  sendDigestNow: async (): Promise<{ sent: boolean }> => (await apiClient.post('/digest/send-now')).data,
+
+  twoFactorStatus: async (): Promise<{ enabled: boolean; enabled_at: string | null; recovery_codes_left: number }> =>
+    (await apiClient.get('/auth/2fa')).data,
+
+  twoFactorSetup: async (): Promise<{ qr_code: string; secret: string; uri: string }> =>
+    (await apiClient.post('/auth/2fa/setup')).data,
+
+  twoFactorEnable: async (code: string): Promise<{ recovery_codes: string[] }> =>
+    (await apiClient.post('/auth/2fa/enable', { code })).data,
+
+  twoFactorDisable: async (password: string, code: string): Promise<{ enabled: false }> =>
+    (await apiClient.post('/auth/2fa/disable', { password, code })).data,
+
+  twoFactorRecoveryCodes: async (code: string): Promise<{ recovery_codes: string[] }> =>
+    (await apiClient.post('/auth/2fa/recovery-codes', { code })).data,
 
   register: async (data: {
     first_name: string;

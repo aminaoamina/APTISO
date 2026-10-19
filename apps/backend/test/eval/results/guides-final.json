@@ -1,0 +1,540 @@
+{
+  "label": "guides-final",
+  "prompts": [
+    "wizard-suggest@4",
+    "improve-paragraph@1",
+    "companion-chat@3",
+    "document-review@1",
+    "evidence-analysis@1",
+    "next-actions@2",
+    "weekly-digest@1"
+  ],
+  "chat": {
+    "rows": [
+      {
+        "id": "fact-backup-owner",
+        "kind": "fact",
+        "q": "Which of our risks are about backups and who owns them?",
+        "ms": 9533,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The risks related to backups are R-001 and R-005, both owned by Sarra Mansouri. [F14][F15]",
+        "citations": [
+          "F14 Risk R-001 (Databases / Infection with malicious software (e.g., virus, trojan, etc.)) treated by A.8.13: level 3, NOT_ACCEPTABLE, treatment DECREASE, residual ",
+          "F15 Risk R-005 (Databases / Equipment failure) treated by A.8.13: level 3, NOT_ACCEPTABLE, treatment DECREASE, residual risk 1, owner Sarra Mansouri."
+        ]
+      },
+      {
+        "id": "fact-gitlab-owner",
+        "kind": "fact",
+        "q": "Who owns the risk about weak passwords on GitLab?",
+        "ms": 1998,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Sarra Mansouri owns the risk about weak passwords on GitLab (R-012). [F13]",
+        "citations": [
+          "F13 Risk R-012 (GitLab source code and CI/CD / Malicious disclosure of passwords) treated by A.5.17, A.8.5: level 3, NOT_ACCEPTABLE, treatment DECREASE, residual ri"
+        ]
+      },
+      {
+        "id": "fact-backup-deadline",
+        "kind": "fact",
+        "q": "What is the deadline to implement control A.8.13 (backups)?",
+        "ms": 5723,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The deadline to implement control A.8.13 (Information backup) is 2026-12-15, as defined in the Risk Treatment Plan and documented in the Statement of Applicability [F13], the IT Security Policy [S2], and the Backup policy [S5].",
+        "citations": [
+          "F13 Statement of Applicability, A.8.13 Information backup: applicable; implementation status PLANNED; method: Backup copies of information, software and systems are",
+          "S2 IT Security Policy",
+          "S5 Backup policy"
+        ]
+      },
+      {
+        "id": "fact-planned-controls",
+        "kind": "fact",
+        "q": "Which controls of our Statement of Applicability are planned but not implemented yet?",
+        "ms": 4584,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The Statement of Applicability shows the following controls as applicable but not yet implemented (status: PLANNED):\n\n- A.5.12 Classification of information  \n- A.5.17 Authentication information  \n- A.5.18 Access rights  \n- A.5.19 Information security in supplier relationships  \n\nThese are listed in the Risk Treatment Plan (section 5 of the Statement of Applicability and Risk Treatment Plan) with assigned owners and deadlines [S6]. They are also reflected in the individual SoA entries for each control [F5, F7, F8, F9]. All other Annex A controls are either implemented or not applicable (none are marked as not applicable in this ISMS) [S1].",
+        "citations": [
+          "S6 Statement of Applicability and Risk Treatment Plan",
+          "F5 Statement of Applicability, A.5.12 Classification of information: applicable; implementation status PLANNED; method: Information is classified according to conf",
+          "F7 Statement of Applicability, A.5.17 Authentication information: applicable; implementation status PLANNED; method: Allocation and management of authentication in",
+          "F8 Statement of Applicability, A.5.19 Information security in supplier relationships: applicable; implementation status PLANNED; method: Information security risks",
+          "F9 Statement of Applicability, A.5.18 Access rights: applicable; implementation status PLANNED; method: Access rights are provisioned, reviewed at regular interval",
+          "S1 Statement of Applicability and Risk Treatment Plan"
+        ]
+      },
+      {
+        "id": "fact-pentest",
+        "kind": "fact",
+        "q": "Who is responsible for the external penetration test and what budget was approved?",
+        "ms": 2523,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Leila Trabelsi is responsible for the external penetration test, and the approved budget is 8,000 EUR. [S1]",
+        "citations": [
+          "S1 Management Review Minutes"
+        ]
+      },
+      {
+        "id": "fact-audit-conclusion",
+        "kind": "fact",
+        "q": "What did our internal audit conclude?",
+        "ms": 3980,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The internal audit concluded that the ISMS of NovaTeck conforms to ISO/IEC 27001:2022 and is effectively implemented for most requirements. However, two minor nonconformities (related to competence records and access reviews) and two observations (regarding restore tests and measurement of objectives) were identified and must be addressed before the certification audit. [S4]",
+        "citations": [
+          "S4 Internal Audit Report"
+        ]
+      },
+      {
+        "id": "fact-open-nc",
+        "kind": "fact",
+        "q": "Which nonconformities are still open and who is responsible for them?",
+        "ms": 9250,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Based on the Internal Audit Report [S6], there are two minor nonconformities still open:\n\n- **NC-003 (Competence)**: No training records for the two Customer Support agents hired in September 2026. The awareness session is planned for 20 November 2026.  \n  → Responsible: Not explicitly assigned in the provided facts, but per procedure [S5], the person responsible for the ISMS assigns a responsible person for each nonconformity. As project lead, you would need to confirm assignment.\n\n- **NC-004 (Access rights, A.5.18)**: The quarterly access review of the NovaPay back-office has not been done; a former contractor account was found active in GitLab.  \n  → Responsible: Youssef Gharbi [F2], as he is responsible for A.5.18 Access rights in the Statement of Applicability.\n\nThese align with the management review action to close the two internal audit nonconformities by 2026-12-31 [data name=\"person\"]. The restore test (related to the observation on A.8.13) is also part of that action.",
+        "citations": [
+          "S6 Internal Audit Report",
+          "S5 Procedure for Nonconformities and Corrective Actions",
+          "F2 Statement of Applicability, A.5.18 Access rights: applicable; implementation status PLANNED; method: Access rights are provisioned, reviewed at regular interval"
+        ]
+      },
+      {
+        "id": "fact-review-date",
+        "kind": "fact",
+        "q": "When was the first management review held and who chaired it?",
+        "ms": 2491,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The first management review was held on 16/10/2026, and it was chaired by Karim Ben Salah, as he is listed first among the participants and approved the Management Review Minutes document. [S2][S6]",
+        "citations": [
+          "S2 Management Review Minutes",
+          "S6 Management Review Minutes"
+        ]
+      },
+      {
+        "id": "fact-scope-exclusions",
+        "kind": "fact",
+        "q": "What is excluded from our ISMS scope?",
+        "ms": 2377,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The Paris sales office (6 people, no access to production or client payroll data) and the marketing website (hosted by an agency, no client data) are excluded from the ISMS scope. [S1]",
+        "citations": [
+          "S1 ISMS Scope Document"
+        ]
+      },
+      {
+        "id": "fact-legal-gaps",
+        "kind": "fact",
+        "q": "Which legal or contractual requirements are we not compliant with yet?",
+        "ms": 11175,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Based on the Register of Legal, Contractual, and Other Requirements, the following requirements are currently marked as **Non-Compliant**:\n\n1. **Client requirement (NovaPay subscription agreement v3, security annex)**  \n   - Description: Notify security incidents affecting client data within 48 hours; 99.9% monthly availability; yearly penetration test report on request; client data deleted within 90 days after the end of the contract.  \n   - Responsible: Amina Bayoudh  \n   - Status: Non-Compliant  \n   - Note: The first external penetration test is planned for Q1 2027. [S7]\n\n2. **Tender requirement (Two French banks, September and October 2026 tenders)**  \n   - Description: ISO/IEC 27001 certification of the service is required before the contract is signed; until then a completed security questionnaire and the project plan are accepted.  \n   - Responsible: Karim Ben Salah  \n   - Status: Non-Compliant  \n   - Note: Certification is pending; stage 1 audit is booked for May 2027 (per management review action). [S7], [data]\n\n3. **Tunisian data protection requirement (INPDP)**  \n   - Description: Declare the processing of personal data to the INPDP and obtain its authorisation before transferring personal data abroad. The declaration of the transfer to AWS eu-west-3 (Paris) is still in progress.  \n   - Responsible: Ines Bouaziz  \n   - Status: Non-Compliant  \n   - Jurisdiction: Tunisia  \n   - Note: This relates to international data transfers under Tunisian law. [S8]\n\nAll other legal, regulatory, and contractual requirements listed in the register are currently marked as **Compliant**. [S7], [S8]\n\nTo address these gaps, you should:\n- Track progress on the penetration test (Q1 2027) and INPDP declaration.\n- Ensure the certification body is selected and stage 1 audit is confirmed for May 2027 (as per the management review action due 2027-01-31). [data]",
+        "citations": [
+          "S7 Register of Legal, Contractual, and Other Requirements",
+          "S8 Statement of Applicability and Risk Treatment Plan"
+        ]
+      },
+      {
+        "id": "fact-progress",
+        "kind": "fact",
+        "q": "hi what is not done in the steps",
+        "ms": 4451,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Based on the project progress fact [F1], the only step not yet started is:\n\n- **Phase 5: ISMS Maintenance & Certification Cycle** – 0 out of 1 steps done (not started).\n\nAll other phases (Project Preparation, Risk Management, Security Documentation, and Preparation for External Audit) are fully completed (100% done). The certification date has not been recorded yet, as it depends on completing Phase 5.\n\nThe next step for the project is to begin the ISMS Maintenance & Certification Cycle, which includes activities such as managing corrective actions from internal audits, conducting management reviews, and preparing for the Stage 1 audit with the chosen certification body (as noted in the open tasks from the management review).",
+        "citations": [
+          "F1 Project progress: 39 of 40 steps done (98%), target date 2027-06-30.\nPhase 1 Project Preparation: 8/8 steps done.\nPhase 2 Risk Management: 3/3 steps done.\nPhase"
+        ]
+      },
+      {
+        "id": "fact-policy-approver",
+        "kind": "fact",
+        "q": "Who approves our security policies?",
+        "ms": 10638,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Based on the project facts, the security policies are approved by top management, specifically the CEO, as stated in the Statement of Applicability and Risk Treatment Plan [S2] and confirmed in the implementation method for A.5.1: \"The Information Security Policy and topic-specific policies are approved by top management\" [F1, F2, F11]. The document \"Information Security Policy\" was approved by Karim Ben Salah [F11], who holds a leadership role in the ISMS implementation. For formal approval of policies like the Information Security Policy, the Procedure for Document and Record Control specifies that such documents are approved by the CEO [S1]. Therefore, while operational approval may be delegated (e.g., to the CISO or ISMS lead), the ultimate authority for approving security policies rests with the CEO, in line with top management responsibility under clause 5.1 and A.5.1. No evidence indicates that approval has been delegated below top management level for policy documents.",
+        "citations": [
+          "S2 Statement of Applicability and Risk Treatment Plan",
+          "F1 Project progress: 39 of 40 steps done (98%), target date 2027-06-30.\nPhase 1 Project Preparation: 8/8 steps done.\nPhase 2 Risk Management: 3/3 steps done.\nPhase",
+          "F2 Statement of Applicability, A.5.1 Policies for information security: applicable; implementation status IMPLEMENTED; method: The Information Security Policy and ",
+          "F11 Document \"Information Security Policy\" covers 5.2, A.5.1: version 1.0 in the library since 2026-10-18, approved by Karim Ben Salah.",
+          "S1 Procedure for Document and Record Control"
+        ]
+      },
+      {
+        "id": "fact-acceptance",
+        "kind": "fact",
+        "q": "Up to which risk level is a risk acceptable in our methodology?",
+        "ms": 6334,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Risks with levels 0, 1, and 2 are acceptable, while risks with levels 3 and 4 are unacceptable and must be treated. [S1][S2]",
+        "citations": [
+          "S1 Risk Assessment and Risk Treatment Methodology",
+          "S2 Risk Assessment and Treatment Report"
+        ]
+      },
+      {
+        "id": "fact-incidents",
+        "kind": "fact",
+        "q": "Which security incidents did we record?",
+        "ms": 11099,
+        "recall": 0,
+        "cited": true,
+        "refused": true,
+        "invented": [],
+        "ok": false,
+        "error": null,
+        "answer": "The project documentation does not contain a record of specific security incidents that were logged or analyzed. The incident management procedure (A.5.24 to A.5.28, A.6.8) is implemented and defines how events are reported, assessed, responded to, and how lessons are learned [F15][S2][S3][S4][S5][S6], but no incident register, post-incident reports, or details of actual incidents are provided in the facts or sources.\n\nTo answer your question, you would need to consult the incident register or logs maintained under the Incident management procedure, which should contain records of observed or suspected information security events and their assessment outcomes [S5]. This information is not currently captured in the project facts.",
+        "citations": [
+          "F15 Document \"Incident management procedure\" covers A.5.5, A.5.24, A.5.25, A.5.26, A.5.27, A.5.28, A.6.8: version 1.0 in the library since 2026-10-18, approved by K",
+          "S2 Incident management procedure",
+          "S3 Incident management procedure",
+          "S4 Statement of Applicability and Risk Treatment Plan",
+          "S5 Incident management procedure",
+          "S6 Incident management procedure"
+        ]
+      },
+      {
+        "id": "fact-support-training",
+        "kind": "fact",
+        "q": "Which training is planned for the Customer Support team?",
+        "ms": 1698,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Phishing and social engineering for Customer Support is planned for the Customer Support team. [S1]",
+        "citations": [
+          "S1 Training Plan and Record"
+        ]
+      },
+      {
+        "id": "refuse-revenue",
+        "kind": "refusal",
+        "q": "What is NovaTeck's annual revenue?",
+        "ms": 2939,
+        "recall": 1,
+        "cited": false,
+        "refused": true,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "I don't have any information about NovaTeck's annual revenue in the provided data. The facts and sources cover the ISMS project progress, documents, management review minutes, risk assessment reports, and related ISO/IEC 27001:2022 implementation details, but financial figures such as revenue are not included. To answer this question, you would need to consult NovaTeck's financial statements or organizational records, which are outside the scope of the ISMS project data currently available in APTISO.",
+        "citations": []
+      },
+      {
+        "id": "refuse-firewall",
+        "kind": "refusal",
+        "q": "Which firewall vendor do we use in the Tunis office?",
+        "ms": 8452,
+        "recall": 1,
+        "cited": false,
+        "refused": true,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The firewall vendor used in the Tunis office is not specified in the provided information. The documents mention network equipment (firewalls, routers, switches) in the context of risk R-015 and controls A.8.20 and A.8.22, but no vendor name is given. To answer this question, you would need to check the network inventory, asset register, or IT department documentation, which may be part of the ISMS evidence but is not included in the current facts or sources.",
+        "citations": []
+      },
+      {
+        "id": "refuse-siem",
+        "kind": "refusal",
+        "q": "Which SIEM product did we buy for log monitoring?",
+        "ms": 3906,
+        "recall": 1,
+        "cited": true,
+        "refused": true,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The information about which SIEM product was purchased for log monitoring is not provided in the available data or facts. You can find this detail in the procurement records or the Risk Treatment Plan under control A.8.16 Monitoring activities, which references a \"Centralised log monitoring service\" but does not name the specific SIEM product. To answer this question, check the approved budget or vendor contract for the centralised log monitoring service mentioned in the Risk Treatment Plan [S6].",
+        "citations": [
+          "S6 Statement of Applicability and Risk Treatment Plan"
+        ]
+      },
+      {
+        "id": "teach-soa",
+        "kind": "teach",
+        "q": "Teach me what a Statement of Applicability is.",
+        "ms": 16005,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "A Statement of Applicability (SoA) is a key document in ISO/IEC 27001:2022 that lists all 93 controls from Annex A and states, for each one, whether it applies to your organization’s ISMS, why it applies or does not apply, and whether it is currently implemented. It is required by clause 6.1.3 d) and serves as the link between your risk assessment and the controls you choose to treat those risks. The SoA also includes a Risk Treatment Plan (clause 6.1.3 e) to schedule implementation of any controls that are applicable but not yet in place, and by approving it, risk owners formally accept the residual risks (clause 6.1.3 f).\n\nAn auditor will check that the SoA exists, is approved, and contains a clear justification for each control’s applicability status. They will verify that the implementation status matches what is actually in place and that any controls marked as “not yet implemented” have a corresponding plan in the Risk Treatment Plan. Evidence includes the SoA document itself, approval records, and links to risk treatment actions.\n\nIn your project, the SoA was prepared on 18/10/2026 [S5] and covers all 93 Annex A controls, with 93 applicable and 0 excluded [S4]. Of these, 84 are implemented and 9 are not yet implemented and are tracked in the Risk Treatment Plan [S4]. Your SoA is maintained by the CISO [S7] and is stored with version control [S7]. You can see examples of how controls are justified in your SoA entries—for instance, A.6.5 and A.6.6 are marked applicable because they treat specific risks (R-008 and R-021) [F6, F7]. This shows your SoA is actively used to link risk treatment to control selection, as required.",
+        "citations": [
+          "S5 Statement of Applicability and Risk Treatment Plan",
+          "S4 Statement of Applicability and Risk Treatment Plan",
+          "S7 Risk Assessment and Risk Treatment Methodology",
+          "F6 Risk R-008 (NovaPay production platform (AWS eu-west-3) / Access to information system with malicious intent) treated by A.6.5: level 3, NOT_ACCEPTABLE, treatme",
+          "F7 Risk R-021 (Outsourced personnel (e.g., freelancers or contractors) / Attack through outsourced equipment/service (compromising supply chain)) treated by A.6.6:"
+        ]
+      },
+      {
+        "id": "teach-9-2",
+        "kind": "teach",
+        "q": "Explain clause 9.2 and how our project covers it.",
+        "ms": 14244,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Clause 9.2 of ISO/IEC 27001:2022 requires that an organization conduct internal audits at planned intervals to verify whether the ISMS conforms to its own requirements and to the standard, and that the audit programme is effectively implemented. The purpose is to detect nonconformities, assess the effectiveness of controls, and provide input for management review and continual improvement. An auditor checks that an audit programme exists (defining scope, frequency, methods, responsibilities), that auditors are independent and competent, that audit criteria are clearly referenced (e.g., ISMS policies, procedures, the standard), that findings are documented with evidence, and that results are reported to relevant management and followed up. Evidence includes an approved audit schedule, audit checklists, audit reports with findings and auditor signatures, records of auditor training, and a corrective action register tracking follow-up.\n\nYour project covers clause 9.2 through the following:\n- The \"Internal Audit Procedure\" document (version 1.0, approved 2026-10-18) establishes the audit programme, defines responsibilities, and outlines how audits are conducted and reported [F12].\n- The \"Internal Audit Report\" (version 1.0, approved 2026-10-18) provides evidence of audit execution, including findings and conclusions [F11].\n- The procedure references ISO/IEC 27001 clause 9.2 and ISO 19011 as basis [S1], and specifies that audit records (programme, checklists, reports) are retained in APTISO for at least three years [S4].\n- The procedure applies to the entire ISMS scope and is intended for top management and ISMS personnel [S6].\n\nHowever, as the project lead, you should note that Phase 5 (ISMS Maintenance & Certification Cycle) has not started [F1], meaning the internal audit programme may not yet be fully operationalized for ongoing cycles. The next step is to ensure the audit programme is activated and audits are conducted at planned intervals as part of ISMS maintenance, especially since two internal audit nonconformities from \"Management review 16/10/2026\" remain open and are due for closure by 2026-12-31 [data name=\"person\"]. You should verify that audit planning, auditor independence, and follow-up on nonconformities are being addressed in line with the procedure.",
+        "citations": [
+          "F12 Document \"Internal Audit Procedure\" covers 9.2: version 1.0 in the library since 2026-10-18, approved by Karim Ben Salah.",
+          "F11 Document \"Internal Audit Report\" covers 9.2: version 1.0 in the library since 2026-10-18, approved by Karim Ben Salah.",
+          "S1 Internal Audit Procedure",
+          "S4 Internal Audit Procedure",
+          "S6 Internal Audit Procedure",
+          "F1 Project progress: 39 of 40 steps done (98%), target date 2027-06-30.\nPhase 1 Project Preparation: 8/8 steps done.\nPhase 2 Risk Management: 3/3 steps done.\nPhase"
+        ]
+      },
+      {
+        "id": "teach-a-8-13",
+        "kind": "teach",
+        "q": "What does control A.8.13 require?",
+        "ms": 4716,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Control A.8.13 requires that backup copies of information, software, and systems are maintained and regularly tested to ensure recoverability. This includes defining backup frequency, scope, retention periods, securing backup storage (segregated from production), and verifying that recovery time objectives (RTO) and recovery point objectives (RPO) are met. An auditor checks for a backup policy, evidence of regular backups, test restore reports, and secure backup storage configuration. Common pitfalls include performing backups without testing restores or storing backups in the same location as primary systems. [S2]",
+        "citations": [
+          "S2 A.8.13 Information backup"
+        ]
+      },
+      {
+        "id": "teach-nc-vs-obs",
+        "kind": "teach",
+        "q": "What is the difference between a nonconformity and an observation in an audit?",
+        "ms": 7485,
+        "recall": 1,
+        "cited": true,
+        "refused": true,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "A nonconformity is a failure to meet a requirement of ISO/IEC 27001:2022, a policy, or a procedure—such as missing training records or an overdue access review—while an observation is a note about something that is not a nonconformity but could be improved, like objectives only having a baseline measurement or no restore test performed yet. Observations do not indicate non-compliance but highlight opportunities for continual improvement [S4][S6][S8]. In your internal audit report, NC-003 (competence) and NC-004 (access rights) are minor nonconformities, while the two observations relate to unmeasured objectives and missing restore tests [S8]. Your Procedure for Nonconformities and Corrective Actions requires nonconformities to be recorded, analysed, and corrected to prevent recurrence, with effectiveness reviewed [S2][S3][S5][S7]. Observations, though not requiring corrective action, should still be tracked and considered in management review for improvement [S6]. As project lead, you should ensure the two nonconformities are closed and the first backup restore test is run by 2026-12-31, as decided in your last management review [data name=\"person\"].",
+        "citations": [
+          "S4 Internal Audit Report",
+          "S6 Internal Audit Report",
+          "S8 Internal Audit Report",
+          "S2 Procedure for Nonconformities and Corrective Actions",
+          "S3 Procedure for Nonconformities and Corrective Actions",
+          "S5 Clause 10.2 Nonconformity and corrective action",
+          "S7 Procedure for Nonconformities and Corrective Actions"
+        ]
+      },
+      {
+        "id": "teach-6-1-2",
+        "kind": "teach",
+        "q": "Explain clause 6.1.2 risk assessment in simple words.",
+        "ms": 10451,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "Clause 6.1.2 of ISO/IEC 27001:2022 requires the organization to define and apply a process for identifying information security risks. This means systematically finding out what could go wrong with information assets (like data leaks, system failures, or unauthorized access), how likely it is to happen, and what the impact would be if it did. The goal is to understand the level of risk so that decisions can be made about what needs to be treated.\n\nAn auditor will check whether the organization has a documented risk assessment process, whether it has been applied to identify risks across the ISMS scope, and whether the results are recorded (e.g., in a risk register or risk assessment report). Evidence includes the risk assessment methodology, completed risk assessment tables, and records showing that risk owners were involved.\n\nYour project has a documented \"Risk Assessment and Risk Treatment Methodology\" (approved since 2026-10-18) that covers clause 6.1.2 [F2], and a \"Risk Assessment and Treatment Report\" that records the results [F4]. This shows the risk assessment process is defined and applied, meeting the core requirement of 6.1.2. However, note that the annual risk review (due 2027-10-18) is still pending as part of the ISMS maintenance cycle [F1], which is needed to keep the risk assessment up to date.",
+        "citations": [
+          "F2 Document \"Risk Assessment and Risk Treatment Methodology\" covers 6.1.2, 6.1.3: version 1.0 in the library since 2026-10-18, approved by Karim Ben Salah.",
+          "F4 Document \"Risk Assessment and Treatment Report\" covers 6.1.2, 8.2: version 1.0 in the library since 2026-10-18, approved by Karim Ben Salah.",
+          "F1 Project progress: 39 of 40 steps done (98%), target date 2027-06-30.\nPhase 1 Project Preparation: 8/8 steps done.\nPhase 2 Risk Management: 3/3 steps done.\nPhase"
+        ]
+      },
+      {
+        "id": "teach-2013-trap",
+        "kind": "teach",
+        "q": "Which control of our SoA covers backup, A.12.3.1?",
+        "ms": 6264,
+        "recall": 1,
+        "cited": true,
+        "refused": false,
+        "invented": [],
+        "ok": true,
+        "error": null,
+        "answer": "The control in your Statement of Applicability that covers backup is **A.8.13 Information backup**, not A.12.3.1 (which is from the 2013 version of the standard and not used in ISO/IEC 27001:2022).  \n\nYour SoA shows that A.8.13 is applicable, with implementation status **PLANNED**, and it is intended to treat risks R-001 and R-005. The method is defined in the Backup policy, with Sarra Mansouri as the responsible owner and a deadline of 2026-12-15 [F13].  \n\nThe Backup policy document (version 1.0, approved 2026-10-18) covers A.8.13 [F20], and both the IT Security Policy [F23] and the Backup policy itself reference this control for backup arrangements [S3][S4].  \n\nNote: A.12.3.1 does not exist in ISO/IEC 27001:2022. The equivalent control for backup in the 2022 version is **A.8.13 Information backup**. If you saw A.12.3.1 in older documents, it should be updated to reflect the 2022 structure.  \n\nNext step: Ensure the backup restore test is performed (as per your management review action due 2026-12-31) to move A.8.13 from PLANNED to IMPLEMENTED.",
+        "citations": [
+          "F13 Statement of Applicability, A.8.13 Information backup: applicable; implementation status PLANNED; method: Backup copies of information, software and systems are",
+          "F20 Document \"Backup policy\" covers A.8.13: version 1.0 in the library since 2026-10-18, approved by Karim Ben Salah.",
+          "F23 Document \"IT Security Policy\" covers A.5.9, A.5.10, A.5.11, A.5.14, A.5.17, A.5.32, A.6.7, A.7.7, A.7.9, A.7.10, A.8.1, A.8.13: version 1.0 in the library since",
+          "S3 Backup policy",
+          "S4 IT Security Policy"
+        ]
+      }
+    ],
+    "summary": {
+      "cases": 24,
+      "passed": 23,
+      "fact_recall": 0.9523809523809523,
+      "citation_rate": 1,
+      "refusal_accuracy": 1,
+      "invented_facts": 0,
+      "by_kind": {
+        "fact": "14/15",
+        "refusal": "3/3",
+        "teach": "6/6"
+      },
+      "latency_p50_s": 6.264,
+      "latency_p95_s": 14.244
+    }
+  },
+  "review": {
+    "rows": [
+      {
+        "id": "backup-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 55,
+        "ok": true,
+        "expected": 3,
+        "found": 3,
+        "missed": [],
+        "findings": 6,
+        "matching_findings": 6,
+        "false_alarms_high": null,
+        "detail": [
+          "high missing A.8.13: The document does not specify that backups are encrypted, as required by the SoA which states daily encrypted RDS snapshots.",
+          "high missing A.8.13: The document does not mention that backups are copied to a second AWS region (offsite), as required.",
+          "high missing A.8.13: The document does not mention restore testing every quarter, as required.",
+          "high contradiction A.8.13: The SoA requires backups to be copied to a second AWS region, but the document states they are kept on the same server as the database, which contradicts the offsite copy requirement.",
+          "medium contradiction A.8.13: The SoA specifies daily backups, but the document uses 'regularly' without specifying frequency, contradicting the required daily frequency.",
+          "low vague A.8.13: The term 'regularly' is vague and cannot be audited without a defined frequency, owner, or criterion."
+        ]
+      },
+      {
+        "id": "access-control-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 85,
+        "ok": true,
+        "expected": 3,
+        "found": 3,
+        "missed": [],
+        "findings": 5,
+        "matching_findings": 5,
+        "false_alarms_high": null,
+        "detail": [
+          "high contradiction A.5.16: The SoA states that identity management is implemented via one personal account per person managed in Microsoft Entra ID, but the document describes a shared administrator account used by the DevOps team, which violates the principle of individual accountability.",
+          "high missing A.5.16: The document does not mention Microsoft Entra ID or the requirement for one personal account per person, which is a required element of the implemented control.",
+          "high contradiction A.5.18: The SoA requires quarterly access reviews signed by managers, whereas the document states that access rights are reviewed 'when necessary,' which contradicts the defined frequency and manager sign-off requirement.",
+          "high missing A.5.18: The document lacks any provision for removing or disabling accounts on the employee's last day of employment, which is required by the SoA.",
+          "medium vague A.5.18: The phrase 'when necessary' is ambiguous and does not provide a verifiable criterion, frequency, or owner, making it impossible for an auditor to confirm compliance."
+        ]
+      },
+      {
+        "id": "incident-procedure",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 105,
+        "ok": true,
+        "expected": 2,
+        "found": 2,
+        "missed": [],
+        "findings": 4,
+        "matching_findings": 2,
+        "false_alarms_high": null,
+        "detail": [
+          "high missing A.5.24: The procedure does not describe the incident management planning and preparation required by A.5.24, such as establishing an incident management plan, defining roles and responsibilities, allocating resources, providing training, and testing the plan.",
+          "high missing A.5.26: The procedure does not detail the response activities required by A.5.26, such as containment, eradication, recovery, preservation of evidence, communication with relevant authorities, and coordination with external parties.",
+          "medium missing A.5.27: The procedure lacks any mention of learning from incidents, including post-incident review, lessons learned, updating of risk assessments and controls, and corrective actions as required by A.5.27.",
+          "low vague A.6.8: The term 'promptly' is vague and not measurable; an auditor cannot verify what constitutes prompt reporting without a defined timeframe."
+        ]
+      },
+      {
+        "id": "clean-transfer-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 110,
+        "ok": true,
+        "expected": 0,
+        "found": 0,
+        "missed": [],
+        "findings": 0,
+        "matching_findings": 0,
+        "false_alarms_high": 0,
+        "detail": []
+      }
+    ],
+    "summary": {
+      "documents": 4,
+      "passed": 4,
+      "recall": 1,
+      "precision": 0.8666666666666667,
+      "clean_false_alarms_high": 0
+    }
+  },
+  "rescored_from": "after-guides"
+}

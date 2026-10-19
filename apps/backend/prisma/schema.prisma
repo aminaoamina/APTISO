@@ -66,6 +66,7 @@ enum NotificationType {
   TASK_CANCELLED
   REQUEST_RECEIVED
   REQUEST_DECIDED
+  TWO_FACTOR_SUGGESTED
 }
 
 enum ProjectStatus {
@@ -120,6 +121,7 @@ enum AuditAction {
   DOCUMENT_PUBLISHED
   TASK_ASSIGNED
   TASK_COMPLETED
+  DATA_EXPORTED
 }
 
 // ============================================================
@@ -143,8 +145,21 @@ model User {
   updated_at        DateTime  @updatedAt @db.Timestamp(6)
 
   // Relations
+  /// Two-step verification (TOTP). The secret is encrypted (AES-256-GCM); it is pending until the first code confirms it.
+  totp_secret     String?   @db.Text
+  /// Notification e-mails (tasks, requests...); the bell in the app is always on.
+  email_notifications Boolean   @default(true)
+  /// Monday e-mail: team and personal recap of the week, written by the AI.
+  weekly_digest       Boolean   @default(true)
+  totp_enabled_at DateTime? @db.Timestamp(6)
+  /// Last 30-second step used: a code cannot be used twice.
+  totp_last_step  Int?
+  recovery_codes  TwoFactorRecoveryCode[]
+  ai_conversations AiConversation[]
+
   organization_memberships           OrganizationMember[]
   project_memberships                ProjectMember[]
+  ai_decisions                       AiDecision[]
   organizations_created              Organization[]            @relation("OrganizationsCreated")
   projects_created                   ComplianceProject[]       @relation("ProjectsCreated")
   invitations_sent                   Invitation[]              @relation("InvitationsSent")
@@ -339,6 +354,10 @@ model ComplianceProject {
   review_setup         ManagementReviewSetup?
   management_reviews   ManagementReview[]
   maintenance          MaintenanceSetup?
+  audit_program        AuditProgram?
+  ai_decisions         AiDecision[]
+  whiteboard           Whiteboard?
+  ai_conversations     AiConversation[]
 
   @@index([organization_id])
   @@index([status])
@@ -681,6 +700,7 @@ model DocumentInstance {
 
   task_assignments TaskAssignment[]
   versions         DocumentVersion[]
+  ai_reviews       DocumentAiReview[]
 
   @@index([template_id])
   @@index([created_by])
@@ -859,6 +879,7 @@ model EvidenceFile {
 
   evidence Evidence @relation(fields: [evidence_id], references: [id], onDelete: Cascade)
   uploader User     @relation(fields: [uploaded_by], references: [id])
+  analysis EvidenceAnalysis?
 
   @@index([evidence_id])
   @@map("evidence_files")
@@ -1575,8 +1596,9 @@ model InternalAudit {
   created_at      DateTime    @default(now()) @db.Timestamp(6)
   updated_at      DateTime    @updatedAt @db.Timestamp(6)
 
-  project ComplianceProject    @relation(fields: [project_id], references: [id], onDelete: Cascade)
-  items   AuditChecklistItem[]
+  project       ComplianceProject    @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  items         AuditChecklistItem[]
+  program_audit ProgramAudit?
 
   @@index([project_id])
   @@map("internal_audits")
@@ -1696,4 +1718,211 @@ model MaintenanceSetup {
   project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
 
   @@map("maintenance_setups")
+}
+
+/// Clause 9.2.2: the internal audits planned over the certification cycle.
+model AuditProgram {
+  id         String   @id @default(uuid()) @db.Uuid
+  project_id String   @unique @db.Uuid
+  objectives String   @db.Text
+  criteria   String   @db.Text
+  methods    String   @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  audits  ProgramAudit[]
+
+  @@map("audit_programs")
+}
+
+model ProgramAudit {
+  id                String   @id @default(uuid()) @db.Uuid
+  program_id        String   @db.Uuid
+  /// First day of the planned month.
+  planned_month     DateTime @db.Date
+  auditor_id        String   @db.Uuid
+  scope             String   @db.Text
+  /// The internal audit started from this line.
+  internal_audit_id String?  @unique @db.Uuid
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+  updated_at        DateTime @updatedAt @db.Timestamp(6)
+
+  program        AuditProgram   @relation(fields: [program_id], references: [id], onDelete: Cascade)
+  internal_audit InternalAudit? @relation(fields: [internal_audit_id], references: [id], onDelete: SetNull)
+
+  @@index([program_id])
+  @@map("program_audits")
+}
+
+/// What the person did with an AI proposal.
+enum AiOutcome {
+  ACCEPTED
+  DISMISSED
+}
+
+/// The authoritative record of human decisions on AI proposals: the AI suggests, a person decides.
+/// run_id points to the AI run in the AI service's own database (aptiso_ai.ai_runs).
+model AiDecision {
+  id           String    @id @default(uuid()) @db.Uuid
+  run_id       String    @unique @db.Uuid
+  project_id   String    @db.Uuid
+  user_id      String    @db.Uuid
+  capability   String    @db.VarChar(50)
+  subject_type String?   @db.VarChar(40)
+  subject_id   String?   @db.VarChar(120)
+  outcome      AiOutcome
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user    User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([project_id])
+  @@map("ai_decisions")
+}
+
+/// Status of a long AI task, as seen by the backend.
+enum AiJobStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum AiFindingState {
+  OPEN
+  ACCEPTED
+  DISMISSED
+}
+
+/// An AI review of one version of a document (advisory: never blocks submission or approval).
+/// job_id points to the job in the AI service (aptiso_ai.ai_jobs).
+model DocumentAiReview {
+  id           String         @id @default(uuid()) @db.Uuid
+  document_id  String         @db.Uuid
+  project_id   String         @db.Uuid
+  requested_by String         @db.Uuid
+  /// SHA-256 of the reviewed content: the same content is never reviewed twice.
+  content_hash String         @db.Char(64)
+  job_id       String         @unique @db.Uuid
+  status       AiJobStatus @default(QUEUED)
+  run_id       String?        @db.Uuid
+  error        String?        @db.Text
+  created_at   DateTime       @default(now()) @db.Timestamp(6)
+  completed_at DateTime?      @db.Timestamp(6)
+
+  document DocumentInstance  @relation(fields: [document_id], references: [id], onDelete: Cascade)
+  findings AiReviewFinding[]
+
+  @@index([document_id, created_at])
+  @@map("document_ai_reviews")
+}
+
+/// One finding of an AI review, with the person's decision on it.
+model AiReviewFinding {
+  id          String         @id @default(uuid()) @db.Uuid
+  review_id   String         @db.Uuid
+  type        String         @db.VarChar(20)
+  ref         String         @db.VarChar(20)
+  quote       String?        @db.Text
+  explanation String         @db.Text
+  suggestion  String         @db.Text
+  severity    String         @db.VarChar(10)
+  state       AiFindingState @default(OPEN)
+  decided_by  String?        @db.Uuid
+  decided_at  DateTime?      @db.Timestamp(6)
+
+  review DocumentAiReview @relation(fields: [review_id], references: [id], onDelete: Cascade)
+
+  @@index([review_id])
+  @@map("ai_review_findings")
+}
+
+/// What the AI read in an evidence file: proposals only, applied by a person through the normal evidence actions.
+/// job_id points to the job in the AI service (aptiso_ai.ai_jobs); the file copy sent there is removed once the job is over.
+model EvidenceAnalysis {
+  id            String      @id @default(uuid()) @db.Uuid
+  file_id       String      @unique @db.Uuid
+  project_id    String      @db.Uuid
+  job_id        String?     @unique @db.Uuid
+  status        AiJobStatus @default(QUEUED)
+  summary       String?     @db.Text
+  document_type String?     @db.VarChar(200)
+  /// [{ref, title, reason, confidence}]
+  suggestions   Json?
+  expiry_date   DateTime?   @db.Date
+  expiry_quote  String?     @db.Text
+  pages         Int?
+  ocr_pages     Int?
+  note          String?     @db.VarChar(500)
+  error         String?     @db.Text
+  run_id        String?     @db.Uuid
+  attempts      Int         @default(0)
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  completed_at  DateTime?   @db.Timestamp(6)
+
+  file EvidenceFile @relation(fields: [file_id], references: [id], onDelete: Cascade)
+
+  @@map("evidence_analyses")
+}
+
+/// Companion chat history: a person's conversations in a project, private to them.
+model AiConversation {
+  id         String   @id @default(uuid()) @db.Uuid
+  project_id String   @db.Uuid
+  user_id    String   @db.Uuid
+  /// The first question, shortened.
+  title      String   @db.VarChar(120)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  project  ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user     User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  messages AiMessage[]
+
+  @@index([project_id, user_id, updated_at])
+  @@map("ai_conversations")
+}
+
+model AiMessage {
+  id              String   @id @default(uuid()) @db.Uuid
+  conversation_id String   @db.Uuid
+  /// user | assistant
+  role            String   @db.VarChar(10)
+  content         String   @db.Text
+  /// The sources the answer cited (assistant messages).
+  citations       Json?
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+
+  conversation AiConversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
+  @@map("ai_messages")
+}
+
+/// The project's whiteboard (tldraw): one board per project, saved as a snapshot.
+model Whiteboard {
+  id         String   @id @default(uuid()) @db.Uuid
+  project_id String   @unique @db.Uuid
+  snapshot   Json
+  updated_by String   @db.Uuid
+  updated_at DateTime @updatedAt @db.Timestamp(6)
+
+  project ComplianceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@map("whiteboards")
+}
+
+/// One-time codes to sign in when the authenticator app is not available (stored as hashes only).
+model TwoFactorRecoveryCode {
+  id         String    @id @default(uuid()) @db.Uuid
+  user_id    String    @db.Uuid
+  code_hash  String    @db.Char(64)
+  used_at    DateTime? @db.Timestamp(6)
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("two_factor_recovery_codes")
 }

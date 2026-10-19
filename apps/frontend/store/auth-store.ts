@@ -8,7 +8,9 @@ interface AuthState {
   isLoading: boolean;
 
   // Actions
-  login: (email: string, password: string) => Promise<void>;
+  /** Returns a challenge token when the account asks for a second step. */
+  login: (email: string, password: string) => Promise<string | void>;
+  loginSecondFactor: (challengeToken: string, code: string) => Promise<void>;
   register: (data: {
     first_name: string;
     last_name: string;
@@ -31,6 +33,10 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           const response = await authApi.login({ email, password });
+          if ('two_factor_required' in response) {
+            set({ isLoading: false });
+            return response.challenge_token;
+          }
 
           // Tokens are stored in HttpOnly cookies by the server
           // Only user data is stored client-side
@@ -43,6 +49,11 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: false });
           throw error;
         }
+      },
+
+      loginSecondFactor: async (challengeToken: string, code: string) => {
+        const response = await authApi.loginSecondFactor(challengeToken, code);
+        set({ user: response.user, isAuthenticated: true, isLoading: false });
       },
 
       register: async (data) => {

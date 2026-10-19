@@ -21,6 +21,7 @@ import apiClient from '@/lib/api-client';
 import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/utils';
 import { Spinner } from '@/components/ui/spinner';
+import { TwoFactorCard } from '@/components/profile/two-factor-card';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1').replace('/api/v1', '');
 
@@ -160,8 +161,40 @@ export default function ProfilePage() {
 
   // Notifications — fetched from backend (placeholder for now)
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [auditReminders, setAuditReminders] = useState(true);
-  const [weeklyDigest, setWeeklyDigest] = useState(false);
+  const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const [isSendingDigest, setIsSendingDigest] = useState(false);
+
+  useEffect(() => {
+    authApi.notificationSettings().then((s) => {
+      setEmailNotifications(s.email_notifications);
+      setWeeklyDigest(s.weekly_digest);
+    }).catch(() => undefined);
+  }, []);
+
+  /** Saves one switch; it flips back if the save fails. */
+  const saveSetting = async (key: 'email_notifications' | 'weekly_digest', value: boolean, set: (v: boolean) => void, label: string) => {
+    set(value);
+    try {
+      await authApi.updateNotificationSettings({ [key]: value });
+      toast.success(`${label} ${value ? 'on' : 'off'}`);
+    } catch (err) {
+      set(!value);
+      toast.error(getErrorMessage(err, 'Could not save the setting'));
+    }
+  };
+
+  const handleSendDigest = async () => {
+    setIsSendingDigest(true);
+    try {
+      const { sent } = await authApi.sendDigestNow();
+      if (sent) toast.success('Digest sent: check your inbox');
+      else toast.info('Nothing to report this week, so no digest was sent');
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Could not send the digest'));
+    } finally {
+      setIsSendingDigest(false);
+    }
+  };
 
   // Password strength
   const pwStrength = useMemo(
@@ -693,6 +726,11 @@ export default function ProfilePage() {
         </div>
       </SectionCard>
 
+      {/* ─── Two-step verification ─────────────────────── */}
+      <SectionCard delay="0.18s">
+        <TwoFactorCard />
+      </SectionCard>
+
       {/* ─── Notifications ────────────────────────────────── */}
       <SectionCard delay="0.2s">
         <div className="section-title">Notifications</div>
@@ -705,27 +743,10 @@ export default function ProfilePage() {
             <div>
               <div className="text-[14px] font-medium">Email notifications</div>
               <div className="text-[12.5px] text-dim mt-0.5">
-                Receive email updates about your account activity
+                Tasks assigned to you, due dates, requests and decisions. The bell in the app always shows them.
               </div>
             </div>
-            <Toggle checked={emailNotifications} onChange={setEmailNotifications} />
-          </div>
-
-          <div
-            style={{
-              height: 1,
-              background: 'rgba(var(--glass-border), var(--glass-border-alpha))',
-            }}
-          />
-
-          <div className="flex items-center justify-between py-2">
-            <div>
-              <div className="text-[14px] font-medium">Audit reminders</div>
-              <div className="text-[12.5px] text-dim mt-0.5">
-                Get notified before audit deadlines and compliance milestones
-              </div>
-            </div>
-            <Toggle checked={auditReminders} onChange={setAuditReminders} />
+            <Toggle checked={emailNotifications} onChange={(v) => saveSetting('email_notifications', v, setEmailNotifications, 'Email notifications')} />
           </div>
 
           <div
@@ -739,10 +760,19 @@ export default function ProfilePage() {
             <div>
               <div className="text-[14px] font-medium">Weekly digest</div>
               <div className="text-[12.5px] text-dim mt-0.5">
-                Receive a summary of your compliance progress each week
+                Every Monday: your team&apos;s week and yours, next steps and a tip, written with AI
               </div>
+              <button
+                type="button"
+                className="text-[12.5px] text-primary hover:underline mt-1 inline-flex items-center gap-1"
+                onClick={handleSendDigest}
+                disabled={isSendingDigest}
+              >
+                {isSendingDigest && <Loader2 className="h-3 w-3 animate-spin" />}
+                Send me this week&apos;s digest now
+              </button>
             </div>
-            <Toggle checked={weeklyDigest} onChange={setWeeklyDigest} />
+            <Toggle checked={weeklyDigest} onChange={(v) => saveSetting('weekly_digest', v, setWeeklyDigest, 'Weekly digest')} />
           </div>
         </div>
       </SectionCard>

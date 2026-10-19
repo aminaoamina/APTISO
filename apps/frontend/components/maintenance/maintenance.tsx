@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { CalendarClock, RefreshCw } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import type { RiskRegisterCompletion } from '@/lib/api';
-import type { Frequency } from '@/lib/audit-prep-api';
+import type { Frequency, Member } from '@/lib/audit-prep-api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect } from '@/components/ui/native-select';
 import { Spinner } from '@/components/ui/spinner';
-import { ReadOnlyNotice, dateValue, fmtDate, useRegister } from '@/components/audit-prep/shared';
+import { DocumentCard, ReadOnlyNotice, dateValue, docHref, fmtDate, useRegister } from '@/components/audit-prep/shared';
 import { FREQUENCIES } from '@/components/audit-prep/objectives';
+import { AuditProgram, AuditProgramState, programApi } from './audit-program';
 
 type ActivityStatus = 'NOT_STARTED' | 'ON_TIME' | 'DUE_SOON' | 'LATE';
 
@@ -45,6 +46,9 @@ interface MaintenanceState {
     open_tasks: number;
     completed_tasks: number;
   }[];
+  audit_program: AuditProgramState | null;
+  members: Member[];
+  documents: { id: string; title: string }[];
   completion: RiskRegisterCompletion;
   permissions: { canEdit: boolean; canDecide: boolean; userId: string };
   created?: number;
@@ -206,6 +210,13 @@ export default function Maintenance({ orgId, projectId, onCompletionChange }: {
           </div>
         </CardContent>
       </Card>
+
+      <AuditProgram orgId={orgId} projectId={projectId} program={state.audit_program} members={state.members} canEdit={permissions.canEdit} run={run} />
+      {state.audit_program && (
+        <DocumentCard title="Internal Audit Program" documents={state.documents} canEdit={permissions.canEdit}
+          description="The program as a controlled document: submit it to the library and have it approved by top management (clause 9.2.2)."
+          onGenerate={() => run(() => programApi.document<MaintenanceState>(projectId), 'Program document generated')} href={docHref(orgId, projectId)} />
+      )}
     </div>
   );
 }

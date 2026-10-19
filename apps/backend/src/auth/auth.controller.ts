@@ -13,7 +13,9 @@ import {
   UploadedFile,
   UseInterceptors,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response, Request } from 'express';
 import {
@@ -36,7 +38,11 @@ import {
   UpdateProfileDto,
   ChangePasswordDto,
   DeleteAccountDto,
+  TwoFactorCodeDto,
+  TwoFactorDisableDto,
+  TwoFactorLoginDto,
 } from './dto/auth.dto';
+import { TwoFactorService } from './two-factor.service';
 import { Public } from '../common/decorators/public.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
@@ -47,7 +53,10 @@ const AUTH_COOKIE_PATH = '/api/v1/auth';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly twoFactor: TwoFactorService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -64,6 +73,8 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Login user with secure cookies' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
@@ -79,10 +90,68 @@ export class AuthController {
       userAgent,
     );
 
+    // Two-step verification on: no cookies yet, the code is asked next.
+    if ('two_factor_required' in result) return result;
+
     // Set HttpOnly cookies with the SAME token pair stored in the Session
     this.setAuthCookies(res, result.tokens.access_token, result.tokens.refresh_token);
 
     return { user: result.user };
+  }
+
+  @Public()
+  @Post('login/2fa')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Second login step: code from the authenticator app or a recovery code' })
+  async loginSecondFactor(
+    @Body() dto: TwoFactorLoginDto,
+    @Res({ passthrough: true }) res: Response,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const result = await this.authService.loginWithSecondFactor(dto.challenge_token, dto.code, ipAddress, userAgent);
+    this.setAuthCookies(res, result.tokens.access_token, result.tokens.refresh_token);
+    return { user: result.user };
+  }
+
+  // ─── Two-step verification (optional, from the profile page) ───
+
+  @Get('2fa')
+  @ApiBearerAuth()
+  twoFactorStatus(@CurrentUser('id') userId: string) {
+    return this.twoFactor.status(userId);
+  }
+
+  @Post('2fa/setup')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'New secret: QR code and key for the authenticator app' })
+  twoFactorSetup(@CurrentUser('id') userId: string) {
+    return this.twoFactor.setup(userId);
+  }
+
+  @Post('2fa/enable')
+  @ApiBearerAuth()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  twoFactorEnable(@CurrentUser('id') userId: string, @Body() dto: TwoFactorCodeDto) {
+    return this.twoFactor.enable(userId, dto.code);
+  }
+
+  @Post('2fa/disable')
+  @ApiBearerAuth()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  twoFactorDisable(@CurrentUser('id') userId: string, @Body() dto: TwoFactorDisableDto) {
+    return this.twoFactor.disable(userId, dto.password, dto.code);
+  }
+
+  @Post('2fa/recovery-codes')
+  @ApiBearerAuth()
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  twoFactorRecoveryCodes(@CurrentUser('id') userId: string, @Body() dto: TwoFactorCodeDto) {
+    return this.twoFactor.regenerateRecoveryCodes(userId, dto.code);
   }
 
   @Public()

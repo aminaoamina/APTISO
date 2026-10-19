@@ -65,6 +65,12 @@ export class InternalAuditService {
 
   /** "Schedule new audit": the checklist covers clauses 4-10 and every applicable SoA control. */
   async create(stepId: string, dto: CreateAuditDto, userId: string) {
+    await this.schedule(stepId, dto, userId);
+    return this.get(stepId, userId);
+  }
+
+  /** Creates the audit, its checklist and the auditor's task; also used by the audit programme (Phase 5). */
+  async schedule(stepId: string, dto: CreateAuditDto, userId: string) {
     const access = await this.access.forStep(stepId, userId, P4.INTERNAL_AUDIT);
     this.access.assertEdit(access);
     await this.access.assertMembers(access.projectId, [dto.lead_auditor_id]);
@@ -113,7 +119,7 @@ export class InternalAuditService {
     });
     await this.prisma.internalAudit.update({ where: { id: audit.id }, data: { task_id: task.id } });
     await this.log(userId, audit.id, { action: 'schedule_audit', checklist_items: items.length });
-    return this.get(stepId, userId);
+    return audit;
   }
 
   async update(stepId: string, auditId: string, dto: UpdateAuditDto, userId: string) {
@@ -142,7 +148,7 @@ export class InternalAuditService {
   }
 
   async start(stepId: string, auditId: string, userId: string) {
-    const { audit } = await this.loadAudit(stepId, auditId, userId);
+    const { audit } = await this.loadAudit(stepId, auditId, userId, true);
     if (audit.status !== 'PLANNED') throw new BadRequestException('The audit has already started');
     await this.prisma.internalAudit.update({ where: { id: auditId }, data: { status: 'IN_PROGRESS' } });
     await this.log(userId, auditId, { action: 'start_audit' });
@@ -151,7 +157,7 @@ export class InternalAuditService {
 
   /** Records a checklist result; a nonconformity finding is added to the Nonconformity register. */
   async updateItem(stepId: string, auditId: string, itemId: string, dto: UpdateAuditItemDto, userId: string) {
-    const { access, audit } = await this.loadAudit(stepId, auditId, userId);
+    const { access, audit } = await this.loadAudit(stepId, auditId, userId, true);
     if (audit.status === 'PLANNED') throw new BadRequestException('Start the audit first');
     if (audit.status === 'APPROVED') throw new BadRequestException('An approved audit cannot be changed');
     const item = audit.items.find(i => i.id === itemId);
@@ -189,7 +195,7 @@ export class InternalAuditService {
 
   /** Lead auditor reports the audit (clause 9.2.2: results reported to management). */
   async report(stepId: string, auditId: string, dto: AuditReportDto, userId: string) {
-    const { audit } = await this.loadAudit(stepId, auditId, userId);
+    const { audit } = await this.loadAudit(stepId, auditId, userId, true);
     if (audit.status !== 'IN_PROGRESS') throw new BadRequestException('Only an audit in progress can be reported');
     const open = audit.items.filter(i => !i.result).length;
     if (open > 0) throw new BadRequestException(`${open} checklist item(s) have no result yet`);
@@ -302,11 +308,15 @@ export class InternalAuditService {
     ]);
   }
 
-  private async loadAudit(stepId: string, auditId: string, userId: string) {
+  /**
+   * `byAuditor`: performing the audit (results, report) is also open to its lead
+   * auditor when they have read-only access, e.g. an external consultant (clause 9.2.2).
+   */
+  private async loadAudit(stepId: string, auditId: string, userId: string, byAuditor = false) {
     const access = await this.access.forStep(stepId, userId, P4.INTERNAL_AUDIT);
-    this.access.assertEdit(access);
     const audit = await this.prisma.internalAudit.findFirst({ where: { id: auditId, project_id: access.projectId }, include: AUDIT_INCLUDE });
     if (!audit) throw new NotFoundException('Audit not found');
+    if (!(byAuditor && audit.lead_auditor_id === userId)) this.access.assertEdit(access);
     return { access, audit };
   }
 

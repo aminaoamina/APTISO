@@ -8,7 +8,7 @@ import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Bold,
   Italic,
@@ -29,8 +29,11 @@ import {
   Columns3,
   Trash2,
   Download,
+  Sparkles,
 } from 'lucide-react';
 import type { ProseMirrorNode } from '@/lib/api';
+import { toast } from 'sonner';
+import { ImprovePanel, type ImproveTarget } from '@/components/ai/improve-panel';
 
 const extensions = [
   StarterKit.configure({
@@ -51,6 +54,8 @@ const extensions = [
 ];
 
 interface ToolbarProps {
+  /** Opens ✨ Improve on the current selection (only when the AI assistant is offered). */
+  onImprove?: () => void;
   editor: Editor;
   onExportDocx?: () => void;
 }
@@ -87,7 +92,7 @@ function ToolbarButton({
 
 const Divider = () => <div className="w-px h-5 bg-border mx-1" />;
 
-function Toolbar({ editor, onExportDocx }: ToolbarProps) {
+function Toolbar({ editor, onExportDocx, onImprove }: ToolbarProps) {
   const setLink = () => {
     const previous = editor.getAttributes('link').href as string | undefined;
     if (previous) {
@@ -225,6 +230,21 @@ function Toolbar({ editor, onExportDocx }: ToolbarProps) {
         <Redo2 className="h-4 w-4" />
       </ToolbarButton>
 
+      {onImprove && (
+        <>
+          <Divider />
+          <button
+            type="button"
+            title="Improve the selected text with the AI assistant"
+            onClick={onImprove}
+            className="h-8 px-2 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-[var(--brand-orange)] hover:bg-muted transition-colors"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Improve</span>
+          </button>
+        </>
+      )}
+
       {onExportDocx && (
         <>
           <Divider />
@@ -249,6 +269,8 @@ export interface DocumentEditorProps {
   onChange?: (content: ProseMirrorNode) => void;
   onReady?: (editor: Editor) => void;
   onExportDocx?: () => void;
+  /** Offers ✨ Improve on selected text. */
+  assistant?: { projectId: string; documentId: string };
 }
 
 export default function DocumentEditor({
@@ -256,8 +278,10 @@ export default function DocumentEditor({
   editable = true,
   onChange,
   onExportDocx,
+  assistant,
 }: DocumentEditorProps) {
   const readyRef = useRef(false);
+  const [improve, setImprove] = useState<ImproveTarget | null>(null);
 
   const editor = useEditor({
     extensions,
@@ -292,7 +316,20 @@ export default function DocumentEditor({
 
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
-      {editable && <Toolbar editor={editor} onExportDocx={onExportDocx} />}
+      {editable && (
+        <Toolbar
+          editor={editor}
+          onExportDocx={onExportDocx}
+          onImprove={assistant ? () => {
+            const { from, to, empty } = editor.state.selection;
+            if (empty) return void toast.info('Select the text to improve first');
+            setImprove({ from, to, text: editor.state.doc.textBetween(from, to, '\n\n').slice(0, 4000) });
+          } : undefined}
+        />
+      )}
+      {editable && assistant && improve && (
+        <ImprovePanel editor={editor} target={improve} projectId={assistant.projectId} documentId={assistant.documentId} onClose={() => setImprove(null)} />
+      )}
       <div className="document-editor-area px-6 py-5 max-h-[70vh] overflow-y-auto">
         <EditorContent editor={editor} />
       </div>

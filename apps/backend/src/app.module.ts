@@ -10,6 +10,7 @@ import { OrganizationsModule } from './organizations/organizations.module';
 import { ProjectsModule } from './projects/projects.module';
 import { RequestsModule } from './requests/requests.module';
 import { EvidenceModule } from './evidence/evidence.module';
+import { ExportsModule } from './exports/exports.module';
 import { FrameworksModule } from './frameworks/frameworks.module';
 import { DocumentsModule } from './documents/documents.module';
 import { RequirementsModule } from './requirements/requirements.module';
@@ -18,6 +19,10 @@ import { SoaModule } from './soa/soa.module';
 import { PoliciesModule } from './policies/policies.module';
 import { AuditPrepModule } from './audit-prep/audit-prep.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
+import { AiModule } from './ai/ai.module';
+import { WhiteboardModule } from './whiteboard/whiteboard.module';
+import { TeamModule } from './team/team.module';
+import { DigestModule } from './digest/digest.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CsrfGuard } from './common/guards/csrf.guard';
 import { CsrfController } from './common/controllers/csrf.controller';
@@ -42,6 +47,7 @@ import { AuditLogService } from './common/services/audit-log.service';
     ProjectsModule,
     RequestsModule,
     EvidenceModule,
+    ExportsModule,
     FrameworksModule,
     DocumentsModule,
     RequirementsModule,
@@ -50,6 +56,10 @@ import { AuditLogService } from './common/services/audit-log.service';
     PoliciesModule,
     AuditPrepModule,
     MaintenanceModule,
+    AiModule,
+    WhiteboardModule,
+    TeamModule,
+    DigestModule,
     // Nightly jobs (ISMS maintenance reminders).
     ScheduleModule.forRoot(),
   ],

@@ -8,11 +8,12 @@ import { ProjectRoleGuard } from '../common/guards/project-role.guard';
 import { OrganizationRoleGuard } from '../common/guards/organization-role.guard';
 import { TasksModule } from '../tasks/tasks.module';
 import { ConnectorsModule } from '../connectors/connectors.module';
+import { AiModule } from '../ai/ai.module';
 
 @Module({
-  imports: [TasksModule, ConnectorsModule],
+  imports: [TasksModule, ConnectorsModule, AiModule],
   controllers: [DocumentsController],
   providers: [DocumentsService, DocxExportService, LibraryService, AuditLogService, ProjectRoleGuard, OrganizationRoleGuard],
-  exports: [DocumentsService],
+  exports: [DocumentsService, DocxExportService],
 })
 export class DocumentsModule {}
