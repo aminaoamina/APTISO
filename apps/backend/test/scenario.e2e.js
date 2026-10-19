@@ -77,6 +77,11 @@ const expectError = async (fn, pattern, msg) => {
   const sent = [];
   app.get(MailService).transporter.sendMail = async m => { sent.push(m); return { messageId: 'test' }; };
   const settle = () => new Promise(r => setTimeout(r, 300));
+  // A register step is finished once its generated document is in the library (clause 7.5.3).
+  const toLibrary = async stepId => {
+    const d = await prisma.documentInstance.findUnique({ where: { step_id: stepId }, include: { _count: { select: { versions: true } } } });
+    if (d && !d._count.versions) await app.get(LibraryService).submit(d.id, lead.id, 'First issue');
+  };
   ok(true, 'application context started (Annex A catalogue check passed)');
 
   // ── Seed users, organization, project ──
@@ -129,6 +134,7 @@ const expectError = async (fn, pattern, msg) => {
 
   // SoA cannot be finished while the risk register step is open
   await expectError(() => projects.completeStep(project.id, soaStep, lead.id, 'PROJECT_LEAD'), /not complete/, 'SoA completion blocked before anything is done');
+  await toLibrary(rrStep);
   await projects.completeStep(project.id, rrStep, lead.id, 'PROJECT_LEAD');
   const review = await prisma.taskAssignment.findFirst({ where: { step_id: rrStep, type: 'RISK_REVIEW' } });
   ok(!!review && review.deadline > new Date(Date.now() + 360 * 864e5), 'finishing the register scheduled the yearly risk review');
@@ -190,6 +196,8 @@ const expectError = async (fn, pattern, msg) => {
   ok(headings.includes('5. Risk Treatment Plan') && headings.includes('6. Approval by the risk owners'), 'document has SoA, plan and approval sections');
   c = await soa.getCompletion(soaStep);
   ok(c.ready, `SoA checklist complete (${c.items.filter(i => i.done).length}/${c.items.length})`);
+  await expectError(() => projects.completeStep(project.id, soaStep, lead.id, 'PROJECT_LEAD'), /to the library/, 'a register step cannot be finished while its document is not in the library');
+  await toLibrary(soaStep);
   await projects.completeStep(project.id, soaStep, lead.id, 'PROJECT_LEAD');
   const done = await prisma.projectStep.findUnique({ where: { id: soaStep } });
   ok(done.status === 'COMPLETED', 'SoA step completed');
@@ -293,6 +301,7 @@ const expectError = async (fn, pattern, msg) => {
   await expectError(() => trainings.update(trStep, tr.trainings[0].id, { status: 'PERFORMED' }, lead.id), /evidence/, 'a training cannot be performed without date and evidence');
   await trainings.createDocument(trStep, lead.id);
   ok((await trainings.getCompletion(trStep)).ready, 'training plan checklist complete');
+  await toLibrary(trStep);
   await projects.completeStep(project.id, trStep, lead.id, 'PROJECT_LEAD');
 
   // Step 4: security objectives — Conformio's 8 defaults
@@ -306,6 +315,7 @@ const expectError = async (fn, pattern, msg) => {
   ob = await objectives.addMeasurement(objStep, ob.objectives[0].id, { measured_on: '2026-12-31', result: '9 incidents (-10%)', achieved: true }, lead.id);
   await objectives.createDocument(objStep, lead.id);
   ok((await objectives.getCompletion(objStep)).ready, 'objectives checklist complete');
+  await toLibrary(objStep);
   await projects.completeStep(project.id, objStep, lead.id, 'PROJECT_LEAD');
 
   // Registers: nonconformity lifecycle (clause 10.2) and incidents
@@ -358,6 +368,7 @@ const expectError = async (fn, pattern, msg) => {
   await audits.approve(auStep, audit.id, lead.id);
   const auDoc = await audits.createDocument(auStep, lead.id);
   ok((await audits.getCompletion(auStep)).ready, 'internal audit checklist complete');
+  await toLibrary(auStep);
   await projects.completeStep(project.id, auStep, lead.id, 'PROJECT_LEAD');
 
   // Step 5: management review setup
@@ -393,6 +404,7 @@ const expectError = async (fn, pattern, msg) => {
   ok(mr.reviews[0].decisions[0].status === 'DONE', 'completing the task completes the decision');
   await reviews.createDocument(mrStep, lead.id);
   ok((await reviews.getReviewCompletion(mrStep)).ready, 'management mreview checklist complete');
+  await toLibrary(mrStep);
   await projects.completeStep(project.id, mrStep, lead.id, 'PROJECT_LEAD');
   const phase4 = await prisma.projectPhase.findFirst({ where: { project_id: project.id, order: 4 } });
   const p4Done = await prisma.projectStep.count({ where: { phase_id: phase4.id, status: 'COMPLETED' } });

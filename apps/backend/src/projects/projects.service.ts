@@ -620,6 +620,10 @@ export class ProjectsService {
       const missing = checklist.items.filter(i => !i.done).map(i => `${i.label} (${i.detail})`);
       throw new BadRequestException(`${step.title} is not complete yet: ${missing.join('; ')}`);
     }
+    // Registers generate their document (SoA, reports, plans, minutes): like a document step, it must be in the library (clause 7.5.3).
+    if (!skip && step.document_instance && !step.document_instance._count.versions) {
+      throw new BadRequestException('Submit the document of this step to the library before finishing the step');
+    }
 
     const updated = await this.prisma.projectStep.update({
       where: { id: stepId },
