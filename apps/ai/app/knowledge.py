@@ -68,16 +68,30 @@ async def index_document(session: AsyncSession, ai: AiClient, project_id: uuid.U
     return len(pieces)
 
 
+def _guide_text(ref: str, head: str) -> str:
+    """The searchable text of a clause or control: its audit question or title, then the APTISO guide if there is one."""
+    g = catalog.GUIDES.get(ref)
+    if not g:
+        return head
+    def bullets(items: list[str]) -> str:
+        return "\n".join(f"- {i}" for i in items)
+
+    return (f"{head}\nAPTISO implementation guide (general guidance, not the text of the standard).\n"
+            f"Objective: {g['objective']}\nWhat an auditor checks:\n{bullets(g['auditor_expects'])}\n"
+            f"Examples of evidence:\n{bullets(g['evidence'])}\nCommon pitfalls:\n{bullets(g['pitfalls'])}")
+
+
 async def ensure_catalog(session: AsyncSession, ai: AiClient) -> None:
-    """The ISO catalog (clauses, their audit questions, Annex A titles) as shared knowledge, embedded once per catalog version."""
-    if await session.scalar(select(func.count()).select_from(KnowledgeChunk).where(KnowledgeChunk.source_type == "iso", KnowledgeChunk.version == catalog.VERSION)):
+    """The ISO catalog (titles, audit questions) and APTISO's implementation guides as shared knowledge,
+    embedded once per knowledge version (catalog + guides)."""
+    if await session.scalar(select(func.count()).select_from(KnowledgeChunk).where(KnowledgeChunk.source_type == "iso", KnowledgeChunk.version == catalog.KNOWLEDGE_VERSION)):
         return
-    entries = [(r, f"Clause {r} {t}", catalog.CLAUSE_QUESTIONS.get(r, t)) for r, t in catalog.CLAUSES.items()]
-    entries += [(r, f"{r} {t}", f"Annex A control {r}: {t}") for r, t in catalog.CONTROLS.items()]
+    entries = [(r, f"Clause {r} {t}", _guide_text(r, catalog.CLAUSE_QUESTIONS.get(r, t))) for r, t in catalog.CLAUSES.items()]
+    entries += [(r, f"{r} {t}", _guide_text(r, f"Annex A control {r}: {t}")) for r, t in catalog.CONTROLS.items()]
     vectors = await ai.embed([f"{title}\n{body}" for _, title, body in entries], "passage", RunMeta(subject_type="iso_catalog"))
     await session.execute(delete(KnowledgeChunk).where(KnowledgeChunk.source_type == "iso"))
     for (ref, title, body), vec in zip(entries, vectors):
-        session.add(KnowledgeChunk(project_id=None, source_type="iso", source_id=ref, version=catalog.VERSION, title=title, section=None,
+        session.add(KnowledgeChunk(project_id=None, source_type="iso", source_id=ref, version=catalog.KNOWLEDGE_VERSION, title=title, section=None,
                                    refs=[ref], visibility="all", content=body, content_hash=_hash(title, body), embedding=vec))
     await session.commit()
 

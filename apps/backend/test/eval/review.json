@@ -1,0 +1,55 @@
+{
+  "about": "Document review cases with planted defects, sent to the AI service job queue. A finding matches an expected defect when its ref is one of refs (if given), its type is the same (if given) and one keyword appears in its quote, explanation or suggestion. The clean document must not get any high-severity finding.",
+  "cases": [
+    {
+      "id": "backup-policy",
+      "title": "Backup policy",
+      "text": "1. Purpose\nThis policy defines how NovaTeck backs up the NovaPay platform.\n\n2. Backup\nBackups of the production database are performed regularly by the DevOps team. Backups are kept on the same server as the database for 30 days. The DevOps Lead is responsible for the backups.\n\n3. Responsibilities\nThe DevOps Lead owns this policy and reviews it every 12 months.",
+      "covers": [{ "ref": "A.8.13", "soa": { "applicable": true, "justification": "Risk R-001 (ransomware on the production database).", "method": "Daily encrypted RDS snapshots copied to a second AWS region; restore test every quarter.", "status": "PLANNED" } }],
+      "expect": [
+        { "id": "vague-regularly", "type": "vague", "refs": ["A.8.13"], "any": ["regularly"] },
+        { "id": "missing-restore-test", "type": "missing", "refs": ["A.8.13"], "any": ["restor", "test"] },
+        { "id": "contradiction-same-server", "refs": ["A.8.13"], "any": ["same server", "second region", "second aws region", "another region", "daily"] }
+      ]
+    },
+    {
+      "id": "access-control-policy",
+      "title": "Access control policy",
+      "text": "1. Purpose\nThis policy sets the rules for access to NovaTeck information systems.\n\n2. Granting access\nAccess to NovaPay and AWS is granted by the IT Manager on request of the employee's manager, based on the employee's role.\n\n3. Administrator accounts\nTo make support easier, the DevOps team shares one administrator account on AWS and on GitLab.\n\n4. Review\nAccess rights are reviewed when necessary.",
+      "covers": [
+        { "ref": "A.5.15", "soa": { "applicable": true, "method": "Role-based access to AWS and the NovaPay back-office.", "status": "IMPLEMENTED" } },
+        { "ref": "A.5.16", "soa": { "applicable": true, "method": "One personal account per person, managed in Microsoft Entra ID.", "status": "IMPLEMENTED" } },
+        { "ref": "A.5.18", "soa": { "applicable": true, "method": "Quarterly access review signed by managers; accounts removed on the last day of employment.", "status": "PLANNED" } }
+      ],
+      "expect": [
+        { "id": "shared-admin", "refs": ["A.5.16", "A.5.15", "A.5.18", "A.8.2", "A.8.5"], "any": ["shar"] },
+        { "id": "vague-review", "refs": ["A.5.18"], "any": ["when necessary", "quarter", "frequency"] },
+        { "id": "missing-removal", "refs": ["A.5.18", "A.5.16"], "any": ["remov", "leav", "terminat", "revok", "last day", "deprovision"] }
+      ]
+    },
+    {
+      "id": "incident-procedure",
+      "title": "Incident management procedure",
+      "text": "1. Purpose\nThis procedure describes how NovaTeck handles information security incidents.\n\n2. Reporting\nEmployees report security events promptly to the IT service desk or in the #security Teams channel.\n\n3. Assessment and response\nThe Information Security Manager assesses each event within 4 working hours, decides whether it is an incident, and coordinates the response with IT and DevOps. Clients are informed within 48 hours when their data is affected.\n\n4. Records\nEach incident is recorded in the incident register with its timeline and actions.",
+      "covers": [
+        { "ref": "A.5.24", "soa": { "applicable": true, "status": "IMPLEMENTED" } },
+        { "ref": "A.5.25", "soa": { "applicable": true, "status": "IMPLEMENTED" } },
+        { "ref": "A.5.26", "soa": { "applicable": true, "status": "IMPLEMENTED" } },
+        { "ref": "A.5.27", "soa": { "applicable": true, "status": "IMPLEMENTED" } },
+        { "ref": "A.6.8", "soa": { "applicable": true, "status": "IMPLEMENTED" } }
+      ],
+      "expect": [
+        { "id": "vague-promptly", "refs": ["A.6.8", "A.5.24", "A.5.25"], "any": ["promptly"] },
+        { "id": "missing-lessons", "refs": ["A.5.27"], "any": ["lesson", "learn"] }
+      ]
+    },
+    {
+      "id": "clean-transfer-policy",
+      "title": "Information transfer policy",
+      "text": "1. Purpose\nThis policy protects information that NovaTeck exchanges with clients and suppliers.\n\n2. Rules\nClient payroll files are exchanged only through the NovaPay client portal over TLS 1.2 or higher. E-mail attachments containing personal data are forbidden; Microsoft 365 data loss prevention blocks them automatically. Transfers to suppliers require a signed agreement that includes the security clauses of Annex 2 of the client contract.\n\n3. Responsibilities\nThe Legal Counsel & DPO approves every new type of transfer. The IT Manager checks the data loss prevention reports every month and reports exceptions to the CISO.\n\n4. Review\nThe CISO reviews this policy every 12 months.",
+      "covers": [{ "ref": "A.5.14", "soa": { "applicable": true, "method": "Client payroll files only through the NovaPay client portal (TLS); personal data blocked in e-mail by DLP rules in Microsoft 365; signed agreements with suppliers.", "status": "IMPLEMENTED" } }],
+      "expect": [],
+      "clean": true
+    }
+  ]
+}

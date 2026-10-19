@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from app.config import get_settings
 from app.db import create_engine, session_factory
 from app.llm.client import AiClient, AiRejected, AiUnavailable
-from app.routers import assist, health, jobs, knowledge
+from app.routers import assist, health, jobs, knowledge, metrics
 
 BODY_METHODS = {"POST", "PUT", "PATCH"}
 
@@ -67,3 +67,4 @@ app.include_router(health.router)
 app.include_router(assist.router)
 app.include_router(jobs.router)
 app.include_router(knowledge.router)
+app.include_router(metrics.router)

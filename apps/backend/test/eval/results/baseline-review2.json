@@ -1,0 +1,93 @@
+{
+  "label": "baseline-review2",
+  "prompts": [
+    "wizard-suggest@4",
+    "improve-paragraph@1",
+    "companion-chat@2",
+    "document-review@1",
+    "evidence-analysis@1",
+    "next-actions@2",
+    "weekly-digest@1"
+  ],
+  "review": {
+    "rows": [
+      {
+        "id": "backup-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 45,
+        "ok": true,
+        "expected": 3,
+        "found": 3,
+        "missed": [],
+        "findings": 3,
+        "matching_findings": 3,
+        "false_alarms_high": null,
+        "detail": [
+          "high missing A.8.13: The document does not describe the implementation method specified in the Statement of Applicability: daily encrypted RDS snapshots copied to a second AWS region, nor does it mention quarterly restore tests.",
+          "high contradiction A.8.13: This contradicts the SoA which requires backups to be encrypted RDS snapshots copied to a second AWS region, not retained on the same server.",
+          "medium vague A.8.13: The term 'regularly' is not defined; an auditor cannot verify the frequency without a specific interval, owner, or criterion."
+        ]
+      },
+      {
+        "id": "access-control-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 50,
+        "ok": true,
+        "expected": 3,
+        "found": 3,
+        "missed": [],
+        "findings": 3,
+        "matching_findings": 3,
+        "false_alarms_high": null,
+        "detail": [
+          "high contradiction A.5.16: SoA requires one personal account per person managed in Microsoft Entra ID; sharing administrator account contradicts this requirement.",
+          "high missing A.5.18: SoA requires quarterly access review signed by managers and removal of accounts on the last day of employment; the document does not address these requirements.",
+          "medium vague A.5.18: The phrase \"when necessary\" is not measurable; an auditor cannot verify frequency or trigger, making the requirement unverifiable."
+        ]
+      },
+      {
+        "id": "incident-procedure",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 105,
+        "ok": true,
+        "expected": 2,
+        "found": 2,
+        "missed": [],
+        "findings": 5,
+        "matching_findings": 2,
+        "false_alarms_high": null,
+        "detail": [
+          "high missing A.5.24: The document does not describe the incident management planning and preparation activities required by A.5.24, such as establishing and maintaining an incident management plan, defining roles and responsibilities, communication plans, training, testing, and resource allocation.",
+          "medium missing A.5.25: While the document states that the Information Security Manager assesses events within 4 working hours and decides whether they are incidents, it does not cover classification, prioritization, or assignment of owners as required for assessment and decision on information security events.",
+          "high missing A.5.26: The document lacks details on the response to information security incidents, such as containment, eradication, recovery actions, escalation procedures, and communication with stakeholders beyond informing clients within 48 hours.",
+          "high missing A.5.27: The document does not mention learning from information security incidents, including post-incident reviews, lessons learned, updating of risk assessments and controls, and documentation of improvements.",
+          "low vague A.6.8: The term 'promptly' is not defined, making it impossible for an auditor to verify whether reporting meets the required timeliness."
+        ]
+      },
+      {
+        "id": "clean-transfer-policy",
+        "status": "succeeded",
+        "error": null,
+        "seconds": 110,
+        "ok": true,
+        "expected": 0,
+        "found": 0,
+        "missed": [],
+        "findings": 0,
+        "matching_findings": 0,
+        "false_alarms_high": 0,
+        "detail": []
+      }
+    ],
+    "summary": {
+      "documents": 4,
+      "passed": 4,
+      "recall": 1,
+      "precision": 0.7272727272727273,
+      "clean_false_alarms_high": 0
+    }
+  }
+}

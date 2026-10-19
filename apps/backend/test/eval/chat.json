@@ -1,0 +1,31 @@
+{
+  "about": "Assistant cases on the NovaTeck demo project (run test/novateck.seed.js and test/novateck.finish.js first). expect = groups that must all appear (any alternative of a group, case-insensitive); min = at least n of the listed items; cite = at least one valid source; refusal = the fact is not in the data, the answer must say so; forbid = invented facts (hallucination).",
+  "cases": [
+    { "id": "fact-backup-owner", "kind": "fact", "q": "Which of our risks are about backups and who owns them?", "expect": [["Sarra"]], "cite": true },
+    { "id": "fact-gitlab-owner", "kind": "fact", "q": "Who owns the risk about weak passwords on GitLab?", "expect": [["Sarra"]], "cite": true },
+    { "id": "fact-backup-deadline", "kind": "fact", "q": "What is the deadline to implement control A.8.13 (backups)?", "expect": [["2026-12-15", "15 December 2026", "December 15, 2026", "15/12/2026"]], "cite": true },
+    { "id": "fact-planned-controls", "kind": "fact", "q": "Which controls of our Statement of Applicability are planned but not implemented yet?", "min": { "n": 3, "any": ["A.8.13", "A.5.17", "A.8.16", "A.6.3", "A.8.8", "A.5.19", "A.5.12", "A.5.18", "A.6.7"] }, "cite": true },
+    { "id": "fact-pentest", "kind": "fact", "q": "Who is responsible for the external penetration test and what budget was approved?", "expect": [["Nour", "Leila"], ["8,000", "8 000", "8000"]], "cite": true },
+    { "id": "fact-audit-conclusion", "kind": "fact", "q": "What did our internal audit conclude?", "expect": [["minor"], ["observation"]], "cite": true },
+    { "id": "fact-open-nc", "kind": "fact", "q": "Which nonconformities are still open and who is responsible for them?", "expect": [["GitLab", "contractor"], ["Youssef"]], "cite": true },
+    { "id": "fact-review-date", "kind": "fact", "q": "When was the first management review held and who chaired it?", "expect": [["2026-10-16", "16/10/2026", "16 October", "October 16"], ["Karim"]], "cite": true },
+    { "id": "fact-scope-exclusions", "kind": "fact", "q": "What is excluded from our ISMS scope?", "expect": [["Paris"], ["website", "web site"]], "cite": true },
+    { "id": "fact-legal-gaps", "kind": "fact", "q": "Which legal or contractual requirements are we not compliant with yet?", "min": { "n": 2, "any": ["2004-63", "INPDP", "penetration", "pentest", "tender", "bank", "certification"] }, "cite": true },
+    { "id": "fact-progress", "kind": "fact", "q": "hi what is not done in the steps", "expect": [["Maintenance", "Phase 5"]], "cite": true },
+    { "id": "fact-policy-approver", "kind": "fact", "q": "Who approves our security policies?", "expect": [["Karim", "CEO"]], "cite": true },
+    { "id": "fact-acceptance", "kind": "fact", "q": "Up to which risk level is a risk acceptable in our methodology?", "expect": [["2"]], "cite": true },
+    { "id": "fact-incidents", "kind": "fact", "q": "Which security incidents did we record?", "expect": [["phishing"], ["certificate", "TLS", "47 minutes", "unavailable", "outage"]], "cite": true },
+    { "id": "fact-support-training", "kind": "fact", "q": "Which training is planned for the Customer Support team?", "expect": [["phishing", "social engineering"]], "cite": true },
+
+    { "id": "refuse-revenue", "kind": "refusal", "q": "What is NovaTeck's annual revenue?", "refusal": true, "forbid": ["\\d[\\d.,]*\\s?(k|m|million|millions)?\\s?(eur|€|tnd|dinars|\\$|usd)", "(eur|€|tnd|\\$|usd)\\s?\\d"] },
+    { "id": "refuse-firewall", "kind": "refusal", "q": "Which firewall vendor do we use in the Tunis office?", "refusal": true, "forbid": ["fortinet", "fortigate", "cisco", "palo alto", "pfsense", "sophos", "check point", "juniper", "mikrotik"] },
+    { "id": "refuse-siem", "kind": "refusal", "q": "Which SIEM product did we buy for log monitoring?", "refusal": true, "forbid": ["splunk", "qradar", "sentinel", "elastic", "wazuh", "datadog", "sumo logic", "graylog"] },
+
+    { "id": "teach-soa", "kind": "teach", "q": "Teach me what a Statement of Applicability is.", "expect": [["93", "Annex A"], ["justif"]], "cite": true },
+    { "id": "teach-9-2", "kind": "teach", "q": "Explain clause 9.2 and how our project covers it.", "expect": [["internal audit"], ["programme", "program", "plan"]], "cite": true },
+    { "id": "teach-a-8-13", "kind": "teach", "q": "What does control A.8.13 require?", "expect": [["backup"], ["test", "restor"]], "forbid": ["A\\.12\\.3"] },
+    { "id": "teach-nc-vs-obs", "kind": "teach", "q": "What is the difference between a nonconformity and an observation in an audit?", "expect": [["nonconformit", "non-conformit"], ["observation"]] },
+    { "id": "teach-6-1-2", "kind": "teach", "q": "Explain clause 6.1.2 risk assessment in simple words.", "expect": [["likel"], ["owner", "consequence", "impact"]] },
+    { "id": "teach-2013-trap", "kind": "teach", "q": "Which control of our SoA covers backup, A.12.3.1?", "expect": [["A.8.13"]], "forbid": ["A\\.12\\.3\\.1 (is|covers) (applicable|implemented)"] }
+  ]
+}

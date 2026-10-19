@@ -43,7 +43,7 @@ export class ChatService {
     const query = previous ? `${previous.slice(0, 500)}\n${dto.message}` : dto.message;
     const found = await this.ai.request<Search>('POST', '/v1/search', { project_id: projectId, user_id: userId, visibilities, query }, { timeoutMs: 30_000 });
     // Where the project stands comes first: questions such as "what is left?" need it whatever they mention.
-    const facts = [await this.progressFact(projectId), ...(await this.knowledge.facts(projectId, found.refs, ctx.access.canEdit))];
+    const facts = [await this.progressFact(projectId), await this.registersFact(projectId), ...(await this.knowledge.facts(projectId, found.refs, ctx.access.canEdit))];
 
     const user = [
       `Name: ${ctx.user.name}`,
@@ -86,6 +86,32 @@ export class ChatService {
       lines.push(`Phase ${phase.order} ${phase.name}: ${done}/${steps.length} steps done${open.length ? `. Not finished: ${open.slice(0, 12).map(st => `"${st.title}" (${PROGRESS_LABEL[st.progress]})`).join(', ')}` : ''}.`);
     }
     if (!project.maintenance?.certification_date) lines.push('Certification date: not recorded yet (Phase 5, Maintenance).');
+    return { text: lines.join('\n').slice(0, 2000), source_type: 'project', source_id: projectId };
+  }
+
+  /** The improvement registers are records, not documents: without this fact the assistant cannot see them. */
+  private async registersFact(projectId: string) {
+    const [incidents, nonconformities] = await Promise.all([
+      this.prisma.incident.findMany({ where: { project_id: projectId }, orderBy: { occurred_at: 'desc' }, take: 8, select: { title: true, occurred_at: true, severity: true, status: true } }),
+      this.prisma.nonconformity.findMany({
+        where: { project_id: projectId, status: { notIn: ['RESOLVED', 'NOT_RELEVANT'] } }, orderBy: { number: 'asc' }, take: 8,
+        select: { number: true, title: true, status: true, responsible_id: true },
+      }),
+    ]);
+    const people = await this.prisma.user.findMany({
+      where: { id: { in: nonconformities.map(n => n.responsible_id).filter((x): x is string => !!x) } },
+      select: { id: true, first_name: true, last_name: true },
+    });
+    const name = (id: string | null) => { const p = people.find(u => u.id === id); return p ? `, ${p.first_name} ${p.last_name}` : ''; };
+    const day = (d: Date) => d.toISOString().slice(0, 10);
+    const lines = [
+      incidents.length
+        ? `Incident register: ${incidents.map(i => `"${i.title}" (${day(i.occurred_at)}, ${i.severity.toLowerCase()}, ${i.status.toLowerCase()})`).join('; ')}.`
+        : 'Incident register: no incident recorded.',
+      nonconformities.length
+        ? `Open nonconformities: ${nonconformities.map(n => `NC-${String(n.number).padStart(3, '0')} "${n.title}" (${n.status.toLowerCase().replace(/_/g, ' ')}${name(n.responsible_id)})`).join('; ')}.`
+        : 'Open nonconformities: none.',
+    ];
     return { text: lines.join('\n').slice(0, 2000), source_type: 'project', source_id: projectId };
   }
 }

@@ -1,0 +1,2677 @@
+{
+ "version": "guides@1",
+ "catalog": "iso27001-2022@3",
+ "model": "nvidia/nemotron-3-super-120b-a12b",
+ "note": "APTISO's own implementation guides, written in its own words; not the text of ISO/IEC 27001.",
+ "items": {
+  "4.1": {
+   "objective": "The organization must identify internal and external issues that can affect its ability to achieve the intended outcomes of its ISMS, ensuring the system is relevant and responsive to its operating environment.",
+   "auditor_expects": [
+    "Documented analysis of internal issues (e.g., culture, structure, resources)",
+    "Documented analysis of external issues (e.g., legal, technological, market, social)",
+    "Evidence that issues were considered when defining ISMS scope",
+    "Review shows issues are updated periodically or when significant changes occur",
+    "Linkage between identified issues and ISMS design or risk treatment decisions"
+   ],
+   "evidence": [
+    "Minutes from management review showing context analysis",
+    "SWOT or PESTLE analysis document",
+    "ISMS scope statement referencing context factors",
+    "Updated risk register showing context-driven risks",
+    "Email or memo assigning responsibility for context monitoring"
+   ],
+   "pitfalls": [
+    "Using generic, boilerplate text without organization-specific details",
+    "Failing to update context analysis after organizational changes",
+    "Confusing interested parties (Clause 4.2) with internal/external issues",
+    "No evidence that context analysis influenced ISMS scope or objectives"
+   ]
+  },
+  "4.2": {
+   "objective": "Identify internal and external parties who can affect or be affected by the ISMS and understand their requirements to ensure the ISMS aligns with legal, regulatory, contractual, and organizational obligations.",
+   "auditor_expects": [
+    "List of identified interested parties (e.g., customers, regulators, suppliers, employees).",
+    "Documented needs and expectations of each party (e.g., SLAs, legal requirements, internal policies).",
+    "Evidence that these inputs were considered when defining ISMS scope and objectives.",
+    "Process for reviewing and updating interested party requirements periodically.",
+    "Link between interested party inputs and risk assessment or control selection."
+   ],
+   "evidence": [
+    "Stakeholder register or interested party matrix.",
+    "Minutes from management review showing discussion of stakeholder requirements.",
+    "Copies of contracts, regulations, or policies referenced to derive requirements.",
+    "ISMS scope document referencing interested party inputs.",
+    "Updated risk treatment plan showing consideration of stakeholder-driven requirements."
+   ],
+   "pitfalls": [
+    "Only listing obvious parties like customers and ignoring regulators or employees.",
+    "Documenting needs but not linking them to ISMS scope, objectives, or controls.",
+    "Failing to update the list when laws, contracts, or organizational structure change.",
+    "Treating interested party analysis as a one-time activity with no review mechanism."
+   ]
+  },
+  "4.3": {
+   "objective": "Define the boundaries and applicability of the ISMS by identifying what parts of the organization, processes, locations, and technologies are included or excluded, ensuring alignment with business objectives and risk context.",
+   "auditor_expects": [
+    "The scope statement clearly defines included and excluded organizational units, locations, and information assets.",
+    "Exclusions are justified and do not leave significant risks unaddressed.",
+    "The scope is consistent with the organization’s context and risk assessment outcomes.",
+    "The scope is documented, communicated, and reviewed periodically.",
+    "The ISMS applies to all relevant interfaces and dependencies within the defined scope."
+   ],
+   "evidence": [
+    "A formal ISMS scope document signed by management.",
+    "Organizational charts or network diagrams showing covered vs. excluded units.",
+    "Risk assessment report referencing the scope boundaries.",
+    "Minutes of management review showing scope validation or update.",
+    "Email or intranet announcement communicating the scope to relevant staff."
+   ],
+   "pitfalls": [
+    "Excluding critical systems or locations without valid risk-based justification.",
+    "Defining scope too broadly, making implementation unmanageable or unauditable.",
+    "Failing to update scope after organizational changes (e.g., mergers, new offices).",
+    "Not linking scope exclusions to the risk treatment plan or residual risk acceptance."
+   ]
+  },
+  "4.4": {
+   "objective": "Establish, implement, maintain, and continually improve an ISMS aligned with organizational context and risk management principles, ensuring information security is integrated into business processes. This addresses the risk of ad hoc or inconsistent security practices that fail to protect information assets systematically.",
+   "auditor_expects": [
+    "ISMS scope is defined and documented",
+    "ISMS processes are implemented and operational",
+    "Evidence of continual improvement activities exists",
+    "ISMS is aligned with organizational objectives and risk treatment",
+    "Roles and responsibilities for ISMS are assigned and communicated"
+   ],
+   "evidence": [
+    "ISMS scope document",
+    "ISMS policy and procedures",
+    "Minutes of management review meetings",
+    "Internal audit reports and corrective action records",
+    "Risk assessment and treatment plan"
+   ],
+   "pitfalls": [
+    "ISMS exists only as a document with no practical implementation",
+    "Scope is too vague or excludes critical business units",
+    "No evidence of continual improvement or management review",
+    "ISMS not integrated into daily operations or business planning"
+   ]
+  },
+  "5.1": {
+   "objective": "Ensure top management demonstrates leadership and commitment to the ISMS by establishing policy, assigning roles, and providing resources, addressing the risk of inadequate governance and lack of accountability.",
+   "auditor_expects": [
+    "Top management has approved the information security policy.",
+    "Roles and responsibilities for information security are defined and communicated.",
+    "Adequate resources (budget, personnel, tools) are allocated to the ISMS.",
+    "Management reviews ISMS performance and directs improvement actions.",
+    "Evidence of leadership involvement in security awareness or incident response."
+   ],
+   "evidence": [
+    "Signed and dated information security policy document.",
+    "Organizational chart showing security roles (e.g., CISO, asset owners).",
+    "Budget allocation records for security tools, training, or audits.",
+    "Minutes of management review meetings with decisions and action items.",
+    "Training records showing executive participation in security awareness sessions."
+   ],
+   "pitfalls": [
+    "Policy exists but not signed or endorsed by top management.",
+    "Security responsibilities are assigned but not communicated or understood.",
+    "Resources are allocated inconsistently or only after incidents occur.",
+    "Management reviews are held but lack follow-up on corrective actions."
+   ]
+  },
+  "5.2": {
+   "objective": "The information security policy establishes management's commitment to information security and provides a framework for setting objectives. It ensures alignment with business goals and addresses risks related to inconsistent or undefined security direction.",
+   "auditor_expects": [
+    "Policy is approved by top management",
+    "Policy is communicated to relevant personnel",
+    "Policy includes commitment to continual improvement",
+    "Policy is reviewed at planned intervals",
+    "Policy is available as documented information"
+   ],
+   "evidence": [
+    "Signed policy document with approval date",
+    "Distribution records (e.g., email, intranet post)",
+    "Meeting minutes showing management review",
+    "Version control log indicating last review",
+    "Policy accessible via employee portal or shared drive"
+   ],
+   "pitfalls": [
+    "Policy exists but not signed or approved by management",
+    "Policy too generic and not relevant to organizational context",
+    "No evidence of communication to staff or contractors",
+    "Policy not reviewed periodically or after significant changes"
+   ]
+  },
+  "5.3": {
+   "objective": "Ensure clear assignment of information security roles, responsibilities, and authorities to support effective ISMS operation and accountability.",
+   "auditor_expects": [
+    "Defined roles with assigned security responsibilities",
+    "Authorities documented for security decision-making",
+    "Responsibilities communicated to relevant personnel",
+    "Top management confirms role assignments"
+   ],
+   "evidence": [
+    "Job descriptions with security duties",
+    "RACI matrix for ISMS processes",
+    "Appointment letters for roles like DPO or CISO",
+    "Meeting minutes showing role assignments"
+   ],
+   "pitfalls": [
+    "Vague or generic role descriptions",
+    "No linkage between roles and actual duties",
+    "Authorities not aligned with responsibilities",
+    "Roles assigned but not communicated to staff"
+   ]
+  },
+  "6.1.1": {
+   "objective": "Identify and plan actions to address risks and opportunities affecting the ISMS to ensure its effectiveness and continual improvement.",
+   "auditor_expects": [
+    "Risk and opportunity identification process defined",
+    "Actions planned to address significant risks and opportunities",
+    "Actions integrated into ISMS planning",
+    "Effectiveness of actions monitored"
+   ],
+   "evidence": [
+    "Risk and opportunity register",
+    "Action plans with owners and timelines",
+    "Management review minutes showing action tracking",
+    "Updated risk treatment plan"
+   ],
+   "pitfalls": [
+    "Only addressing risks, ignoring opportunities",
+    "Actions not linked to identified risks/opportunities",
+    "No clear ownership or deadlines for actions",
+    "Actions not reviewed for effectiveness"
+   ]
+  },
+  "6.1.2": {
+   "objective": "Establish and maintain a process for identifying, analyzing, and evaluating information security risks to support informed risk treatment decisions.",
+   "auditor_expects": [
+    "Risk assessment methodology defined and applied",
+    "Risk identification covers assets, threats, vulnerabilities",
+    "Risk analysis includes likelihood and impact",
+    "Risk evaluation compares results against risk criteria"
+   ],
+   "evidence": [
+    "Risk assessment procedure document",
+    "Asset inventory with threat/vulnerability mapping",
+    "Risk register with likelihood/impact scores",
+    "Risk evaluation matrix or report"
+   ],
+   "pitfalls": [
+    "Using outdated or incomplete asset inventory",
+    "Applying generic risk scales without context",
+    "Failing to involve asset owners in assessment",
+    "Not retaining records of risk assessment outcomes"
+   ]
+  },
+  "6.1.3": {
+   "objective": "Select and implement appropriate risk treatment options to modify information security risk to an acceptable level.",
+   "auditor_expects": [
+    "Risk treatment options selected based on assessment",
+    "Treatment plan includes controls, responsibilities, and resources",
+    "Residual risk evaluated and accepted by risk owners",
+    "Treatment plan implemented and tracked"
+   ],
+   "evidence": [
+    "Statement of Applicability (SoA)",
+    "Risk treatment plan with timelines and owners",
+    "Risk acceptance forms signed by owners",
+    "Implementation records for selected controls"
+   ],
+   "pitfalls": [
+    "Treating risks without evaluating residual risk",
+    "Selecting controls without justification in SoA",
+    "No evidence of risk owner acceptance",
+    "Implementing controls not aligned with risk treatment"
+   ]
+  },
+  "6.2": {
+   "objective": "Establish measurable information security objectives at relevant functions and levels to support the ISMS and drive improvement.",
+   "auditor_expects": [
+    "Objectives are consistent with the information security policy",
+    "Objectives are measurable and monitored",
+    "Objectives are communicated and updated as needed",
+    "Plans to achieve objectives include resources and timelines"
+   ],
+   "evidence": [
+    "Documented security objectives (e.g., reduce phishing clicks by 50%)",
+    "Objective tracking spreadsheet or dashboard",
+    "Management review minutes showing objective status",
+    "Resource allocation records for objective achievement"
+   ],
+   "pitfalls": [
+    "Objectives are vague or not measurable (e.g., 'improve security')",
+    "No link between objectives and policy or risk treatment",
+    "Objectives not reviewed or updated periodically",
+    "No evidence of progress toward objectives"
+   ]
+  },
+  "6.3": {
+   "objective": "Ensure that changes to the ISMS are planned and carried out in a controlled manner to maintain the integrity and effectiveness of the ISMS.",
+   "auditor_expects": [
+    "Changes to ISMS are identified and assessed",
+    "Impact of changes on ISMS is evaluated",
+    "Responsibilities and authorities for change are defined",
+    "Changes are implemented and reviewed for effectiveness"
+   ],
+   "evidence": [
+    "Change request and approval records",
+    "Impact assessment documents for ISMS changes",
+    "Updated policies or procedures after change",
+    "Post-implementation review reports"
+   ],
+   "pitfalls": [
+    "Making changes without assessing ISMS impact",
+    "No formal process for approving ISMS changes",
+    "Failing to update documentation after changes",
+    "Not verifying that changes achieve intended outcome"
+   ]
+  },
+  "7.1": {
+   "objective": "Ensure the organization provides necessary resources to establish, implement, maintain, and continually improve the ISMS, addressing the risk of insufficient support leading to ineffective security controls.",
+   "auditor_expects": [
+    "Verify budget allocation for ISMS activities is documented and approved.",
+    "Check that personnel with ISMS responsibilities have sufficient time and authority.",
+    "Confirm infrastructure (tools, systems, facilities) needed for ISMS operation is available.",
+    "Ensure external providers are engaged when internal capabilities are lacking."
+   ],
+   "evidence": [
+    "ISMS budget approval records or financial plans.",
+    "Job descriptions showing ISMS responsibilities and time allocation.",
+    "Inventory of ISMS-related tools (e.g., SIEM, GRC software) and access logs.",
+    "Contracts or SLAs with external security service providers."
+   ],
+   "pitfalls": [
+    "Allocating resources only during initial implementation, not for ongoing maintenance.",
+    "Assigning ISMS duties to staff without reducing their other workload.",
+    "Overlooking need for training resources when new technologies are adopted.",
+    "Failing to update resource allocation after organizational changes."
+   ]
+  },
+  "7.2": {
+   "objective": "Ensure persons doing work under the organization's control are competent on the basis of appropriate education, training, or experience, addressing the risk of human error due to lack of skills or knowledge in ISMS-related tasks.",
+   "auditor_expects": [
+    "Verify competence requirements are defined for ISMS-relevant roles.",
+    "Check evidence of training completion for personnel in those roles.",
+    "Confirm records of qualifications, certifications, or experience are maintained.",
+    "Ensure effectiveness of training is evaluated where applicable."
+   ],
+   "evidence": [
+    "Competence matrix linking roles to required skills (e.g., risk assessment, incident response).",
+    "Training attendance records with dates, topics, and participant signatures.",
+    "Copies of certifications (e.g., ISO 27001 Lead Implementer, CISSP) for relevant staff.",
+    "Post-training assessment results or supervisor evaluations of skill application."
+   ],
+   "pitfalls": [
+    "Assuming competence based solely on job title without verification.",
+    "Providing generic training not tailored to specific ISMS responsibilities.",
+    "Failing to update competence requirements when new risks or controls emerge.",
+    "Not retaining evidence of training for contractors or temporary staff."
+   ]
+  },
+  "7.3": {
+   "objective": "Ensure persons doing work under the organization's control are aware of the ISMS policy, their contribution to its effectiveness, and the implications of not conforming, addressing the risk of unintentional non-compliance due to lack of understanding.",
+   "auditor_expects": [
+    "Verify awareness activities are planned and delivered regularly.",
+    "Check that content covers ISMS policy, relevant objectives, and individual responsibilities.",
+    "Confirm awareness is communicated in a manner understandable to the audience.",
+    "Ensure records of awareness sessions are maintained."
+   ],
+   "evidence": [
+    "Awareness training schedule or calendar showing frequency (e.g., quarterly, annual).",
+    "Presentation materials or e-learning modules used in awareness sessions.",
+    "Attendance logs or completion reports from awareness training platforms.",
+    "Phishing simulation results or quiz scores demonstrating awareness retention."
+   ],
+   "pitfalls": [
+    "Delivering awareness only at onboarding without refresher sessions.",
+    "Using overly technical language that non-IT staff cannot understand.",
+    "Failing to link awareness content to actual job functions or daily tasks.",
+    "Not tracking or following up on individuals who miss awareness sessions."
+   ]
+  },
+  "7.4": {
+   "objective": "Ensure internal and external communications relevant to the ISMS are properly planned, managed, and responded to, addressing the risk of misinformation, delayed response, or stakeholder distrust due to poor communication practices.",
+   "auditor_expects": [
+    "Verify communication needs are identified (what, when, to whom, how).",
+    "Check that internal ISMS information is shared appropriately (e.g., policy updates, incident summaries).",
+    "Confirm external communications (e.g., to regulators, customers) are controlled and approved.",
+    "Ensure there is a process for receiving and responding to communications from interested parties."
+   ],
+   "evidence": [
+    "Communication plan document specifying ISMS-related topics, frequency, and channels.",
+    "Examples of internal newsletters, intranet posts, or team meeting minutes sharing ISMS updates.",
+    "Approval records for external statements or breach notifications sent to customers or authorities.",
+    "Logs of inquiries received via security email or portal and their resolution timestamps."
+   ],
+   "pitfalls": [
+    "Communicating ISMS changes only after implementation, causing confusion.",
+    "Sharing sensitive security details externally without legal or management review.",
+    "Using inconsistent channels (e.g., email vs. chat) leading to missed messages.",
+    "Not defining who is authorized to speak on behalf of the ISMS externally."
+   ]
+  },
+  "7.5": {
+   "objective": "Ensure documented information required by the ISMS is properly created, updated, controlled, and retained, addressing the risk of inconsistency, loss, or unauthorized changes undermining the reliability of the ISMS.",
+   "auditor_expects": [
+    "Verify documented information is identified (what needs to be documented).",
+    "Check that documents are reviewed, approved, and version-controlled before use.",
+    "Confirm access to documented information is restricted to authorized personnel.",
+    "Ensure retention and disposal schedules are followed for ISMS records."
+   ],
+   "evidence": [
+    "Document control register listing ISMS policies, procedures, and records with owners and review dates.",
+    "Screenshot of document management system showing version history and approval workflow.",
+    "Access control logs showing who viewed or modified a sensitive ISMS document (e.g., risk treatment plan).",
+    "Records of document disposal (e.g., shredding certificates) or archive retrieval logs."
+   ],
+   "pitfalls": [
+    "Allowing uncontrolled edits to documents via email or shared drives without version tracking.",
+    "Failing to retire obsolete documents, leading to confusion over current versions.",
+    "Storing ISMS records in personal devices or unapproved cloud services.",
+    "Not training staff on how to access or update documented information in the system."
+   ]
+  },
+  "8.1": {
+   "objective": "Ensure the organization plans, implements, and controls processes needed to meet ISMS requirements and to implement actions determined by risk assessment and risk treatment, addressing the risk of uncontrolled or inconsistent operations leading to security gaps.",
+   "auditor_expects": [
+    "Verify operational processes are planned based on ISMS objectives and risk treatment outputs.",
+    "Check that controls are implemented as specified in the risk treatment plan.",
+    "Confirm changes to operations are reviewed for impact on the ISMS before implementation.",
+    "Ensure outsourced processes are controlled and aligned with ISMS requirements."
+   ],
+   "evidence": [
+    "Risk treatment plan showing selected controls and implementation responsibilities.",
+    "Project plans or work instructions for deploying controls (e.g., MFA rollout, patching schedule).",
+    "Change management records showing ISMS impact assessment prior to system modifications.",
+    "Contracts or oversight records for outsourced IT or cloud services with security clauses."
+   ],
+   "pitfalls": [
+    "Implementing controls without linking them to specific risk treatment decisions.",
+    "Allowing operational changes (e.g., new software) without assessing ISMS impact.",
+    "Failing to monitor whether implemented controls are working as intended.",
+    "Overlooking security requirements in contracts with third-party processors."
+   ]
+  },
+  "8.2": {
+   "objective": "Ensure risks to information security are systematically identified, analyzed, and evaluated to support informed decisions on risk treatment. Addresses the risk of unmanaged threats exploiting vulnerabilities due to lack of structured risk assessment.",
+   "auditor_expects": [
+    "Risk assessment methodology is defined and documented.",
+    "Assets, threats, vulnerabilities, and impacts are identified consistently.",
+    "Risk levels are determined using agreed criteria (likelihood, impact).",
+    "Results are recorded and approved by relevant stakeholders.",
+    "Assessment is performed at planned intervals or when significant changes occur."
+   ],
+   "evidence": [
+    "Risk assessment procedure document.",
+    "Completed risk assessment worksheets or registers.",
+    "Minutes of risk assessment workshops showing participant input.",
+    "Risk rating matrix or scoring tool used.",
+    "Approval signatures or electronic sign-off on risk assessment outputs."
+   ],
+   "pitfalls": [
+    "Using generic risk lists without asset-specific context.",
+    "Failing to update assessments after system or process changes.",
+    "Overlooking third-party or supply chain risks.",
+    "Relying solely on qualitative scales without defining criteria."
+   ]
+  },
+  "8.3": {
+   "objective": "Ensure selected risk treatment options are implemented, monitored, and verified to reduce risks to an acceptable level. Addresses the risk of untreated vulnerabilities leading to security incidents due to inadequate or unimplemented controls.",
+   "auditor_expects": [
+    "Risk treatment plan outlines specific actions, owners, deadlines, and resources.",
+    "Selected controls align with risk assessment results and risk appetite.",
+    "Residual risk is evaluated and accepted formally where applicable.",
+    "Implementation status of treatments is tracked and reviewed.",
+    "Justification is documented for risk acceptance or avoidance decisions."
+   ],
+   "evidence": [
+    "Approved risk treatment plan with action items.",
+    "Project plans or task lists showing control implementation progress.",
+    "Evidence of control deployment (e.g., firewall rules, access rights changes).",
+    "Residual risk acceptance forms signed by management.",
+    "Meeting records reviewing treatment progress and effectiveness."
+   ],
+   "pitfalls": [
+    "Treating risk acceptance as a default without analysis.",
+    "Implementing controls not linked to identified risks.",
+    "Failing to verify that controls actually reduce risk as intended.",
+    "No clear ownership or deadlines for treatment actions."
+   ]
+  },
+  "9.1": {
+   "objective": "Ensure the ISMS performance is monitored and measured using defined metrics to evaluate effectiveness and support decision-making. Addresses the risk of operating without visibility into whether security controls are working as intended.",
+   "auditor_expects": [
+    "Performance indicators (KPIs) are defined for ISMS processes and controls.",
+    "Data is collected regularly and reliably from relevant sources.",
+    "Results are analyzed to identify trends, anomalies, or areas for improvement.",
+    "Findings are reported to appropriate levels of management.",
+    "Monitoring activities are reviewed for continued suitability and effectiveness."
+   ],
+   "evidence": [
+    "List of defined ISMS KPIs (e.g., patch latency, incident response time).",
+    "Monthly security dashboard or performance report.",
+    "Logs from SIEM, access control systems, or backup verification.",
+    "Analysis notes showing trend evaluation (e.g., rising phishing click rates).",
+    "Minutes of meetings where performance results were discussed."
+   ],
+   "pitfalls": [
+    "Measuring activity (e.g., number of trainings) instead of outcome (e.g., reduced click rates).",
+    "Collecting data but not analyzing or acting on it.",
+    "Using inconsistent or unverifiable data sources.",
+    "Failing to review whether KPIs remain relevant over time."
+   ]
+  },
+  "9.2": {
+   "objective": "Ensure internal audits are conducted at planned intervals to verify ISMS conformity with organizational requirements and the ISO/IEC 27001 standard. Addresses the risk of undetected nonconformities or control gaps persisting due to lack of independent review.",
+   "auditor_expects": [
+    "Audit program defines scope, frequency, methods, and responsibilities.",
+    "Auditors are independent from the activity being audited.",
+    "Audit criteria are clearly referenced (ISMS policies, procedures, standard).",
+    "Audit findings are documented with evidence and categorized (nonconformity, observation).",
+    "Audit conclusions are communicated to relevant managers and reviewed for follow-up."
+   ],
+   "evidence": [
+    "Approved internal audit schedule or program.",
+    "Audit checklists or protocols used during audits.",
+    "Audit reports with findings, evidence references, and auditor signatures.",
+    "Records of auditor training or competency (e.g., internal auditor course).",
+    "Follow-up actions tracked in a corrective action register."
+   ],
+   "pitfalls": [
+    "Auditing only documentation without verifying actual practice.",
+    "Lack of auditor independence (e.g., auditing own work).",
+    "Checklists too vague or not tied to specific controls.",
+    "Failing to open nonconformities for repeat or systemic issues."
+   ]
+  },
+  "9.3": {
+   "objective": "Ensure top management reviews the ISMS at planned intervals to assess its continuing suitability, adequacy, and effectiveness. Addresses the risk of strategic misalignment or resource neglect due to lack of leadership oversight.",
+   "auditor_expects": [
+    "Review inputs include audit results, performance metrics, incidents, and changes.",
+    "Outputs include decisions on policy changes, resource needs, and improvement actions.",
+    "Review is conducted by top management (e.g., CEO, board, executive committee).",
+    "Records show discussion of risks, opportunities, and ISMS performance.",
+    "Review frequency is defined and adhered to (e.g., annually or semi-annually)."
+   ],
+   "evidence": [
+    "Management review meeting agenda and minutes.",
+    "Presentation slides showing KPI trends, audit summaries, incident reports.",
+    "List of review inputs (e.g., risk assessment updates, regulatory changes).",
+    "Decisions recorded (e.g., budget approval, policy revision, control updates).",
+    "Attendance list showing participation of top management roles."
+   ],
+   "pitfalls": [
+    "Review limited to IT staff without executive involvement.",
+    "Focusing only on compliance checkboxes, not performance or risk trends.",
+    "No clear decisions or actions resulting from the review.",
+    "Using outdated or incomplete data (e.g., old incident reports)."
+   ]
+  },
+  "10.1": {
+   "objective": "Ensure nonconformities and corrective actions are addressed promptly and that lessons learned drive ongoing ISMS improvement. Addresses the risk of recurring issues and stagnation due to failure to learn from incidents or audit findings.",
+   "auditor_expects": [
+    "Nonconformities are identified from audits, monitoring, or incidents.",
+    "Root cause analysis is performed to determine underlying reasons.",
+    "Corrective actions are defined, assigned, and tracked to completion.",
+    "Effectiveness of actions is verified after implementation.",
+    "Opportunities for improvement are identified and acted upon proactively."
+   ],
+   "evidence": [
+    "Nonconformity report with description and evidence.",
+    "Root cause analysis (e.g., 5 Whys, fishbone diagram) documented.",
+    "Corrective action plan with owner, deadline, and status updates.",
+    "Verification record (e.g., retest, re-audit) showing issue resolved.",
+    "Improvement log suggesting control enhancements or process updates."
+   ],
+   "pitfalls": [
+    "Corrective actions only address symptoms, not root causes.",
+    "Actions assigned but not tracked or verified for completion.",
+    "Repeating the same nonconformity across multiple audit cycles.",
+    "Improvement suggestions collected but never reviewed or implemented."
+   ]
+  },
+  "10.2": {
+   "objective": "Ensure nonconformities are identified, documented, and addressed through corrective actions to prevent recurrence and improve the ISMS.",
+   "auditor_expects": [
+    "Nonconformities are recorded with clear descriptions and evidence.",
+    "Root cause analysis is performed for significant nonconformities.",
+    "Corrective actions are implemented, tracked, and verified for effectiveness.",
+    "Actions are reviewed in management reviews and linked to continual improvement."
+   ],
+   "evidence": [
+    "Nonconformity register or log with dates, descriptions, and owners.",
+    "Root cause analysis reports (e.g., 5 Whys, fishbone diagrams).",
+    "Corrective action plans with deadlines, responsibilities, and status updates.",
+    "Verification records showing action effectiveness (e.g., retest, audit follow-up).",
+    "Management review minutes referencing nonconformity trends and actions."
+   ],
+   "pitfalls": [
+    "Recording nonconformities without investigating root causes.",
+    "Implementing actions without verifying they prevent recurrence.",
+    "Failing to update the nonconformity log after action completion.",
+    "Treating corrective actions as one-off fixes rather than improvement opportunities."
+   ]
+  },
+  "A.5.1": {
+   "objective": "Establish, approve, and communicate information security policies to provide direction and support for the ISMS in line with business objectives and legal requirements.",
+   "auditor_expects": [
+    "Information security policy is defined and approved by management.",
+    "Policy is communicated to relevant personnel and made accessible.",
+    "Policy is reviewed at planned intervals or when significant changes occur.",
+    "Policy aligns with legal, regulatory, and contractual requirements."
+   ],
+   "evidence": [
+    "Approved information security policy document with version control and approval signature.",
+    "Distribution records (e.g., email, intranet post, training attendance).",
+    "Policy review schedule or minutes showing periodic review.",
+    "Cross-reference to legal/regulatory requirements in policy or supporting documentation."
+   ],
+   "pitfalls": [
+    "Having a policy that is not signed off by top management.",
+    "Policy stored only on a shared drive with no evidence of communication.",
+    "Policy reviewed only during certification audit, not regularly.",
+    "Policy too generic to be actionable or relevant to actual risks."
+   ]
+  },
+  "A.5.2": {
+   "objective": "Define and assign information security roles and responsibilities to ensure accountability and effective execution of security tasks across the organization.",
+   "auditor_expects": [
+    "Roles and responsibilities for information security are clearly defined.",
+    "Responsibilities are assigned to individuals or teams based on competence.",
+    "Responsibilities include ISMS operation, risk treatment, and incident response.",
+    "Roles are communicated and understood by those assigned."
+   ],
+   "evidence": [
+    "Organizational chart or responsibility matrix (e.g., RACI) showing security roles.",
+    "Job descriptions or role profiles mentioning information security duties.",
+    "Appointment letters or emails assigning specific security responsibilities.",
+    "Training records showing awareness of assigned security responsibilities.",
+    "Meeting minutes where roles were discussed and confirmed."
+   ],
+   "pitfalls": [
+    "Assigning security responsibilities without ensuring competence or resources.",
+    "Roles defined but not documented in job descriptions or formal agreements.",
+    "Overlapping or unclear responsibilities leading to gaps or duplication.",
+    "Assuming IT staff alone are responsible for all information security."
+   ]
+  },
+  "A.5.3": {
+   "objective": "Prevent conflicts of interest and reduce risk of fraud or misuse by separating duties where one person could otherwise control all aspects of a critical process.",
+   "auditor_expects": [
+    "Key information processing activities are identified for segregation of duties.",
+    "Responsibilities are divided so no single individual can initiate, approve, and review the same action.",
+    "Segregation is applied to access rights, transaction processing, and system changes.",
+    "Compensating controls are in place where segregation is not feasible."
+   ],
+   "evidence": [
+    "Access control matrices showing separation of duties (e.g., initiator vs. approver).",
+    "System configuration screenshots showing role-based access restrictions.",
+    "Process flowcharts highlighting segregated steps (e.g., purchase order creation vs. payment).",
+    "Risk assessment documenting where segregation is not possible and compensating controls (e.g., monitoring, audit trails).",
+    "Audit logs showing review of privileged actions by independent personnel."
+   ],
+   "pitfalls": [
+    "Assuming segregation is only about IT access, ignoring manual processes.",
+    "Not documenting why segregation cannot be achieved in small teams.",
+    "Relying on trust instead of formal controls where segregation is lacking.",
+    "Failing to review segregation controls when roles or systems change."
+   ]
+  },
+  "A.5.4": {
+   "objective": "Ensure top management demonstrates leadership and commitment to the ISMS by providing resources, setting direction, and integrating security into business processes.",
+   "auditor_expects": [
+    "Top management communicates the importance of information security.",
+    "Resources (budget, personnel, tools) are allocated for ISMS operation.",
+    "Management reviews ISMS performance and directs improvement.",
+    "Information security is integrated into organizational policies and business planning."
+   ],
+   "evidence": [
+    "Management review minutes showing discussion of ISMS performance and resource needs.",
+    "Budget allocations for security tools, training, or personnel.",
+    "Internal communications (e.g., memos, speeches) from leadership on security importance.",
+    "ISMS objectives aligned with business objectives in planning documents.",
+    "Evidence of management participation in risk assessment or policy approval."
+   ],
+   "pitfalls": [
+    "Delegating ISMS responsibility entirely to IT or a security officer without oversight.",
+    "Holding management reviews only to satisfy audit requirements, not for real improvement.",
+    "Allocating budget but not tracking whether resources are used effectively.",
+    "Treating information security as a technical issue, not a business management issue."
+   ]
+  },
+  "A.5.5": {
+   "objective": "Maintain appropriate contact with relevant authorities (e.g., regulators, law enforcement) to ensure compliance with legal requirements and enable timely response to incidents involving legal obligations.",
+   "auditor_expects": [
+    "Relevant authorities with whom contact may be needed are identified (e.g., data protection agency, police).",
+    "Procedures exist for initiating contact with authorities when required (e.g., breach notification).",
+    "Contact details and communication channels are kept up to date.",
+    "Responsibility for contacting authorities is assigned and understood."
+   ],
+   "evidence": [
+    "List of relevant authorities with contact information (e.g., names, phone, email, portals).",
+    "Procedure document for reporting incidents to authorities (e.g., GDPR breach notification).",
+    "Test records or exercise logs showing contact procedure was validated.",
+    "Role assignment document showing who is responsible for authority contact.",
+    "Correspondence logs showing past interactions with authorities (if any)."
+   ],
+   "pitfalls": [
+    "Assuming contact with authorities is only needed after a major incident, not preparing in advance.",
+    "Having outdated contact details (e.g., changed personnel, defunct hotlines).",
+    "Not defining what triggers a requirement to contact authorities (e.g., thresholds, timelines).",
+    "Relying on informal networks instead of documented procedures for authority contact."
+   ]
+  },
+  "A.5.6": {
+   "objective": "Ensure interactions with special interest groups are managed to prevent undue influence or compromise of information security objectives.",
+   "auditor_expects": [
+    "Policy or procedure defining engagement with special interest groups",
+    "Evidence of risk assessment before engagement",
+    "Records of approvals for participation or sponsorship",
+    "Monitoring of communications or activities with such groups",
+    "Training for staff on appropriate conduct"
+   ],
+   "evidence": [
+    "Approved policy on external group engagement",
+    "Meeting minutes showing risk review prior to attendance",
+    "Email approvals from management for event sponsorship",
+    "Log of interactions with special interest groups",
+    "Awareness training records on external influence risks"
+   ],
+   "pitfalls": [
+    "Engaging with groups without prior risk assessment",
+    "Lack of formal approval process for participation",
+    "No monitoring of what is shared or discussed",
+    "Assuming all external groups are benign without verification"
+   ]
+  },
+  "A.5.7": {
+   "objective": "Establish and maintain threat intelligence capabilities to anticipate and respond to emerging information security threats.",
+   "auditor_expects": [
+    "Process for collecting threat intelligence from reliable sources",
+    "Mechanism to analyze and prioritize threats",
+    "Integration of threat intel into security controls",
+    "Regular review and update of intelligence feeds",
+    "Communication of relevant threats to stakeholders"
+   ],
+   "evidence": [
+    "Subscriptions to threat intelligence feeds or ISACs",
+    "Threat analysis reports or dashboards",
+    "Change logs showing updates to firewalls or IDS based on intel",
+    "Meeting records where threat intel was reviewed",
+    "Alerts or notifications sent to IT/security teams"
+   ],
+   "pitfalls": [
+    "Collecting intel without actionable analysis",
+    "Using outdated or unverified threat sources",
+    "Failing to share intel with relevant teams",
+    "No process to validate or act on received intelligence"
+   ]
+  },
+  "A.5.8": {
+   "objective": "Ensure information security is addressed throughout the lifecycle of projects to prevent security gaps in deliverables.",
+   "auditor_expects": [
+    "Security requirements defined in project initiation",
+    "Risk assessment conducted during project planning",
+    "Security controls integrated into project design",
+    "Security reviews at key project milestones",
+    "Sign-off on security acceptance before go-live"
+   ],
+   "evidence": [
+    "Project charter with security objectives",
+    "Risk assessment document for the project",
+    "Design documents showing encryption or access controls",
+    "Minutes from security review meetings",
+    "Acceptance test report including security tests"
+   ],
+   "pitfalls": [
+    "Adding security only at the end of a project",
+    "No formal security requirements in project planning",
+    "Overlooking third-party component risks",
+    "Skipping security reviews due to schedule pressure"
+   ]
+  },
+  "A.5.9": {
+   "objective": "Maintain an accurate and up-to-date inventory of information and associated assets to support risk management and protection efforts.",
+   "auditor_expects": [
+    "Asset inventory includes all information and related assets",
+    "Ownership assigned to each asset",
+    "Inventory updated regularly and upon changes",
+    "Classification levels applied where appropriate",
+    "Inventory accessible to relevant personnel"
+   ],
+   "evidence": [
+    "Asset register spreadsheet or CMDB entry",
+    "Ownership field populated for each asset",
+    "Change log showing updates after procurement or disposal",
+    "Classification labels (e.g., Confidential) in the inventory",
+    "Access control list showing who can view/edit inventory"
+   ],
+   "pitfalls": [
+    "Inventory missing cloud services or mobile devices",
+    "No clear owner assigned to assets",
+    "Inventory not updated after staff changes",
+    "Treating all assets as same classification without review"
+   ]
+  },
+  "A.5.10": {
+   "objective": "Define and communicate rules for the acceptable use of information and assets to prevent misuse and security incidents.",
+   "auditor_expects": [
+    "Acceptable use policy covering devices, data, and networks",
+    "Policy communicated to all employees and contractors",
+    "Evidence of user acknowledgment (e.g., signed agreement)",
+    "Policy includes prohibitions on harmful or illegal use",
+    "Mechanism to monitor and enforce compliance"
+   ],
+   "evidence": [
+    "Acceptable use policy document",
+    "Email showing policy distribution to staff",
+    "Signed acknowledgment forms or electronic consent logs",
+    "Policy section on prohibited activities (e.g., piracy, harassment)",
+    "Logs from DLP or web filtering showing policy enforcement"
+   ],
+   "pitfalls": [
+    "Policy exists but not communicated to staff",
+    "No proof users have read or agreed to the policy",
+    "Policy too vague to enforce (e.g., 'use responsibly')",
+    "Failure to update policy for new technologies like AI tools"
+   ]
+  },
+  "A.5.11": {
+   "objective": "Ensure return of information and assets upon termination or change of employment to prevent unauthorized retention or disclosure.",
+   "auditor_expects": [
+    "Formal process for asset return at exit or role change",
+    "Checklist covering devices, access, and information",
+    "Verification by asset owner or security team",
+    "Records retained for audit purposes",
+    "Process applied consistently to employees and contractors"
+   ],
+   "evidence": [
+    "Exit checklist signed by employee and manager",
+    "IT ticket showing laptop and badge return",
+    "Email confirming revocation of system access",
+    "Asset return log maintained by facilities or security",
+    "Policy referencing return requirements in employment contract"
+   ],
+   "pitfalls": [
+    "Exit process informal or inconsistent",
+    "No verification that all access was removed",
+    "Contractors excluded from return procedures",
+    "Assets like USB drives or tokens overlooked"
+   ]
+  },
+  "A.5.12": {
+   "objective": "Ensure information is classified according to its sensitivity, value, and criticality to support appropriate protection measures. This addresses the risk of inadequate protection due to lack of awareness about information importance.",
+   "auditor_expects": [
+    "Information classification policy is defined and approved.",
+    "Classification levels (e.g., public, internal, confidential, restricted) are documented.",
+    "Assets are consistently labeled based on classification.",
+    "Employees receive training on classification and handling procedures.",
+    "Classification is reviewed periodically or when business context changes."
+   ],
+   "evidence": [
+    "Approved information classification policy document.",
+    "Asset inventory showing classification labels (e.g., in CMDB or spreadsheet).",
+    "Screenshot of labeled documents or emails with classification headers.",
+    "Training attendance records for information handling.",
+    "Meeting minutes showing classification review updates."
+   ],
+   "pitfalls": [
+    "Classification exists only on paper but not applied to systems or files.",
+    "Over-classification leading to unnecessary controls and user frustration.",
+    "No process to reclassify information when risk or business needs change.",
+    "Employees unaware of classification rules or how to apply them."
+   ]
+  },
+  "A.5.13": {
+   "objective": "Ensure information is labelled according to its classification level to prevent unauthorized access, disclosure, or misuse by making sensitivity clear to users and systems.",
+   "auditor_expects": [
+    "Labelling policy defines how information is marked based on classification (e.g., public, internal, confidential, restricted).",
+    "Labelling is applied consistently across storage media, documents, emails, and digital files.",
+    "Users are trained to recognize and apply labels correctly when creating or handling information.",
+    "Automated tools or templates support labelling where feasible (e.g., document headers, email footers, metadata tags).",
+    "Labelling aligns with access controls so that labelled information triggers appropriate handling rules."
+   ],
+   "evidence": [
+    "Labelled document templates or email signatures showing classification labels.",
+    "Screenshot of a file system or DLP tool applying labels based on content or user input.",
+    "Training records showing staff completed labelling procedures training.",
+    "Policy document specifying labelling rules for each classification level.",
+    "Audit trail showing labelling applied to outgoing emails or shared files."
+   ],
+   "pitfalls": [
+    "Labelling is defined in policy but not enforced or monitored in practice.",
+    "Labels are applied inconsistently—some documents labelled, others not, despite same classification.",
+    "Labelling relies solely on manual user action without automation or reminders, leading to omissions.",
+    "Labels are used but not linked to technical controls (e.g., encryption, access rights), reducing effectiveness."
+   ]
+  },
+  "A.5.14": {
+   "objective": "Ensure that information is protected during transfer within and between systems, locations, or organizations to prevent unauthorized access, alteration, or loss. This addresses risks such as interception, tampering, or accidental disclosure during transmission.",
+   "auditor_expects": [
+    "Verify that information transfer policies define acceptable methods and security controls for different data types and channels.",
+    "Check that encryption or equivalent protections are applied to sensitive information in transit, especially over public networks.",
+    "Confirm that responsibilities for securing transfers are assigned and understood by relevant personnel.",
+    "Review that transfer mechanisms (e.g., email, USB, APIs) are evaluated for risk and controlled accordingly.",
+    "Ensure that logs or records of transfers involving sensitive data are maintained where appropriate."
+   ],
+   "evidence": [
+    "Information transfer policy document specifying approved methods (e.g., SFTP, encrypted email, VPN).",
+    "Configuration screenshots showing TLS/SSL enforcement on web services or email gateways.",
+    "Encryption key management records for data-in-transit protections.",
+    "Log extracts showing monitored or blocked unauthorized transfer attempts (e.g., DLP alerts).",
+    "Training records indicating staff awareness of secure transfer procedures for sensitive data."
+   ],
+   "pitfalls": [
+    "Assuming physical transfer (e.g., USB drives) requires no protection if within the office.",
+    "Using unencrypted email for transmitting confidential or personal data without compensating controls.",
+    "Failing to classify information before transfer, leading to inconsistent application of controls.",
+    "Overlooking third-party transfer risks (e.g., vendor file sharing) without contractual or technical safeguards."
+   ]
+  },
+  "A.5.15": {
+   "objective": "Ensure that access to information and information processing facilities is granted only to authorized individuals based on their roles and responsibilities, reducing the risk of unauthorized access, data breaches, or privilege abuse.",
+   "auditor_expects": [
+    "Access rights are defined according to job functions and business needs.",
+    "Access requests are reviewed and approved before provisioning.",
+    "Access is reviewed periodically to confirm continued appropriateness.",
+    "Privileged access is restricted and monitored more strictly than standard user access.",
+    "Access is promptly revoked or modified when roles change or employment ends."
+   ],
+   "evidence": [
+    "Access control policy document outlining roles and permissions.",
+    "Access request and approval workflow records (e.g., ticketing system logs).",
+    "User access review reports showing periodic validation (e.g., quarterly).",
+    "Privileged account inventory with justification and MFA enforcement.",
+    "HR termination or role change triggers linked to access revocation in IAM system."
+   ],
+   "pitfalls": [
+    "Granting excessive permissions based on convenience rather than need.",
+    "Failing to review access rights regularly, leading to orphaned or excessive privileges.",
+    "Using shared accounts for administrative tasks without individual accountability.",
+    "Not aligning access revocation with HR processes, leaving ex-employees with active access."
+   ]
+  },
+  "A.5.16": {
+   "objective": "Ensure that user identities are uniquely and consistently managed across systems to prevent unauthorized access and support accountability, addressing risks from identity confusion, privilege creep, or orphaned accounts.",
+   "auditor_expects": [
+    "Verify that identity management processes define how users are created, modified, and deactivated.",
+    "Check that each user has a unique identifier linked to their role and employment status.",
+    "Confirm that identity data is synchronized or reconciled across critical systems (e.g., HR, directory, applications).",
+    "Ensure that identity lifecycle events trigger appropriate access provisioning or revocation.",
+    "Validate that identity management is integrated with onboarding, role changes, and offboarding processes."
+   ],
+   "evidence": [
+    "Identity management policy or procedure document.",
+    "User provisioning workflow diagram or ticketing system records (e.g., ServiceNow, Jira).",
+    "Screenshot of user directory showing unique IDs linked to HR employee numbers.",
+    "Access request/approval logs showing identity validation before provisioning.",
+    "Audit trail of identity changes (e.g., name, role, status) synchronized with HRIS."
+   ],
+   "pitfalls": [
+    "Using shared or generic accounts instead of individual identities.",
+    "Failing to deactivate identities promptly when employees leave or change roles.",
+    "Relying on manual processes without automation or verification controls.",
+    "Not linking identity management to HR as the source of truth for employee status."
+   ]
+  },
+  "A.5.17": {
+   "objective": "Ensure authentication information (such as passwords, tokens, or biometric data) is protected throughout its lifecycle to prevent unauthorized access, disclosure, or misuse, reducing the risk of credential compromise and account takeover.",
+   "auditor_expects": [
+    "Verify that authentication secrets are stored using strong, approved cryptographic methods (e.g., salted hashing).",
+    "Check that authentication information is not transmitted or stored in plaintext.",
+    "Confirm that default credentials are changed upon first use and that password policies enforce complexity and rotation where appropriate.",
+    "Ensure that authentication data is securely deleted or revoked when no longer needed (e.g., employee offboarding).",
+    "Validate that multi-factor authentication (MFA) is enforced for privileged or remote access where risk warrants it."
+   ],
+   "evidence": [
+    "Password hashing configuration in directory services (e.g., LDAP, Active Directory) showing use of bcrypt or Argon2.",
+    "Network traffic captures or configuration files proving TLS encryption for authentication flows (e.g., LDAPS, HTTPS).",
+    "User provisioning/deprovisioning logs showing timely password reset or account disablement on exit.",
+    "Security policy document specifying MFA requirements for admin and remote access.",
+    "Audit trail showing failed login attempts and account lockout triggers after threshold."
+   ],
+   "pitfalls": [
+    "Storing passwords in reversible encryption or plaintext in configuration files or scripts.",
+    "Failing to change default vendor credentials on deployed systems or applications.",
+    "Applying password complexity rules without considering usability, leading to insecure workarounds (e.g., sticky notes).",
+    "Not revoking authentication tokens or sessions immediately upon employee termination or role change."
+   ]
+  },
+  "A.5.18": {
+   "objective": "Ensure that access rights to information and systems are granted based on business needs, regularly reviewed, and promptly revoked when no longer required, to prevent unauthorized access and reduce insider threat risks.",
+   "auditor_expects": [
+    "Access rights are assigned based on role and least privilege principle.",
+    "Periodic reviews of access rights are conducted and documented.",
+    "Access is revoked or modified promptly upon role change, transfer, or termination.",
+    "Privileged access is monitored and subject to additional controls.",
+    "Access request and approval processes are formalized and traceable."
+   ],
+   "evidence": [
+    "Access control policy document.",
+    "User access review reports from last 6–12 months.",
+    "Screenshots of IAM system showing role-based access assignments.",
+    "Termination checklist with access revocation timestamps.",
+    "Audit logs showing privileged access usage and approval workflows."
+   ],
+   "pitfalls": [
+    "Access reviews are performed infrequently or only annually without justification.",
+    "Former employees’ accounts remain active beyond termination date.",
+    "Privileged accounts are shared or lack individual accountability.",
+    "No distinction between user and admin access in provisioning processes."
+   ]
+  },
+  "A.5.19": {
+   "objective": "Establish and maintain information security requirements in supplier relationships to protect organizational information accessed, processed, stored, or communicated by external parties, mitigating risks from third-party vulnerabilities.",
+   "auditor_expects": [
+    "Supplier information security requirements are defined and integrated into contracts.",
+    "Risk assessments are performed on suppliers based on data sensitivity and service criticality.",
+    "Suppliers are required to comply with the organization’s information security policies.",
+    "Security clauses include confidentiality, integrity, availability, and incident reporting obligations.",
+    "Supplier compliance is monitored throughout the contract lifecycle."
+   ],
+   "evidence": [
+    "Supplier risk assessment matrix or questionnaire.",
+    "Sample contracts with information security clauses (e.g., ISO 27001 compliance, audit rights).",
+    "Supplier security questionnaires or SOC reports on file.",
+    "Records of security reviews conducted during supplier onboarding.",
+    "Communication logs showing supplier incident reporting procedures."
+   ],
+   "pitfalls": [
+    "Using generic contracts without tailored security clauses for high-risk suppliers.",
+    "Failing to assess suppliers based on the type and volume of data they handle.",
+    "Assuming supplier compliance without verification or evidence.",
+    "No process to reassess supplier security after contract renewal or scope change."
+   ]
+  },
+  "A.5.20": {
+   "objective": "Ensure that information security requirements are explicitly addressed and agreed upon in supplier agreements to enforce consistent protection of organizational information across all third-party engagements.",
+   "auditor_expects": [
+    "Information security requirements are specified in writing within supplier contracts or SLAs.",
+    "Requirements cover data handling, encryption, access controls, breach notification, and audit rights.",
+    "Agreements reference applicable standards (e.g., ISO 27001, GDPR) or organizational policies.",
+    "Security requirements are proportionate to the risk posed by the supplier relationship.",
+    "Contracts include rights to audit, inspect, or verify supplier compliance."
+   ],
+   "evidence": [
+    "Redacted supplier agreements showing security clauses (Annex or Schedule).",
+    "SLA documents with defined security metrics (e.g., uptime, incident response time).",
+    "Email correspondence confirming negotiation of security terms.",
+    "Legal or procurement review sign-off on security requirements.",
+    "Template contract clauses used for supplier engagements."
+   ],
+   "pitfalls": [
+    "Security requirements are buried in general terms and conditions without specific detail.",
+    "Contracts rely solely on supplier self-certification without validation.",
+    "No mechanism to update security requirements when threats or regulations change.",
+    "Overlooking subcontractor flows-down of security obligations in supply chains."
+   ]
+  },
+  "A.5.21": {
+   "objective": "Manage information security risks associated with the ICT supply chain by ensuring that security is considered throughout the lifecycle of ICT products and services, from acquisition to disposal, to prevent compromise via compromised hardware, software, or services.",
+   "auditor_expects": [
+    "ICT supply chain risks are identified and assessed (e.g., malware, counterfeit components, backdoors).",
+    "Security requirements are defined for ICT acquisitions (hardware, software, cloud services).",
+    "Suppliers of ICT products are vetted for security practices (e.g., secure development, integrity verification).",
+    "Controls are in place to verify authenticity and integrity of ICT components upon receipt.",
+    "Monitoring and logging detect anomalies in ICT supply chain-delivered components."
+   ],
+   "evidence": [
+    "ICT procurement policy with security requirements (e.g., code signing, SBOM, vendor security assessments).",
+    "Vendor security assessment reports for critical ICT suppliers (e.g., firmware, network equipment).",
+    "Receipt logs showing hash verification or digital signature validation of software/firmware.",
+    "Records of penetration testing or code review on acquired ICT components.",
+    "Change management records linking ICT acquisitions to security review steps."
+   ],
+   "pitfalls": [
+    "Focusing only on software suppliers while ignoring hardware or firmware risks.",
+    "Assuming commercial off-the-shelf (COTS) products are secure by default without verification.",
+    "No process to validate integrity of ICT components before deployment.",
+    "Lack of visibility into sub-tier suppliers in the ICT supply chain."
+   ]
+  },
+  "A.5.22": {
+   "objective": "Ensure that supplier services are continuously monitored, reviewed, and managed for changes that could affect information security, maintaining alignment with agreed security requirements and responding promptly to deviations or incidents.",
+   "auditor_expects": [
+    "Ongoing monitoring of supplier performance against security SLAs and KPIs.",
+    "Regular review meetings held with suppliers to assess security compliance and incidents.",
+    "Change management process requires security impact assessment for service modifications.",
+    "Supplier security incidents are reported, investigated, and resolved in accordance with agreements.",
+    "Evidence of corrective actions taken when supplier security performance declines."
+   ],
+   "evidence": [
+    "Monthly/quarterly supplier security performance reports.",
+    "Meeting minutes from supplier security review sessions.",
+    "Change request forms showing security review sign-off before implementation.",
+    "Incident reports involving suppliers with timelines and resolution status.",
+    "Records of service credits, penalties, or contract adjustments due to security failures."
+   ],
+   "pitfalls": [
+    "Monitoring is limited to availability or performance, ignoring security metrics.",
+    "No formal process to assess security impact of supplier service changes.",
+    "Supplier incidents are tracked but not analyzed for root cause or trends.",
+    "Reviews occur only annually or after a breach, not on a regular cadence."
+   ]
+  },
+  "A.5.23": {
+   "objective": "Ensure that information security risks associated with the use of cloud services are identified, assessed, and managed through appropriate controls, contractual agreements, and ongoing oversight to protect data stored, processed, or accessed in cloud environments.",
+   "auditor_expects": [
+    "Cloud service usage is authorized and aligned with organizational policies (e.g., approved providers, data classification).",
+    "Risk assessments are conducted before adopting cloud services (e.g., data residency, access control, encryption).",
+    "Contracts with cloud providers include security commitments (e.g., encryption, audit rights, incident response).",
+    "Security configurations of cloud services are reviewed and hardened (e.g., IAM, logging, network controls).",
+    "Ongoing monitoring detects misconfigurations, unauthorized access, or data leaks in cloud environments."
+   ],
+   "evidence": [
+    "Cloud usage policy defining approved services and data handling rules.",
+    "Cloud risk assessment reports (e.g., CSA STAR, SOC 2, or internal questionnaire).",
+    "Redacted cloud contracts showing security annexes or compliance commitments.",
+    "Screenshots of cloud security posture management (CSPM) tool alerts or dashboards.",
+    "Configuration review reports (e.g., AWS Config, Azure Policy) showing remediation of findings."
+   ],
+   "pitfalls": [
+    "Using cloud services without formal approval or risk assessment (shadow IT).",
+    "Assuming cloud provider security absolves the organization of responsibility for data protection.",
+    "Failing to encrypt sensitive data at rest or in transit in cloud environments.",
+    "Overreliance on provider compliance reports without verifying actual configuration."
+   ]
+  },
+  "A.5.24": {
+   "objective": "Ensure the organization has planned and prepared for managing information security incidents, including defining roles, responsibilities, and procedures to respond effectively before incidents occur.",
+   "auditor_expects": [
+    "Incident management plan is documented and approved",
+    "Roles and responsibilities for incident response are clearly assigned",
+    "Procedures for reporting, escalating, and classifying incidents are defined",
+    "Training and awareness activities for incident response are conducted",
+    "Plan is reviewed and updated periodically"
+   ],
+   "evidence": [
+    "Approved incident management policy or plan document",
+    "RACI matrix or role assignment register for incident response",
+    "Incident reporting procedure (e.g., form, email template, portal)",
+    "Training records or attendance logs for incident response drills",
+    "Minutes of management review showing plan updates"
+   ],
+   "pitfalls": [
+    "Having a plan but not assigning clear ownership or roles",
+    "Plan exists but is not tested or exercised",
+    "No defined escalation paths or communication channels",
+    "Plan is outdated and not reviewed after changes in infrastructure or threats"
+   ]
+  },
+  "A.5.25": {
+   "objective": "Establish a process to assess information security events to determine if they constitute incidents requiring formal response, based on impact and likelihood.",
+   "auditor_expects": [
+    "Criteria for classifying events as incidents are defined (e.g., impact, severity, scope)",
+    "Events are logged and assessed consistently using the criteria",
+    "Assessment outcomes are recorded and reviewed by authorized personnel",
+    "Escalation triggers are clearly linked to assessment results",
+    "Assessment process is integrated with incident reporting"
+   ],
+   "evidence": [
+    "Event classification matrix or decision tree",
+    "Log of security events with assessment outcomes (e.g., ticketing system)",
+    "Assessment checklist or form used by analysts",
+    "Escalation log showing when events were upgraded to incidents",
+    "Meeting minutes from security operations review showing assessment decisions"
+   ],
+   "pitfalls": [
+    "Using vague or subjective criteria for incident classification",
+    "Failing to log low-severity events, missing patterns",
+    "Assessment done informally without documentation",
+    "No distinction between events and incidents in reporting tools"
+   ]
+  },
+  "A.5.26": {
+   "objective": "Ensure timely and appropriate actions are taken to contain, eradicate, and recover from confirmed information security incidents, minimizing damage and restoring normal operations.",
+   "auditor_expects": [
+    "Response procedures are followed based on incident type and severity",
+    "Containment actions are taken promptly to limit spread",
+    "Eradication steps remove root causes (e.g., malware, compromised accounts)",
+    "Recovery actions restore systems to normal operation securely",
+    "Communication with stakeholders occurs during response"
+   ],
+   "evidence": [
+    "Incident response tickets showing timeline of actions (containment, eradication, recovery)",
+    "Forensic logs or malware removal reports",
+    "System restoration records (e.g., backup restore logs, patch application)",
+    "Communication logs (emails, alerts, status updates to management/users)",
+    "Post-incident activity checklist signed off by responders"
+   ],
+   "pitfalls": [
+    "Jumping to recovery without proper eradication, risking re-infection",
+    "Delaying containment due to unclear authority or approval",
+    "Restoring systems from backups without verifying integrity",
+    "Poor communication leading to confusion or duplicated effort"
+   ]
+  },
+  "A.5.27": {
+   "objective": "Ensure that lessons learned from information security incidents are captured, analyzed, and used to improve the ISMS, including updating controls, policies, and training.",
+   "auditor_expects": [
+    "Post-incident reviews are conducted for significant incidents",
+    "Findings and root causes are documented and analyzed",
+    "Corrective and preventive actions are identified and assigned",
+    "Improvements to controls, policies, or training are implemented",
+    "Review outcomes are communicated to relevant stakeholders"
+   ],
+   "evidence": [
+    "Post-incident report with root cause analysis (e.g., 5 Whys, fishbone)",
+    "Corrective action register with owners, deadlines, and status",
+    "Updated policies, procedures, or configurations resulting from lessons learned",
+    "Training materials revised based on incident findings",
+    "Management review minutes showing discussion of incident trends and improvements"
+   ],
+   "pitfalls": [
+    "Conducting reviews only for major incidents, ignoring near misses",
+    "Identifying issues but not assigning or tracking corrective actions",
+    "Updating documentation without verifying effectiveness",
+    "Failing to share lessons across teams or departments"
+   ]
+  },
+  "A.5.28": {
+   "objective": "Ensure that evidence related to information security incidents is collected, preserved, and handled in a manner that maintains its integrity and admissibility for internal or legal proceedings.",
+   "auditor_expects": [
+    "Evidence collection procedures are defined and followed (e.g., chain of custody)",
+    "Digital evidence is preserved using forensically sound methods (e.g., imaging, hashing)",
+    "Access to evidence is restricted and logged",
+    "Evidence is stored securely to prevent tampering or loss",
+    "Legal or regulatory requirements for evidence handling are considered"
+   ],
+   "evidence": [
+    "Chain of custody form showing handling of digital/media evidence",
+    "Forensic image hash values (e.g., MD5, SHA-256) before and after analysis",
+    "Access logs to evidence storage (e.g., secure server, evidence locker)",
+    "Screenshot or video of evidence collection process with timestamps",
+    "Policy document referencing legal hold or e-discovery procedures"
+   ],
+   "pitfalls": [
+    "Collecting evidence without preserving original state (e.g., running tools on live system)",
+    "Failing to document who handled evidence and when",
+    "Storing evidence on unsecured or shared drives",
+    "Using non-forensic tools that alter metadata or timestamps"
+   ]
+  },
+  "A.5.29": {
+   "objective": "Ensure that information security is maintained during disruptions to normal operations, such as disasters, crises, or major incidents, by applying appropriate controls to protect information assets.",
+   "auditor_expects": [
+    "Information security controls are considered in business continuity and disaster recovery plans",
+    "Critical information assets are identified and protected during disruption",
+    "Alternative processes or systems maintain confidentiality, integrity, and availability",
+    "Security monitoring and incident response remain operational during disruption",
+    "Plans are tested to verify security controls work under disruption scenarios"
+   ],
+   "evidence": [
+    "Business continuity plan with security control requirements (e.g., encryption, access control)",
+    "Disaster recovery runbook showing secure restoration of systems",
+    "Test results from exercises simulating disruption with security checks",
+    "Configuration of backup sites showing equivalent security controls (e.g., firewalls, MFA)",
+    "Incident response logs showing continued operation during a test disruption"
+   ],
+   "pitfalls": [
+    "Security controls are neglected in continuity planning",
+    "Backup systems lack equivalent protection (e.g., no MFA, unpatched)",
+    "Incident response cannot function due to dependency on disrupted systems",
+    "Plans are not tested, so gaps remain undetected"
+   ]
+  },
+  "A.5.30": {
+   "objective": "Ensure that information and communication technology (ICT) systems and services are prepared to support business continuity objectives during disruptions, reducing the risk of prolonged downtime or data loss when critical operations are affected.",
+   "auditor_expects": [
+    "Verify that ICT continuity requirements are defined based on business impact analysis and risk assessment.",
+    "Check that recovery time objectives (RTO) and recovery point objectives (RPO) are established for critical ICT services.",
+    "Confirm that ICT continuity plans include procedures for activating alternate systems, data restoration, and network failover.",
+    "Ensure that ICT continuity arrangements are tested at planned intervals and results are documented.",
+    "Validate that responsibilities for ICT continuity are assigned and communicated to relevant personnel."
+   ],
+   "evidence": [
+    "ICT continuity plan document outlining recovery steps for critical systems.",
+    "Test reports from ICT disaster recovery exercises (e.g., failover to backup site).",
+    "Configuration management database (CMDB) showing RTO/RPO assignments for services.",
+    "Meeting minutes where ICT continuity responsibilities were assigned and reviewed.",
+    "Logs or screenshots demonstrating successful data restoration from backup during a test."
+   ],
+   "pitfalls": [
+    "Defining ICT continuity without linking it to business impact analysis results.",
+    "Having recovery plans that are not tested or tested only theoretically without actual execution.",
+    "Failing to update ICT continuity plans after infrastructure changes (e.g., cloud migration, system upgrades).",
+    "Assuming that general IT backups equate to full ICT readiness for business continuity without validating RTO/RPO."
+   ]
+  },
+  "A.5.31": {
+   "objective": "Ensure the organization identifies, understands, and complies with all applicable legal, statutory, regulatory, and contractual requirements related to information security, reducing the risk of non-compliance penalties, legal action, or reputational damage.",
+   "auditor_expects": [
+    "Verify a documented list of applicable legal and contractual requirements exists and is maintained.",
+    "Check that responsibilities for monitoring and compliance are assigned to specific roles or functions.",
+    "Confirm that changes in requirements are reviewed and acted upon in a timely manner.",
+    "Ensure evidence shows compliance is monitored and reported to management.",
+    "Validate that contractual obligations (e.g., SLAs, NDAs) are integrated into security controls."
+   ],
+   "evidence": [
+    "Register of legal, statutory, regulatory, and contractual requirements with version control and review dates.",
+    "Minutes from management review meetings showing discussion of compliance status.",
+    "Email correspondence or tickets demonstrating tracking of regulatory updates (e.g., GDPR, HIPAA, PCI-DSS).",
+    "Signed contracts or SLAs with clauses referencing information security obligations.",
+    "Internal audit reports or compliance checklists verifying adherence to specific requirements."
+   ],
+   "pitfalls": [
+    "Maintaining a generic list without tailoring it to the organization’s specific context, location, or industry.",
+    "Failing to assign clear ownership for monitoring changes in laws or contracts.",
+    "Not updating the register when new regulations emerge or contracts are renewed.",
+    "Treating compliance as a one-time activity rather than an ongoing process."
+   ]
+  },
+  "A.5.32": {
+   "objective": "Ensure that intellectual property rights are respected and protected to prevent legal, financial, and reputational harm from unauthorized use, copying, or distribution of proprietary assets.",
+   "auditor_expects": [
+    "Verify that IP ownership and usage rights are documented for all software, data, and creative works used or developed by the organization.",
+    "Check that access to IP is restricted based on role and need-to-know principles.",
+    "Confirm that employees and contractors sign IP assignment or confidentiality agreements.",
+    "Review procedures for handling third-party IP, including licensing and open-source compliance.",
+    "Ensure that IP infringement risks are assessed and mitigated in procurement and development processes."
+   ],
+   "evidence": [
+    "Signed IP assignment agreements from employees and contractors.",
+    "Software license inventory showing valid licenses for all used applications.",
+    "Access control lists showing restricted access to source code repositories or design documents.",
+    "Records of open-source component scans and compliance reports (e.g., SBOMs).",
+    "Email or ticket records showing IP infringement reports and remediation actions."
+   ],
+   "pitfalls": [
+    "Assuming that internal development automatically grants full IP rights without formal agreements.",
+    "Using unlicensed or pirated software without tracking or remediation.",
+    "Failing to extend IP protections to contractors, consultants, or cloud service providers.",
+    "Overlooking open-source license obligations (e.g., GPL copyleft) in productized software."
+   ]
+  },
+  "A.5.33": {
+   "objective": "Ensure that records are protected against loss, damage, unauthorized access, or alteration throughout their lifecycle to maintain integrity, availability, and confidentiality as required by business, legal, or regulatory obligations.",
+   "auditor_expects": [
+    "Records are identified and classified based on sensitivity and retention requirements.",
+    "Access to records is restricted to authorized personnel through technical and procedural controls.",
+    "Records are stored in secure locations with protection against environmental threats (e.g., fire, flood, electromagnetic interference).",
+    "Procedures exist for secure disposal or destruction of records when retention period ends.",
+    "Backup and recovery mechanisms are in place for critical records to ensure availability."
+   ],
+   "evidence": [
+    "Record classification matrix or inventory showing retention periods and sensitivity levels.",
+    "Access control lists or system logs showing who accessed specific records and when.",
+    "Physical storage facility records (e.g., fire-rated cabinets, off-site storage logs) or environmental monitoring reports.",
+    "Signed disposal certificates or shredding service records for destroyed records.",
+    "Backup logs or restore test reports demonstrating recoverability of critical records."
+   ],
+   "pitfalls": [
+    "Treating all records the same regardless of sensitivity or legal requirements.",
+    "Failing to define or enforce retention periods, leading to indefinite storage or premature deletion.",
+    "Storing backups in the same location as primary records without geographic separation.",
+    "Not verifying that disposal methods actually render records irrecoverable (e.g., deleting files without secure erasure)."
+   ]
+  },
+  "A.5.34": {
+   "objective": "Ensure personal identifiable information is protected in accordance with applicable privacy laws and organizational policies to prevent unauthorized access, disclosure, or misuse. This addresses risks related to privacy breaches, regulatory penalties, and reputational harm from mishandling PII.",
+   "auditor_expects": [
+    "Verify that PII processing activities are identified and documented in a register or inventory.",
+    "Check that legal and regulatory requirements for PII (e.g., GDPR, CCPA) are mapped to controls.",
+    "Confirm that access to PII is restricted based on need-to-know and role-based principles.",
+    "Ensure that PII is encrypted or pseudonymized where appropriate, especially in storage and transmission.",
+    "Review that data retention and disposal procedures for PII are defined and followed."
+   ],
+   "evidence": [
+    "PII inventory or data flow diagram showing what PII is collected, where it resides, and how it moves.",
+    "Records of legal basis for processing (e.g., consent forms, legitimate interest assessments).",
+    "Access control lists or IAM reports showing restricted access to PII systems.",
+    "Encryption configuration screenshots for databases, backups, or email containing PII.",
+    "Data retention schedule and disposal certificates for PII records."
+   ],
+   "pitfalls": [
+    "Treating all data as PII without proper classification, leading to over-control or gaps.",
+    "Failing to update PII registers when new systems or data sources are introduced.",
+    "Relying solely on consent without verifying other lawful bases for processing.",
+    "Storing PII in unencrypted form on endpoint devices or cloud storage without justification."
+   ]
+  },
+  "A.5.35": {
+   "objective": "Ensure that the effectiveness of the information security management system is periodically evaluated through independent reviews to identify gaps, validate compliance, and drive continual improvement. This addresses the risk of undetected weaknesses or complacency in security controls due to lack of objective assessment.",
+   "auditor_expects": [
+    "Evidence of planned independent reviews conducted at defined intervals.",
+    "Reviewer independence from the ISMS implementation and operation.",
+    "Documented findings, conclusions, and recommendations from the review.",
+    "Management response and action plan to address review outcomes.",
+    "Records showing review results were communicated to relevant stakeholders."
+   ],
+   "evidence": [
+    "Review schedule or audit program showing independent review dates.",
+    "Review reports signed by internal auditors or external consultants not involved in ISMS operations.",
+    "Minutes of management review meetings referencing independent review findings.",
+    "Corrective action requests or improvement tickets linked to review recommendations.",
+    "Email distribution lists or meeting invites showing communication of review results to top management."
+   ],
+   "pitfalls": [
+    "Using internal staff who manage or operate controls to conduct the review, compromising independence.",
+    "Treating the review as a checkbox exercise without follow-up on findings.",
+    "Failing to define criteria or scope for what constitutes an 'independent' review.",
+    "Not retaining records of review outcomes or management responses for the required period."
+   ]
+  },
+  "A.5.36": {
+   "objective": "Ensure that all personnel comply with established information security policies, rules, and standards to prevent deviations that could lead to security incidents or breaches.",
+   "auditor_expects": [
+    "Verify that compliance expectations are communicated to all relevant personnel.",
+    "Check for mechanisms to monitor adherence to security policies.",
+    "Confirm that non-compliance is identified, recorded, and addressed.",
+    "Review whether compliance is integrated into performance evaluations where appropriate.",
+    "Ensure that third parties under contract are also bound by relevant security requirements."
+   ],
+   "evidence": [
+    "Signed acknowledgment forms from employees confirming receipt and understanding of security policies.",
+    "Logs or reports from monitoring tools showing policy compliance checks (e.g., configuration, access).",
+    "Incident records detailing policy violations and follow-up actions taken.",
+    "Performance review templates or HR records showing security compliance as a criterion.",
+    "Contracts or SLAs with third parties referencing adherence to the organization’s security policies."
+   ],
+   "pitfalls": [
+    "Assuming policy distribution equals compliance without verification or follow-up.",
+    "Failing to address repeated or minor policy violations, leading to normalization of non-compliance.",
+    "Not extending compliance requirements to contractors, vendors, or third-party users.",
+    "Using outdated policies that no longer reflect current risks or technical controls."
+   ]
+  },
+  "A.5.37": {
+   "objective": "Ensure that critical information processing facilities have documented operating procedures to maintain consistency, security, and availability of services.",
+   "auditor_expects": [
+    "Verify that procedures are documented for key operational activities (e.g., backup, change management, incident response).",
+    "Check that procedures are accessible to authorized personnel who need to use them.",
+    "Confirm that procedures are reviewed and updated regularly or after significant changes.",
+    "Ensure that procedures include security considerations (e.g., segregation of duties, access controls).",
+    "Validate that procedures are followed in practice through observation or records."
+   ],
+   "evidence": [
+    "Documented operating procedures for system administration, backups, patching, or logging.",
+    "Access logs or records showing who accessed or updated the procedures.",
+    "Version control records or review dates indicating periodic updates.",
+    "Screenshots or links showing procedures stored in a known, accessible location (e.g., intranet, document management system).",
+    "Audit trails or logs showing adherence to procedures (e.g., change tickets matching approved steps)."
+   ],
+   "pitfalls": [
+    "Having procedures that exist only on paper but are not used or known by operational staff.",
+    "Procedures lacking sufficient detail to be consistently followed (e.g., vague steps like 'secure the system').",
+    "Failing to update procedures after system changes, leading to drift between documentation and reality.",
+    "Storing procedures in inaccessible locations (e.g., locked drawers, personal drives) without access controls."
+   ]
+  },
+  "A.6.1": {
+   "objective": "Ensure that individuals are screened before employment or engagement to verify their suitability and reduce the risk of insider threats or misuse of assets.",
+   "auditor_expects": [
+    "Verify that screening requirements are defined based on role risk and access level.",
+    "Check that background checks are performed consistently for relevant positions (e.g., IT, finance, HR).",
+    "Confirm that screening includes verification of identity, qualifications, and where appropriate, criminal records.",
+    "Ensure that screening is completed before access is granted to sensitive systems or data.",
+    "Review that third-party personnel (e.g., contractors) are subject to equivalent screening where required."
+   ],
+   "evidence": [
+    "Screening policy or procedure defining checks by role (e.g., basic, standard, enhanced).",
+    "Completed background check reports or vendor confirmation letters for new hires.",
+    "HR records showing screening completed prior to start date or access provisioning.",
+    "Screening checklists signed off by hiring managers or HR.",
+    "Contracts or engagement letters for contractors specifying screening requirements and outcomes."
+   ],
+   "pitfalls": [
+    "Applying the same screening level to all roles regardless of access or responsibility.",
+    "Allowing employees to start work or gain access before screening is complete.",
+    "Relying solely on self-declarations without independent verification (e.g., not checking references or qualifications).",
+    "Failing to re-screen individuals when they change roles to higher-risk positions."
+   ]
+  },
+  "A.6.2": {
+   "objective": "Ensure that the responsibilities for information security are clearly defined, communicated, and agreed upon in employment contracts or agreements to establish accountability.",
+   "auditor_expects": [
+    "Verify that employment contracts include clauses related to information security responsibilities.",
+    "Check that terms cover confidentiality, acceptable use, and compliance with policies.",
+    "Confirm that employees acknowledge and sign these terms before or upon starting employment.",
+    "Ensure that third-party agreements (e.g., contractors, consultants) include equivalent security obligations.",
+    "Review that changes to roles or responsibilities are reflected in updated agreements where needed."
+   ],
+   "evidence": [
+    "Signed employment contracts or offer letters containing information security clauses.",
+    "Acceptable use policies or confidentiality agreements signed by employees.",
+    "HR records showing signed acknowledgments of security terms onboarding.",
+    "Contracts with third parties referencing adherence to the organization’s security policies.",
+    "Updated agreements or addendums when an employee’s role changes significantly."
+   ],
+   "pitfalls": [
+    "Using generic contracts that omit specific information security responsibilities.",
+    "Failing to obtain signed acknowledgments, relying only on verbal understanding or policy distribution.",
+    "Not updating agreements when job functions change (e.g., promotion to a role with system admin access).",
+    "Overlooking third-party workers, assuming they are covered by their employer’s obligations alone."
+   ]
+  },
+  "A.6.3": {
+   "objective": "Ensure that personnel receive appropriate information security awareness, education, and training to reduce human error and improve adherence to security practices.",
+   "auditor_expects": [
+    "Verify that a formal awareness and training program exists and is aligned with organizational risks.",
+    "Check that training is provided at induction and periodically thereafter (e.g., annual refresher).",
+    "Confirm that content is relevant to roles (e.g., phishing for all, secure coding for developers).",
+    "Ensure that training completion is tracked and followed up for non-participants.",
+    "Review that effectiveness is measured (e.g., via quizzes, simulations, or feedback)."
+   ],
+   "evidence": [
+    "Training schedule or curriculum showing induction and recurring sessions.",
+    "Learning management system (LMS) records showing course completion by employee and date.",
+    "Phishing simulation results or quiz scores demonstrating knowledge retention.",
+    "Training materials (e.g., slides, videos) tailored to different roles or departments.",
+    "Remediation records (e.g., follow-up training) for individuals who failed or missed training."
+   ],
+   "pitfalls": [
+    "Providing the same generic training to all staff regardless of role or risk exposure.",
+    "Measuring only attendance, not understanding or behavior change (e.g., no assessments).",
+    "Failing to train new starters before granting access to systems or data.",
+    "Not updating training content to reflect current threats (e.g., omitting recent phishing tactics)."
+   ]
+  },
+  "A.6.4": {
+   "objective": "Ensure that a formal disciplinary process exists to address information security policy violations consistently and fairly, reinforcing accountability and deterring misconduct.",
+   "auditor_expects": [
+    "Verify that the disciplinary process is documented and communicated to all personnel.",
+    "Check that it defines escalation levels based on severity (e.g., warning, suspension, termination).",
+    "Confirm that violations are investigated impartially and recorded appropriately.",
+    "Ensure that HR and management are involved in applying disciplinary actions per policy.",
+    "Review that the process is applied consistently regardless of role or seniority."
+   ],
+   "evidence": [
+    "Documented disciplinary procedure referencing information security violations.",
+    "Records of past incidents showing investigation, findings, and actions taken (e.g., warnings, retraining).",
+    "HR files demonstrating consistent application (e.g., similar offenses resulting in similar sanctions).",
+    "Communication records (e.g., emails, meeting notes) showing involvement of HR and line managers.",
+    "Policy acknowledgment forms that reference consequences of non-compliance."
+   ],
+   "pitfalls": [
+    "Applying disciplinary actions inconsistently (e.g., leniency for managers, severity for junior staff).",
+    "Lacking a documented process, leading to ad-hoc or arbitrary responses to violations.",
+    "Failing to distinguish between accidental errors and intentional misconduct in investigations.",
+    "Not recording disciplinary actions, making it impossible to demonstrate consistency or fairness."
+   ]
+  },
+  "A.6.5": {
+   "objective": "Ensure that access rights and responsibilities are promptly revoked or adjusted when an employee leaves or changes role to prevent unauthorized access to information assets. This addresses the risk of insider threats or data leakage from former or transferred personnel.",
+   "auditor_expects": [
+    "Verify that termination or role change procedures are documented and consistently applied.",
+    "Check that access revocation occurs within a defined timeframe (e.g., last working day).",
+    "Confirm that responsibilities for information assets are reassigned or documented upon role change.",
+    "Ensure that exit interviews include confirmation of return of assets and access removal.",
+    "Validate that exceptions to the process are approved and logged."
+   ],
+   "evidence": [
+    "Signed termination checklist showing access revocation dates.",
+    "HRIS or IAM system logs showing account disablement on termination date.",
+    "Asset return receipt signed by departing employee and IT/security.",
+    "Updated access control matrix reflecting role-based changes after transfer.",
+    "Approval record for delayed access removal (if any) with justification."
+   ],
+   "pitfalls": [
+    "Delaying access removal until weeks after termination, increasing exposure.",
+    "Failing to revoke access to shared or privileged accounts (e.g., admin, service accounts).",
+    "Overlooking return of physical assets like keys, badges, or encrypted devices.",
+    "Not updating responsibility assignments for information assets when roles change, leading to orphaned accountability."
+   ]
+  },
+  "A.6.6": {
+   "objective": "Ensure that individuals with access to confidential information are legally bound to protect it through formal agreements, reducing the risk of unauthorized disclosure or misuse of sensitive data.",
+   "auditor_expects": [
+    "Verify that confidentiality or non-disclosure agreements (NDAs) are in place for all personnel, contractors, and third parties with access to confidential information.",
+    "Check that NDAs are signed before access is granted and cover the scope, duration, and obligations regarding confidential information.",
+    "Confirm that agreements are reviewed periodically and updated when roles, responsibilities, or legal requirements change.",
+    "Ensure that records of signed agreements are maintained and accessible for audit purposes.",
+    "Validate that breaches of NDAs are addressed through disciplinary or legal processes as defined in policy."
+   ],
+   "evidence": [
+    "Signed NDAs for employees, contractors, and vendors stored in HR or legal repositories.",
+    "Policy document referencing the requirement for NDAs as a condition of access to confidential information.",
+    "Access control lists showing who has signed NDAs before being granted system or data access.",
+    "Audit trail of NDA reviews and updates (e.g., annual renewal logs).",
+    "Incident report or disciplinary record showing enforcement of NDA violations."
+   ],
+   "pitfalls": [
+    "Using generic or template NDAs that do not specifically address the organization’s confidential information types or legal jurisdiction.",
+    "Failing to obtain NDAs before granting access, relying on verbal assurances or post-hoc signing.",
+    "Not updating NDAs when roles change (e.g., promotion, transfer, or termination), leaving gaps in coverage.",
+    "Storing NDAs in inaccessible locations or failing to maintain version control, making audit verification difficult."
+   ]
+  },
+  "A.6.7": {
+   "objective": "Ensure that remote working arrangements do not compromise the confidentiality, integrity, or availability of information by applying appropriate security controls to remote access and devices used outside the organization's premises.",
+   "auditor_expects": [
+    "Remote work policy defines acceptable use, security requirements, and access controls for remote devices.",
+    "Technical controls such as VPN, MFA, endpoint encryption, and anti-malware are enforced for remote connections.",
+    "Employees receive training on secure remote work practices, including handling sensitive data and recognizing phishing.",
+    "Incident reporting procedures are clearly communicated and accessible for remote workers.",
+    "Access to internal systems is logged and monitored for anomalous activity from remote locations."
+   ],
+   "evidence": [
+    "Signed remote work agreements or policy acknowledgments from employees.",
+    "Configuration screenshots showing enforced MFA and VPN requirements for remote access.",
+    "Endpoint protection logs indicating encryption and antivirus status on remote devices.",
+    "Records of remote work security training completion (e.g., LMS certificates or attendance sheets).",
+    "Sample audit logs showing remote login attempts with timestamps, geolocation, and device info."
+   ],
+   "pitfalls": [
+    "Allowing remote access via personal devices without enforcing baseline security controls.",
+    "Failing to update or communicate remote work policies after changes in threat landscape or technology.",
+    "Not monitoring remote access logs, leading to undetected unauthorized access attempts.",
+    "Assuming compliance based solely on policy existence without verifying technical enforcement or user behavior."
+   ]
+  },
+  "A.6.8": {
+   "objective": "Ensure that information security events are reported promptly through established channels so they can be assessed and responded to in a timely manner, reducing the impact of incidents and supporting continuous improvement.",
+   "auditor_expects": [
+    "Verify that a clear procedure exists for reporting security events by all personnel.",
+    "Check that reporting channels (e.g., email, portal, phone) are documented and accessible.",
+    "Confirm that employees are aware of their obligation to report events and know how to do so.",
+    "Review that reported events are logged and forwarded to the appropriate response team.",
+    "Ensure that reporting is encouraged without fear of blame or reprisal."
+   ],
+   "evidence": [
+    "Documented information security event reporting procedure.",
+    "Screenshot of the internal reporting portal or form used by staff.",
+    "Training records showing staff awareness of reporting obligations.",
+    "Sample log of reported events with timestamps and reporter details.",
+    "Communications (e.g., newsletter, intranet post) promoting a no-blame reporting culture."
+   ],
+   "pitfalls": [
+    "Reporting process is overly complex or unclear, discouraging use.",
+    "No defined escalation path after initial report is submitted.",
+    "Employees fear punishment for reporting, leading to under-reporting.",
+    "Reports are collected but not reviewed or acted upon in a timely manner."
+   ]
+  },
+  "A.7.1": {
+   "objective": "Define and protect physical security perimeters to prevent unauthorized access to sensitive areas containing information and information processing facilities. This addresses the risk of physical intrusion, theft, or tampering with critical assets.",
+   "auditor_expects": [
+    "Physical boundaries (walls, fences, doors) are clearly defined and documented.",
+    "Access points to secure areas are controlled and monitored (e.g., locks, guards, turnstiles).",
+    "Unauthorized entry attempts are detectable and logged where feasible.",
+    "Perimeter controls are proportionate to the sensitivity of the assets inside.",
+    "Exceptions or temporary access are authorized and recorded."
+   ],
+   "evidence": [
+    "Site plans or diagrams showing secured perimeters and access points.",
+    "Access control logs (badge-in/out, visitor registers) for secure zones.",
+    "Photos or video stills of perimeter barriers, doors, and security signage.",
+    "Maintenance records for locks, alarms, or surveillance equipment.",
+    "Visitor escort logs or temporary access authorization forms."
+   ],
+   "pitfalls": [
+    "Assuming perimeter security is only about doors and ignoring windows, vents, or roof access.",
+    "Failing to review or update perimeter controls after organizational changes (e.g., office moves).",
+    "Relying solely on signage without physical or technical enforcement.",
+    "Not distinguishing between public, restricted, and high-security zones in practice."
+   ]
+  },
+  "A.7.2": {
+   "objective": "Ensure that physical access to secure areas is controlled and monitored to prevent unauthorized entry, thereby protecting information assets from theft, damage, or compromise due to physical intrusion.",
+   "auditor_expects": [
+    "Verify that physical entry points to secure areas are secured with appropriate access controls (e.g., locks, card readers, biometrics).",
+    "Check that access rights are granted based on business need and reviewed periodically.",
+    "Confirm that entry and exit events are logged and retained for a defined period.",
+    "Ensure that visitor access is controlled, logged, and escorted where required.",
+    "Validate that physical security measures are tested and maintained regularly."
+   ],
+   "evidence": [
+    "Access control system configuration showing authentication methods and zone definitions.",
+    "Access request and approval records for personnel entering secure areas.",
+    "Audit logs of entry/exit events with timestamps and user IDs for the last 30 days.",
+    "Visitor register or digital sign-in system showing escort requirements and host details.",
+    "Maintenance records or test reports for door locks, alarms, or surveillance equipment."
+   ],
+   "pitfalls": [
+    "Using generic or shared credentials (e.g., shared PINs or cards) for secure area access.",
+    "Failing to revoke access promptly when employees change roles or leave the organization.",
+    "Not monitoring or reviewing access logs, relying only on physical locks without audit trails.",
+    "Allowing visitors to enter secure areas unescorted or without recording their presence."
+   ]
+  },
+  "A.7.3": {
+   "objective": "Ensure physical spaces are protected from unauthorized access, damage, or interference by applying appropriate security measures to offices, rooms, and facilities based on risk assessment.",
+   "auditor_expects": [
+    "Verify physical security controls are defined for different areas (e.g., public, restricted, high-security).",
+    "Check that access to sensitive areas is controlled via locks, badges, or biometrics.",
+    "Confirm that security zones are clearly marked and documented.",
+    "Ensure visitors are escorted and logged in secure areas.",
+    "Review that physical security measures align with the ISMS risk treatment plan."
+   ],
+   "evidence": [
+    "Facility security policy or procedure document.",
+    "Access control logs or badge reader reports for server rooms.",
+    "Floor plan showing security zones and access points.",
+    "Visitor register with timestamps and escort details.",
+    "Risk assessment output referencing physical security controls."
+   ],
+   "pitfalls": [
+    "Applying the same security level to all areas without risk differentiation.",
+    "Failing to update access rights when employees change roles or leave.",
+    "Using generic locks without audit trails or key management.",
+    "Overlooking tailgating risks in high-security zones."
+   ]
+  },
+  "A.7.4": {
+   "objective": "Detect and respond to unauthorized physical access or suspicious activity through continuous monitoring of premises using appropriate technical and procedural controls.",
+   "auditor_expects": [
+    "Confirm monitoring tools (e.g., CCTV, alarms) are deployed in critical areas.",
+    "Verify monitoring is active 24/7 or during defined high-risk periods.",
+    "Check that monitoring records are retained for a defined period.",
+    "Ensure alerts are investigated and responded to promptly.",
+    "Validate that monitoring covers entry/exit points and sensitive zones."
+   ],
+   "evidence": [
+    "CCTV system configuration showing coverage of data center entrances.",
+    "Alarm system test logs or maintenance records.",
+    "Stored video footage retention policy (e.g., 30 days).",
+    "Incident report from a triggered alarm with response timeline.",
+    "Security guard patrol logs or monitoring dashboard screenshots."
+   ],
+   "pitfalls": [
+    "Installing cameras but not monitoring feeds in real time.",
+    "Failing to retain footage long enough for forensic analysis.",
+    "Monitoring only entrances but not internal sensitive areas like server rooms.",
+    "Not testing alarm response procedures regularly."
+   ]
+  },
+  "A.7.5": {
+   "objective": "Protect information processing facilities from physical and environmental threats such as fire, flood, dust, electrical faults, and extreme temperatures through preventive and protective controls.",
+   "auditor_expects": [
+    "Verify environmental controls (e.g., HVAC, fire suppression) are installed and maintained.",
+    "Check that equipment is protected from power surges via UPS or surge protectors.",
+    "Confirm that water detection and flood barriers are in place where relevant.",
+    "Ensure dust filters and positive pressure systems are used in clean areas.",
+    "Validate that environmental risks are assessed and treated in the ISMS."
+   ],
+   "evidence": [
+    "Fire suppression system inspection certificate (e.g., FM-200 or sprinkler).",
+    "UPS battery test logs showing runtime capacity.",
+    "Water sensor alert logs from raised floor or basement areas.",
+    "HVAC maintenance records with filter replacement dates.",
+    "Risk assessment entry identifying flood risk and mitigation (e.g., elevated flooring)."
+   ],
+   "pitfalls": [
+    "Relying solely on smoke detectors without suppression in server rooms.",
+    "Placing equipment under sprinkler heads without water-resistant enclosures.",
+    "Ignoring humidity control leading to condensation or static discharge.",
+    "Using consumer-grade UPS units without monitoring or replacement schedules."
+   ]
+  },
+  "A.7.6": {
+   "objective": "Ensure that personnel working in secure areas are authorized, aware of security procedures, and supervised to prevent accidental or intentional breaches.",
+   "auditor_expects": [
+    "Confirm only authorized personnel have access to secure areas.",
+    "Verify that staff have received security awareness training relevant to physical security.",
+    "Check that supervision or buddy systems are in place for high-risk tasks.",
+    "Ensure access is revoked promptly when roles change or employment ends.",
+    "Validate that secure area procedures are communicated and understood."
+   ],
+   "evidence": [
+    "Access control list showing authorized personnel for the server room.",
+    "Training completion records for physical security awareness (e.g., LMS report).",
+    "Supervisor sign-off on entry logs for contractor work in secure zones.",
+    "HR termination checklist including access revocation timestamp.",
+    "Posted procedures at secure area entrances (photo or screenshot)."
+   ],
+   "pitfalls": [
+    "Allowing contractors to work unsupervised in secure areas after initial vetting.",
+    "Not revoking physical access when an employee transfers to a non-secure role.",
+    "Assuming training completion equals understanding without verification or refreshers.",
+    "Relying on verbal instructions instead of documented procedures for secure area entry."
+   ]
+  },
+  "A.7.7": {
+   "objective": "Reduce the risk of unauthorized access to information by ensuring desks and screens are cleared of sensitive information when unattended, especially in shared or public environments.",
+   "auditor_expects": [
+    "Verify a clear desk and clear screen policy is defined and communicated.",
+    "Check that employees lock screens when leaving workstations unattended.",
+    "Confirm that sensitive documents are stored securely when not in use.",
+    "Ensure printers and output trays are monitored to prevent unattended sensitive prints.",
+    "Validate that the policy applies to remote and mobile workers where relevant."
+   ],
+   "evidence": [
+    "Clear desk and clear screen policy document referenced in onboarding.",
+    "Screenshot of screen lock timeout setting (e.g., 5 minutes) on workstations.",
+    "Photos of locked cabinets storing sensitive documents during audit walkthrough.",
+    "Print release system logs showing authenticated print retrieval.",
+    "Audit findings from desk inspections showing compliance (e.g., no sticky notes with passwords)."
+   ],
+   "pitfalls": [
+    "Having a policy but not enforcing it through regular checks or reminders.",
+    "Employees writing passwords on sticky notes despite training.",
+    "Leaving confidential prints unattended on shared printers for extended periods.",
+    "Applying the policy only to office staff and ignoring remote workers using laptops in cafes."
+   ]
+  },
+  "A.7.8": {
+   "objective": "Protect equipment from physical threats, unauthorized access, and environmental hazards by ensuring it is sited and protected appropriately according to its criticality and sensitivity.",
+   "auditor_expects": [
+    "Verify that critical equipment (e.g., servers, network gear) is located in secure, access-controlled areas.",
+    "Check that equipment is protected from physical shock, vibration, or unauthorized tampering.",
+    "Confirm that cabling is secured and not exposed to damage or interception.",
+    "Ensure equipment is positioned to avoid hazards like flooding, overheating, or direct sunlight.",
+    "Validate that siting decisions are based on risk assessment and documented."
+   ],
+   "evidence": [
+    "Floor plan showing server room location away from exterior walls and windows.",
+    "Photos of rack-mounted servers with locked cabinets and cable management.",
+    "Environmental monitoring logs showing temperature/humidity within acceptable ranges.",
+    "Risk assessment noting equipment siting as a control for physical threat mitigation.",
+    "Maintenance records showing seismic bracing or anti-static flooring installation."
+   ],
+   "pitfalls": [
+    "Placing network switches in unlocked janitorial closets or open offices.",
+    "Running Ethernet cables under carpets where they can be damaged or tapped.",
+    "Locating UPS units in areas prone to water leaks without elevation or drainage.",
+    "Failing to consider electromagnetic interference when siting equipment near motors or radios."
+   ]
+  },
+  "A.7.9": {
+   "objective": "Ensure that information assets used outside the organization’s premises are protected against loss, damage, theft, or unauthorized access, addressing risks from mobile work, remote access, and physical exposure.",
+   "auditor_expects": [
+    "Verify policies define acceptable use and protection measures for off-premises assets.",
+    "Check that encryption, access controls, and physical safeguards are applied to laptops, mobile devices, and removable media.",
+    "Confirm procedures exist for reporting lost or stolen devices and for remote wipe capabilities.",
+    "Review training records showing staff awareness of off-premises security responsibilities.",
+    "Ensure asset inventory includes off-premises items and their status is tracked."
+   ],
+   "evidence": [
+    "Off-premises asset use policy document.",
+    "Encryption configuration screenshots for laptops and USB drives.",
+    "Incident log of lost/stolen devices with response actions.",
+    "Security awareness training attendance records for remote workers.",
+    "Asset register showing location tags (e.g., 'off-site', 'remote') and last known status."
+   ],
+   "pitfalls": [
+    "Applying the same controls as on-premises without considering mobility risks.",
+    "Failing to enforce encryption on removable media used off-site.",
+    "Not tracking asset location or status after deployment to remote workers.",
+    "Overlooking physical security (e.g., leaving laptops in cars) in policy or training."
+   ]
+  },
+  "A.7.10": {
+   "objective": "Protect storage media containing information throughout its lifecycle to prevent unauthorized disclosure, modification, loss, or theft, addressing risks from improper handling, storage, or disposal of media.",
+   "auditor_expects": [
+    "Confirm classification and handling procedures apply to all storage media types (e.g., tapes, disks, USB).",
+    "Verify secure storage (e.g., locked cabinets, access logs) for media containing sensitive data.",
+    "Check that media is sanitized or destroyed before reuse or disposal per classification level.",
+    "Ensure media movement (transfer, transport) is logged and authorized.",
+    "Review that backup media is stored offsite with appropriate protection controls."
+   ],
+   "evidence": [
+    "Storage media handling procedure document.",
+    "Access log for secure media safe or cabinet.",
+    "Certificate of destruction or sanitization report for disposed media.",
+    "Media transfer log showing authorization and chain of custody.",
+    "Offsite backup storage contract with security requirements (e.g., fireproof, access control)."
+   ],
+   "pitfalls": [
+    "Treating all media the same regardless of data sensitivity.",
+    "Storing backup media in unsecured locations like desks or server rooms without controls.",
+    "Reusing media without verified sanitization (e.g., quick format only).",
+    "Failing to log media movement between sites or departments."
+   ]
+  },
+  "A.7.11": {
+   "objective": "Ensure that supporting utilities (power, heating, cooling, water, telecommunications) are adequately protected and maintained to prevent disruption or damage to information processing facilities, addressing risks from utility failure or environmental hazards.",
+   "auditor_expects": [
+    "Verify critical systems are connected to uninterruptible power supplies (UPS) or generators.",
+    "Check that HVAC systems are monitored and maintained to prevent overheating or humidity damage.",
+    "Confirm water detection and suppression systems are in place where relevant (e.g., under raised floors).",
+    "Review that telecommunications lines are protected from physical tampering or interception.",
+    "Ensure utility maintenance contracts and test records exist for critical infrastructure."
+   ],
+   "evidence": [
+    "UPS and generator maintenance logs and test reports.",
+    "HVAC service records showing temperature/humidity monitoring.",
+    "Water leak detection system alerts or maintenance records.",
+    "Physical inspection report of telecom conduit security (e.g., locked conduits, sealed entries).",
+    "Service level agreements (SLAs) with utility providers including uptime and response times."
+   ],
+   "pitfalls": [
+    "Assuming utility reliability without backup or monitoring.",
+    "Neglecting environmental monitoring in server rooms (e.g., no humidity sensors).",
+    "Using standard power strips instead of surge-protected, UPS-backed outlets for critical gear.",
+    "Failing to test failover to generator or UPS under load conditions."
+   ]
+  },
+  "A.7.12": {
+   "objective": "Protect power and communication cabling from unauthorized interception, damage, or interference to ensure the confidentiality, integrity, and availability of information transmitted over networks, addressing risks from physical tapping, cutting, or environmental damage.",
+   "auditor_expects": [
+    "Confirm cabling in public or accessible areas is protected (e.g., conduit, shielding, or restricted access).",
+    "Check that network cabling is segregated from power cabling where interference is a risk.",
+    "Verify physical security of patch panels, wall outlets, and conduit entry points.",
+    "Ensure wireless access points are not connected via exposed or easily tampered cabling.",
+    "Review that cabling infrastructure is documented and changes are controlled."
+   ],
+   "evidence": [
+    "Network diagram showing cabling routes and protection methods (conduit, shielding).",
+    "Photos of cabling in secure conduit or behind locked panels.",
+    "Access log for telecommunications room or cabling closets.",
+    "Cable test reports showing no interference or cross-talk after installation.",
+    "Change control records for cabling modifications or additions."
+   ],
+   "pitfalls": [
+    "Running Ethernet cables openly along floors or ceilings in public areas.",
+    "Bundling data and power cables together without shielding, causing interference.",
+    "Leaving wall jacks or patch panels unlocked and accessible to unauthorized personnel.",
+    "Failing to update cabling diagrams after moves, adds, or changes (MACs)."
+   ]
+  },
+  "A.7.13": {
+   "objective": "Ensure that equipment is properly maintained to prevent failures that could compromise information security, addressing risks from malfunction, degradation, or inadequate servicing that could lead to data loss, corruption, or downtime.",
+   "auditor_expects": [
+    "Verify maintenance schedules exist for critical IT equipment (servers, network gear, storage).",
+    "Check that maintenance is performed by qualified personnel and records are retained.",
+    "Confirm that maintenance activities do not weaken security controls (e.g., disabling firewalls during service).",
+    "Ensure emergency maintenance procedures are defined and tested.",
+    "Review that maintenance logs include date, technician, actions taken, and security impact assessment."
+   ],
+   "evidence": [
+    "Preventive maintenance schedule for servers, firewalls, UPS units.",
+    "Signed maintenance work orders or service reports from vendors.",
+    "Change control records linking maintenance to configuration updates.",
+    "Incident log showing no security degradation post-maintenance (or actions taken if issues found).",
+    "Vendor qualifications or certifications for personnel performing maintenance."
+   ],
+   "pitfalls": [
+    "Performing maintenance without recording it, making compliance unverifiable.",
+    "Allowing vendors to bypass security controls (e.g., disabling AV) without re-enabling afterward.",
+    "Using outdated or unsupported hardware without a risk mitigation plan.",
+    "Failing to verify that security patches or configurations are reapplied after maintenance."
+   ]
+  },
+  "A.7.14": {
+   "objective": "Ensure that equipment containing storage media is securely disposed of or reused to prevent unauthorized recovery of sensitive information, addressing risks from data remanence on discarded devices such as hard drives, smartphones, or printers.",
+   "auditor_expects": [
+    "Verify disposal/reuse procedures are based on information classification and media type.",
+    "Check that data destruction methods (e.g., shredding, degaussing, cryptographic erasure) are appropriate and verified.",
+    "Confirm that equipment is sanitized before transfer to third parties for recycling or resale.",
+    "Ensure disposal activities are authorized, logged, and witnessed where required.",
+    "Review that certificates of destruction or reuse validation are retained as evidence."
+   ],
+   "evidence": [
+    "Equipment disposal and reuse policy with classification-based methods.",
+    "Degaussing or shredding certificate for hard drives and tapes.",
+    "Cryptographic erasure log showing verification of wipe success (e.g., Blancco report).",
+    "Authorization form for equipment disposal signed by asset owner and security.",
+    "Third-party recycler contract with data destruction clauses and audit rights."
+   ],
+   "pitfalls": [
+    "Assuming factory reset or formatting is sufficient for data destruction on modern drives.",
+    "Disposing of equipment without removing or destroying storage media first.",
+    "Failing to verify that data erasure tools actually worked (no validation step).",
+    "Donating or selling used equipment without ensuring all data is irrecoverable."
+   ]
+  },
+  "A.8.1": {
+   "objective": "Ensure user endpoint devices are protected against threats by applying appropriate security controls based on risk, reducing the likelihood of malware infection, data leakage, or unauthorized access via compromised devices.",
+   "auditor_expects": [
+    "Verify endpoint protection policies are defined and communicated.",
+    "Check that antivirus, patch management, and device encryption are enforced.",
+    "Confirm devices are inventoried and classified by risk level.",
+    "Review procedures for lost/stolen device response.",
+    "Ensure user awareness training covers endpoint security responsibilities."
+   ],
+   "evidence": [
+    "Endpoint security policy document.",
+    "Screenshot of centralized antivirus management console showing compliance.",
+    "Patch management logs or WSUS/SCCM reports.",
+    "Device inventory register with encryption status.",
+    "Training records or LMS completion reports for endpoint security."
+   ],
+   "pitfalls": [
+    "Assuming personal devices used for work are covered without a BYOD policy.",
+    "Deploying antivirus without centralized monitoring or alerting.",
+    "Failing to encrypt laptops containing sensitive data.",
+    "Not testing or updating incident response procedures for lost devices."
+   ]
+  },
+  "A.8.2": {
+   "objective": "Restrict privileged access rights to only those who require them for their duties, minimizing the risk of misuse, accidental damage, or exploitation by attackers who compromise privileged accounts.",
+   "auditor_expects": [
+    "Verify privileged accounts are identified and documented.",
+    "Check that privileged access is granted based on formal approval and least privilege principle.",
+    "Ensure regular review of privileged access rights (e.g., quarterly).",
+    "Confirm use of privileged access management (PAM) tools where applicable.",
+    "Review logging and monitoring of privileged account activity."
+   ],
+   "evidence": [
+    "List of privileged accounts with justification for each.",
+    "Access request and approval workflow records (e.g., ticketing system).",
+    "Access review meeting minutes or signed-off review sheets.",
+    "PAM tool configuration screenshots (e.g., CyberArk, BeyondTrust).",
+    "Audit logs showing privileged command execution or session recordings."
+   ],
+   "pitfalls": [
+    "Using shared admin accounts without individual accountability.",
+    "Granting permanent privileged access instead of just-in-time access.",
+    "Failing to review access after role changes or employee termination.",
+    "Not monitoring privileged sessions for anomalous behavior."
+   ]
+  },
+  "A.8.3": {
+   "objective": "Ensure access to information and systems is restricted according to business and security requirements, preventing unauthorized disclosure, modification, or destruction of data through improper access controls.",
+   "auditor_expects": [
+    "Verify access control policy defines rules for granting, modifying, and revoking access.",
+    "Check that role-based access control (RBAC) or attribute-based models are implemented.",
+    "Ensure access rights are reviewed periodically (e.g., annually or on role change).",
+    "Confirm segregation of duties is enforced where risks exist (e.g., developer vs. production).",
+    "Review that default passwords are changed and unnecessary accounts are disabled."
+   ],
+   "evidence": [
+    "Access control policy document.",
+    "RBAC matrix or role definitions in IAM system (e.g., Azure AD, Okta).",
+    "Access review reports showing manager sign-offs.",
+    "SoD conflict detection reports from IAM tool.",
+    "List of disabled or expired accounts with timestamps."
+   ],
+   "pitfalls": [
+    "Using overly broad roles (e.g., 'Domain Admin' for all IT staff).",
+    "Not revoking access promptly when employees leave or change roles.",
+    "Allowing developers direct access to production databases without controls.",
+    "Relying on manual spreadsheets for access reviews instead of automated tools."
+   ]
+  },
+  "A.8.4": {
+   "objective": "Protect source code from unauthorized access, modification, or theft by applying appropriate security controls to development environments, repositories, and build processes, preserving intellectual property and preventing injection of malicious code.",
+   "auditor_expects": [
+    "Verify source code repositories are access-controlled (e.g., GitHub, GitLab, SVN).",
+    "Check that changes to source code require peer review and approval (e.g., pull requests).",
+    "Ensure build and deployment pipelines are secured and isolated from development environments.",
+    "Confirm secrets (e.g., API keys, credentials) are not hardcoded in source code.",
+    "Review that source code backups are encrypted and access-restricted."
+   ],
+   "evidence": [
+    "Repository access permissions screenshot (showing role-based access).",
+    "Pull request approval workflow configuration.",
+    "CI/CD pipeline security settings (e.g., Jenkins, GitHub Actions with secret masking).",
+    "Secrets scan report (e.g., from GitGuardian or TruffleHog).",
+    "Backup encryption key management logs or storage access logs."
+   ],
+   "pitfalls": [
+    "Storing production credentials in public or internal repositories.",
+    "Allowing developers to push directly to main branch without review.",
+    "Using the same credentials across dev, test, and prod environments.",
+    "Not scanning for secrets in code before committing or merging."
+   ]
+  },
+  "A.8.5": {
+   "objective": "Ensure authentication mechanisms are strong and appropriate to the risks associated with access to information and systems, reducing the likelihood of unauthorized access through weak or compromised credentials.",
+   "auditor_expects": [
+    "Verify multi-factor authentication (MFA) is enforced for remote and privileged access.",
+    "Check that password policies meet complexity, length, and expiration requirements.",
+    "Ensure authentication systems protect against brute force and credential stuffing (e.g., lockout, throttling).",
+    "Confirm password storage uses strong, salted hashing algorithms (e.g., bcrypt, Argon2).",
+    "Review that default credentials are changed on all systems and applications."
+   ],
+   "evidence": [
+    "MFA enforcement policy and dashboard showing coverage (e.g., Duo, Azure MFA).",
+    "Password policy configuration from AD or IAM system.",
+    "Account lockout policy settings and failed login attempt logs.",
+    "System configuration showing password hashing method (e.g., /etc/login.defs, application config).",
+    "Audit report of default credential checks (e.g., from vulnerability scanner)."
+   ],
+   "pitfalls": [
+    "Applying MFA only to VPN but not to cloud admin portals or SaaS apps.",
+    "Using weak password policies (e.g., 6-character passwords, no complexity).",
+    "Storing passwords in plain text or reversible encryption in applications or scripts.",
+    "Failing to change default passwords on network devices, printers, or IoT systems."
+   ]
+  },
+  "A.8.6": {
+   "objective": "Ensure that the capacity of information processing facilities is sufficient to meet current and future business needs, preventing performance degradation, service disruption, or denial of service due to resource exhaustion.",
+   "auditor_expects": [
+    "Verify capacity planning is performed regularly for critical systems (e.g., servers, storage, network bandwidth).",
+    "Check that monitoring tools track utilization trends (CPU, memory, disk, bandwidth).",
+    "Ensure thresholds and alerts are configured for resource exhaustion risks.",
+    "Confirm capacity upgrades are planned and executed based on forecasts and business growth.",
+    "Review that capacity reports are reviewed by management and linked to business continuity planning."
+   ],
+   "evidence": [
+    "Capacity planning document or spreadsheet with forecasts.",
+    "Monitoring tool screenshots (e.g., SolarWinds, Datadog, Prometheus) showing utilization graphs.",
+    "Alert configuration showing thresholds for CPU >85%, disk >90%.",
+    "Change control records for recent hardware or cloud resource upgrades.",
+    "Management meeting minutes discussing capacity reports and IT investment decisions."
+   ],
+   "pitfalls": [
+    "Only monitoring capacity after incidents occur instead of proactively.",
+    "Setting alerts too high (e.g., 98% CPU) so they trigger too late to act.",
+    "Ignoring storage growth trends in databases or log repositories.",
+    "Upgrading capacity without validating actual usage patterns or business demand."
+   ]
+  },
+  "A.8.7": {
+   "objective": "Ensure that malware is prevented, detected, and removed from information systems to protect the confidentiality, integrity, and availability of data and services.",
+   "auditor_expects": [
+    "Malware protection tools are deployed on all relevant systems",
+    "Real-time scanning and automatic updates are enabled",
+    "Malware incidents are logged and responded to according to procedures",
+    "Regular scans are performed and results reviewed",
+    "Users are aware of malware risks and reporting mechanisms"
+   ],
+   "evidence": [
+    "Endpoint protection platform configuration screenshots",
+    "Malware scan logs from the last 30 days",
+    "Incident ticket showing malware detection and remediation",
+    "Patch/update schedule for antivirus signatures",
+    "User awareness training materials on phishing and malware"
+   ],
+   "pitfalls": [
+    "Only deploying antivirus on servers, not endpoints",
+    "Disabling real-time protection for performance reasons",
+    "No process to update malware signatures regularly",
+    "Failing to log or review malware alerts"
+   ]
+  },
+  "A.8.8": {
+   "objective": "Ensure that technical vulnerabilities in systems are identified, assessed, and remediated in a timely manner to reduce the risk of exploitation.",
+   "auditor_expects": [
+    "Vulnerability scanning is performed regularly on all in-scope systems",
+    "Identified vulnerabilities are assessed for risk and prioritized",
+    "Remediation actions are tracked and completed within agreed timelines",
+    "Patch management is applied to operating systems and applications",
+    "Exception handling is documented for delayed or accepted risks"
+   ],
+   "evidence": [
+    "Vulnerability scan reports (e.g., Nessus, OpenVAS) from last quarter",
+    "Remediation tracker showing open/closed vulnerabilities",
+    "Patch management logs for OS and third-party software",
+    "Risk acceptance form for a deferred vulnerability",
+    "Change control records linked to patch deployment"
+   ],
+   "pitfalls": [
+    "Scanning only external IPs, ignoring internal networks",
+    "No remediation deadline defined or enforced",
+    "Patching applied without testing in staging",
+    "Accepting high-risk vulnerabilities without justification"
+   ]
+  },
+  "A.8.9": {
+   "objective": "Ensure that system configurations are securely established, maintained, and documented to prevent unauthorized changes that could introduce vulnerabilities.",
+   "auditor_expects": [
+    "Baseline configurations are defined for critical systems",
+    "Changes to configurations are controlled via a change management process",
+    "Unauthorized or drift configurations are detected and corrected",
+    "Configuration settings align with security policies (e.g., disable unused services)",
+    "Configuration documentation is kept up to date and accessible"
+   ],
+   "evidence": [
+    "System hardening checklist or baseline template (e.g., CIS Benchmarks)",
+    "Change management records showing approved config changes",
+    "Configuration drift detection tool output (e.g., Ansible, Chef, SCCM)",
+    "Screenshot of disabled services or closed ports on a server",
+    "Version-controlled configuration files (e.g., in Git)"
+   ],
+   "pitfalls": [
+    "Using default vendor configurations without hardening",
+    "No process to detect or correct configuration drift",
+    "Documentation outdated or not reflecting actual state",
+    "Allowing administrators to bypass change control for 'emergencies'"
+   ]
+  },
+  "A.8.10": {
+   "objective": "Ensure that information is securely deleted when no longer required, preventing recovery of sensitive data by unauthorized persons.",
+   "auditor_expects": [
+    "Data deletion procedures are defined for different storage media",
+    "Deletion methods are appropriate to the data sensitivity and technology used",
+    "Deletion is verified and recorded where required",
+    "Retention and deletion schedules are followed",
+    "Personnel are trained on secure deletion practices"
+   ],
+   "evidence": [
+    "Data retention and disposal policy",
+    "Deletion procedure documents (e.g., for hard drives, SSDs, tapes)",
+    "Certificate of destruction from third-party disposal vendor",
+    "Logs showing file shredding or memory wiping actions",
+    "Inventory of decommissioned media with deletion status"
+   ],
+   "pitfalls": [
+    "Using standard delete or format instead of secure wiping",
+    "No verification that data cannot be recovered after deletion",
+    "Retention schedules not linked to deletion triggers",
+    "Failing to delete data from backups or archives"
+   ]
+  },
+  "A.8.11": {
+   "objective": "Ensure that sensitive data is masked in non-production environments to limit exposure while preserving usability for testing or development.",
+   "auditor_expects": [
+    "Data masking techniques are applied to PII, financial data, or other sensitive fields",
+    "Masking is consistent and irreversible where required",
+    "Masked data retains format and referential integrity for application use",
+    "Access to unmasked data is restricted to authorized personnel only",
+    "Masking policies are documented and applied across relevant systems"
+   ],
+   "evidence": [
+    "Data masking policy or standard",
+    "Masking rule configuration (e.g., in Informatica, Delphix, or custom scripts)",
+    "Before/after data samples showing masked fields (e.g., XXX-XX-1234)",
+    "Access control list showing who can view unmasked data",
+    "Test environment data inventory indicating masked usage"
+   ],
+   "pitfalls": [
+    "Using encryption instead of masking, making data unusable for testing",
+    "Masking only some environments but not all non-production systems",
+    "Failing to preserve data format, breaking application functionality",
+    "Using weak masking like truncation that allows easy reversal"
+   ]
+  },
+  "A.8.12": {
+   "objective": "Ensure that unauthorized transfer of information outside the organization is prevented through technical controls that monitor, detect, and block data leakage attempts.",
+   "auditor_expects": [
+    "DLP tools are deployed to monitor data in motion, at rest, and at endpoints",
+    "Rules are defined for sensitive data types (e.g., PII, intellectual property)",
+    "Alerts and blocks are triggered when policy violations are detected",
+    "Incidents are investigated and responded to per security procedures",
+    "DLP effectiveness is reviewed periodically and rules tuned"
+   ],
+   "evidence": [
+    "DLP solution architecture diagram or deployment scope",
+    "DLP policy rules (e.g., for email, USB, web uploads)",
+    "DLP alert logs showing triggered events and actions taken",
+    "Incident report for a data leakage attempt",
+    "DLP tuning report or false positive analysis from last review"
+   ],
+   "pitfalls": [
+    "Deploying DLP only at network perimeter, missing endpoint or cloud vectors",
+    "Over-blocking leading to business disruption and user workarounds",
+    "No process to review or refine rules, causing excessive false positives",
+    "Failing to monitor data at rest in shared repositories or backups"
+   ]
+  },
+  "A.8.13": {
+   "objective": "Ensure information is backed up to protect against loss, corruption, or disruption, maintaining availability and integrity of critical data.",
+   "auditor_expects": [
+    "Backup policy defines frequency, scope, and retention periods.",
+    "Backups are performed regularly and tested for recoverability.",
+    "Backup storage is secured and segregated from production systems.",
+    "Recovery time objectives (RTO) and recovery point objectives (RPO) are defined and met."
+   ],
+   "evidence": [
+    "Backup schedule and procedure document.",
+    "Logs showing successful backup completion for critical systems.",
+    "Test restore reports from the last 12 months.",
+    "Encrypted backup storage configuration (e.g., offsite or cloud).",
+    "RTO/RPO metrics in business continuity plan."
+   ],
+   "pitfalls": [
+    "Backups performed but never tested for restore.",
+    "Backup media stored in same location as primary systems.",
+    "No defined retention policy leading to indefinite or excessive storage.",
+    "Privileged users can alter or delete backups without approval."
+   ]
+  },
+  "A.8.14": {
+   "objective": "Ensure information processing facilities are redundant to maintain continuity of operations during disruptions or failures.",
+   "auditor_expects": [
+    "Redundancy design aligns with business impact analysis and risk treatment.",
+    "Critical systems have failover capabilities (e.g., active-passive or active-active).",
+    "Failover mechanisms are tested periodically under realistic conditions.",
+    "Geographic separation of primary and secondary sites where applicable."
+   ],
+   "evidence": [
+    "Network diagram showing redundant paths and failover routes.",
+    "Failover test reports from last 6–12 months.",
+    "Configuration of load balancers, clusters, or DR site synchronization.",
+    "Service level agreements (SLAs) with third-party providers for redundancy.",
+    "Incident logs showing successful failover during past outages."
+   ],
+   "pitfalls": [
+    "Redundancy exists only on paper; no actual failover testing.",
+    "Secondary site lacks same security controls as primary.",
+    "Failover triggers require manual intervention causing delays.",
+    "Over-reliance on single cloud region without multi-zone deployment."
+   ]
+  },
+  "A.8.15": {
+   "objective": "Ensure appropriate logging is implemented to record user activities, exceptions, faults, and security events for monitoring and investigation.",
+   "auditor_expects": [
+    "Logging policy specifies what, where, and how long logs are retained.",
+    "Critical systems (servers, apps, network devices) generate audit logs.",
+    "Logs are protected from unauthorized access, alteration, or deletion.",
+    "Log collection is centralized where feasible for correlation and analysis."
+   ],
+   "evidence": [
+    "Logging policy document defining log types and retention (e.g., 90 days).",
+    "Screenshot of log configuration on a domain controller or firewall.",
+    "Centralized log server (e.g., SIEM) receiving logs from multiple sources.",
+    "Access control list showing restricted access to log storage.",
+    "Sample log entries showing user login, failed attempts, and admin actions."
+   ],
+   "pitfalls": [
+    "Logs enabled but not reviewed or monitored regularly.",
+    "Logs stored locally on devices with no backup or protection.",
+    "Inconsistent time stamps across systems hindering correlation.",
+    "Sensitive data (e.g., passwords) logged in plain text."
+   ]
+  },
+  "A.8.16": {
+   "objective": "Ensure ongoing monitoring of information systems to detect security events, anomalies, and policy violations in a timely manner.",
+   "auditor_expects": [
+    "Monitoring activities are defined based on risk and criticality of assets.",
+    "Monitoring tools (e.g., IDS, SIEM, UEBA) are deployed and configured.",
+    "Alerts are generated for suspicious activities and investigated promptly.",
+    "Monitoring effectiveness is reviewed and improved periodically."
+   ],
+   "evidence": [
+    "Monitoring procedure outlining what is monitored and by whom.",
+    "SIEM dashboard showing active alerts and correlation rules.",
+    "Incident ticket showing investigation of a triggered alert (e.g., brute force).",
+    "Monthly monitoring performance report (e.g., false positive/negative rates).",
+    "Change log showing tuning of monitoring rules after tuning exercise."
+   ],
+   "pitfalls": [
+    "Monitoring generates excessive false positives leading to alert fatigue.",
+    "No defined escalation path for high-severity alerts.",
+    "Monitoring covers only perimeter; internal traffic is ignored.",
+    "Tools deployed but not updated with latest threat signatures."
+   ]
+  },
+  "A.8.17": {
+   "objective": "Ensure system clocks are synchronized to a reliable time source to support accurate logging, incident investigation, and audit trails.",
+   "auditor_expects": [
+    "Time synchronization policy defines authoritative time sources (e.g., NTP servers).",
+    "All critical systems are configured to synchronize with internal NTP hierarchy.",
+    "Internal NTP servers are synchronized to trusted external sources (e.g., national time service).",
+    "Time drift is monitored and kept within acceptable limits (e.g., <1s)."
+   ],
+   "evidence": [
+    "NTP configuration file (e.g., /etc/ntp.conf or Windows registry settings).",
+    "Screenshot showing time sync status from a domain controller or server.",
+    "Log entries showing consistent timestamps across firewall, server, and workstation.",
+    "Monitoring alert log for time drift exceeding threshold.",
+    "Documentation of external time sources used (e.g., NIST, GPS)."
+   ],
+   "pitfalls": [
+    "Relies solely on external NTP without internal hierarchy, creating single point of failure.",
+    "No monitoring of time drift; systems drift undetected for weeks.",
+    "Virtual machines not configured to sync with host or external time source.",
+    "Firewall blocks NTP ports (UDP 123) preventing synchronization."
+   ]
+  },
+  "A.8.18": {
+   "objective": "Restrict and control the use of privileged utility programs that can override system controls to prevent misuse or accidental damage.",
+   "auditor_expects": [
+    "List of privileged utilities (e.g., root/administrator tools, debuggers, disk editors) is maintained.",
+    "Access to privileged utilities is restricted to authorized personnel only.",
+    "Use of privileged utilities is logged and monitored for abnormal activity.",
+    "Justification is required and approved before granting access to such tools."
+   ],
+   "evidence": [
+    "Inventory of privileged utilities with classification (e.g., high-risk tools).",
+    "Access control list showing who can run 'psexec', 'dd', or 'regedit'.",
+    "Audit log showing use of a privileged utility by an authorized admin.",
+    "Approval ticket or change request for temporary access to a debugger.",
+    "Group policy restricting execution of certain utilities to specific OUs."
+   ],
+   "pitfalls": [
+    "Privileged utilities are accessible to all administrators without restriction.",
+    "No logging of utility usage, making misuse undetectable.",
+    "Tools like PsExec or PowerShell are allowed without constraints or monitoring.",
+    "Access granted based on role alone without task-specific approval."
+   ]
+  },
+  "A.8.19": {
+   "objective": "Ensure software is installed only on operational systems after proper authorization and testing to prevent introducing vulnerabilities or malicious code.",
+   "auditor_expects": [
+    "Change management process includes software installation requests",
+    "Approval records exist for each installation",
+    "Testing in non-production environment before deployment",
+    "Inventory of authorized software maintained",
+    "Logs show installation activities on operational systems"
+   ],
+   "evidence": [
+    "Change control tickets with approvals",
+    "Test environment validation reports",
+    "Authorized software inventory list",
+    "Installation logs from endpoint systems",
+    "Patch management records showing tested updates"
+   ],
+   "pitfalls": [
+    "Installing software without formal change approval",
+    "Using production systems for testing new software",
+    "Failing to maintain an up-to-date authorized software list",
+    "Not verifying software integrity via checksums or signatures"
+   ]
+  },
+  "A.8.20": {
+   "objective": "Protect network infrastructure and services through configuration, monitoring, and access controls to reduce attack surface and prevent unauthorized access.",
+   "auditor_expects": [
+    "Network devices are hardened per security baseline",
+    "Unnecessary services and ports are disabled",
+    "Remote access is restricted and monitored",
+    "Network segmentation limits lateral movement",
+    "Monitoring tools detect anomalous traffic"
+   ],
+   "evidence": [
+    "Firewall and router configuration backups",
+    "Network scan reports showing closed ports",
+    "VPN access logs with MFA enforcement",
+    "IDS/IPS alert logs",
+    "Network diagram with segmentation zones labeled"
+   ],
+   "pitfalls": [
+    "Default credentials left on network devices",
+    "Open management interfaces accessible from internet",
+    "Overly permissive firewall rules allowing unrestricted access",
+    "Lack of logging on critical network infrastructure"
+   ]
+  },
+  "A.8.21": {
+   "objective": "Secure network services (e.g., DNS, email, web) by configuring them to minimize vulnerabilities and enforce authentication and encryption where needed.",
+   "auditor_expects": [
+    "Services run with least privilege",
+    "Service configurations follow hardening guides",
+    "Unused services are disabled",
+    "Authentication required for administrative access",
+    "Service logs are monitored for anomalies"
+   ],
+   "evidence": [
+    "Service account permissions audit",
+    "Hardened configuration templates (e.g., CIS benchmarks)",
+    "Service disablement records",
+    "Admin login logs for critical services",
+    "Log aggregation showing service access attempts"
+   ],
+   "pitfalls": [
+    "Running services as domain admin or root",
+    "Using outdated service versions with known flaws",
+    "Exposing internal services to public networks without proxy",
+    "Not encrypting service-to-service communication where sensitive data flows"
+   ]
+  },
+  "A.8.22": {
+   "objective": "Divide networks into zones based on security needs to limit the spread of breaches and control traffic between trusted and untrusted areas.",
+   "auditor_expects": [
+    "Network zones defined by data sensitivity (e.g., DMZ, internal, restricted)",
+    "Firewall rules enforce zone-to-zone traffic policies",
+    "No direct access from public to high-trust zones",
+    "Monitoring placed at zone boundaries",
+    "Zone assignments documented in network architecture"
+   ],
+   "evidence": [
+    "Network architecture diagram with zones",
+    "Firewall rulebase showing inter-zone policies",
+    "VLAN or subnet assignment records",
+    "Proxy or gateway logs at zone edges",
+    "Access control lists on core switches"
+   ],
+   "pitfalls": [
+    "Flat network design with no segmentation",
+    "Over-reliance on VLANs without routing controls",
+    "Allowing direct RDP/SSH from user zone to server zone",
+    "Misconfiguring NAT to bypass intended zone restrictions"
+   ]
+  },
+  "A.8.23": {
+   "objective": "Prevent access to malicious or inappropriate web content by filtering HTTP/HTTPS traffic to reduce malware infection and policy violations.",
+   "auditor_expects": [
+    "Web filtering solution deployed at network perimeter or endpoint",
+    "Categories of blocked sites defined (e.g., malware, adult, gambling)",
+    "HTTPS inspection enabled where appropriate and legal",
+    "Blocking rules tested and updated regularly",
+    "User attempts to access blocked sites are logged"
+   ],
+   "evidence": [
+    "Web filter policy configuration",
+    "Blocked category list with rationale",
+    "SSL decryption certificates and notices",
+    "Update logs for threat intelligence feeds",
+    "Proxy logs showing blocked URLs and user IDs"
+   ],
+   "pitfalls": [
+    "Blocking only HTTP, allowing HTTPS bypass",
+    "Over-blocking legitimate business sites causing workarounds",
+    "Failing to update threat feeds leading to zero-day exposure",
+    "Not informing users of monitoring, risking privacy concerns"
+   ]
+  },
+  "A.8.24": {
+   "objective": "Use cryptography appropriately to protect the confidentiality, integrity, and authenticity of information based on risk assessment and legal requirements.",
+   "auditor_expects": [
+    "Cryptography policy defines algorithms, key lengths, and usage",
+    "Encryption used for data at rest and in transit where needed",
+    "Key management includes generation, storage, rotation, and destruction",
+    "Approved cryptographic modules are used (e.g., FIPS validated)",
+    "Cryptographic controls reviewed when regulations or threats change"
+   ],
+   "evidence": [
+    "Encryption policy document",
+    "Full-disk encryption reports on laptops",
+    "TLS configuration scans showing strong ciphers",
+    "Key management system logs (e.g., HSM or KMS)",
+    "Database column encryption schemas"
+   ],
+   "pitfalls": [
+    "Using weak or deprecated algorithms like MD5 or SHA-1",
+    "Storing encryption keys alongside encrypted data",
+    "Failing to rotate keys periodically",
+    "Implementing custom crypto instead of using vetted libraries"
+   ]
+  },
+  "A.8.25": {
+   "objective": "Ensure security is integrated throughout the software development lifecycle to reduce vulnerabilities introduced during design, coding, testing, and deployment.",
+   "auditor_expects": [
+    "Documented secure development process covering all phases",
+    "Roles and responsibilities for security in development defined",
+    "Security requirements identified early in the lifecycle",
+    "Change control includes security impact assessment",
+    "Training records for developers on secure practices"
+   ],
+   "evidence": [
+    "Secure development policy or procedure document",
+    "Project plans showing security gates (e.g., threat modeling, code review)",
+    "Training attendance logs for secure coding workshops",
+    "Version-controlled requirements documents with security annotations",
+    "Change request forms with security review sign-off"
+   ],
+   "pitfalls": [
+    "Treating security as a final-phase activity only",
+    "No formal process for updating security requirements during development",
+    "Lack of developer training records",
+    "Ignoring security in legacy system maintenance"
+   ]
+  },
+  "A.8.26": {
+   "objective": "Define and document security requirements for applications based on risk assessment and business needs before development begins.",
+   "auditor_expects": [
+    "Security requirements derived from risk assessment",
+    "Requirements documented and traceable to controls",
+    "Approval process for security requirements established",
+    "Requirements reviewed with stakeholders and developers",
+    "Requirements updated when threats or business context change"
+   ],
+   "evidence": [
+    "Risk assessment report linking threats to application security needs",
+    "Functional or technical specification document with security requirements section",
+    "Approval signatures or email records from product owner and security team",
+    "Traceability matrix linking requirements to controls (e.g., A.8.28, A.8.29)",
+    "Meeting minutes showing security requirement review with dev team"
+   ],
+   "pitfalls": [
+    "Copying generic security requirements without context",
+    "Failing to update requirements after threat landscape changes",
+    "No traceability between requirements and implemented controls",
+    "Security requirements buried in vague business goals"
+   ]
+  },
+  "A.8.27": {
+   "objective": "Apply established security principles to system architecture and design to ensure resilience against threats and secure by default configurations.",
+   "auditor_expects": [
+    "Use of recognized secure design principles (e.g., least privilege, defense in depth)",
+    "Architecture documentation showing security zones and trust boundaries",
+    "Threat modeling performed during design phase",
+    "Security considerations included in technology selection",
+    "Architecture reviewed and approved by security specialists"
+   ],
+   "evidence": [
+    "System architecture diagrams with trust boundaries and data flows labeled",
+    "Threat modeling report (e.g., STRIDE or PASTA) for the application",
+    "Design review minutes with security architect sign-off",
+    "Technology selection criteria including security features (e.g., HSM, WAF support)",
+    "Configuration baselines showing default secure settings"
+   ],
+   "pitfalls": [
+    "Designing without considering attack surfaces",
+    "Using outdated or insecure components without assessment",
+    "No formal threat modeling performed",
+    "Architecture documents not updated after changes"
+   ]
+  },
+  "A.8.28": {
+   "objective": "Ensure developers follow secure coding practices to prevent common vulnerabilities such as injection, broken authentication, and insecure deserialization.",
+   "auditor_expects": [
+    "Secure coding standards defined and accessible to developers",
+    "Code reviews include security checks",
+    "Use of automated security testing tools in CI/CD pipeline",
+    "Developer training on secure coding completed and recorded",
+    "Handling of third-party components with vulnerability tracking"
+   ],
+   "evidence": [
+    "Secure coding standard document (e.g., based on OWASP ASVS or CWE)",
+    "Pull request comments showing security-related code review feedback",
+    "SAST/DAST tool reports integrated in build logs",
+    "Training completion records for OWASP Top 10 or similar",
+    "Software Bill of Materials (SBOM) or dependency scan reports"
+   ],
+   "pitfalls": [
+    "Relying solely on penetration testing instead of preventive coding",
+    "No enforcement of secure coding standards in code reviews",
+    "Ignoring vulnerabilities in open-source dependencies",
+    "Training provided but not tracked or refreshed"
+   ]
+  },
+  "A.8.29": {
+   "objective": "Verify that security requirements are met through structured testing during development and acceptance to detect and remediate flaws before deployment.",
+   "auditor_expects": [
+    "Security test plan defined and aligned with requirements",
+    "Testing includes both functional and non-functional security aspects",
+    "Tests conducted in environments resembling production",
+    "Defects tracked, prioritized, and resolved before release",
+    "Acceptance criteria include security sign-off"
+   ],
+   "evidence": [
+    "Security test plan document with test cases and objectives",
+    "Test execution logs showing results of SAST, DAST, or penetration tests",
+    "Defect tracking system (e.g., Jira) showing security bugs and resolution status",
+    "User acceptance test (UAT) sign-off form with security checkbox",
+    "Penetration test report commissioned before go-live"
+   ],
+   "pitfalls": [
+    "Testing only after development is complete",
+    "Using the same environment for dev and security testing without isolation",
+    "Accepting applications with known medium/high-risk vulnerabilities",
+    "No retesting after vulnerability fixes"
+   ]
+  },
+  "A.8.30": {
+   "objective": "Ensure that outsourced development activities are governed by security requirements and oversight to maintain the same security standards as in-house work.",
+   "auditor_expects": [
+    "Security requirements included in contracts with third-party developers",
+    "Right to audit or monitor supplier’s security practices defined",
+    "Supplier’s security capabilities assessed before engagement",
+    "Security deliverables reviewed and accepted by the organization",
+    "Incident reporting and communication channels established with supplier"
+   ],
+   "evidence": [
+    "Contract or SOW clauses specifying security standards (e.g., ISO 27001 compliance)",
+    "Supplier security assessment questionnaire or audit report",
+    "Email records showing security requirement clarification requests",
+    "Acceptance emails or sign-offs for security-related deliverables",
+    "Incident response procedure referencing supplier notification process"
+   ],
+   "pitfalls": [
+    "Assuming supplier follows same standards without verification",
+    "No security clauses in outsourcing contracts",
+    "Lack of monitoring or right to audit in agreements",
+    "Accepting deliverables without security validation"
+   ]
+  },
+  "A.8.31": {
+   "objective": "Ensure development, testing, and production environments are logically and physically separated to prevent unauthorized changes, data leakage, or accidental disruption of live systems.",
+   "auditor_expects": [
+    "Separate environments are defined in policy or architecture diagrams",
+    "Access controls restrict movement between environments",
+    "Production data is not used in development or testing without masking",
+    "Change promotion follows a controlled workflow"
+   ],
+   "evidence": [
+    "Network segmentation diagrams showing isolated environments",
+    "Access control lists or role-based permissions per environment",
+    "Data masking procedures for test data",
+    "Change control records showing environment-specific approvals"
+   ],
+   "pitfalls": [
+    "Using production databases directly in development without anonymization",
+    "Allowing developers unrestricted access to production systems",
+    "No clear distinction between environments in configuration management tools",
+    "Test environments connected to production networks without firewall rules"
+   ]
+  },
+  "A.8.32": {
+   "objective": "Establish a formal process to manage changes to information systems, ensuring modifications are reviewed, approved, tested, and documented to reduce risk of instability or security flaws.",
+   "auditor_expects": [
+    "Change requests are logged and tracked in a change management system",
+    "Changes undergo risk assessment and approval before implementation",
+    "Testing is performed in a non-production environment prior to deployment",
+    "Post-implementation review confirms change success and documents lessons learned"
+   ],
+   "evidence": [
+    "Change request tickets with approval signatures or digital workflows",
+    "Test plans and results from staging environment",
+    "Backout or rollback procedures documented for each change",
+    "Change advisory board (CAB) meeting minutes or approval logs"
+   ],
+   "pitfalls": [
+    "Emergency changes bypassing formal approval without justification",
+    "No testing performed before deploying changes to production",
+    "Change records lack sufficient detail to recreate or audit the change",
+    "Failure to update configuration management database after changes"
+   ]
+  },
+  "A.8.33": {
+   "objective": "Ensure test information, including test data and test environments, is protected to prevent exposure of sensitive data and maintain integrity of testing processes.",
+   "auditor_expects": [
+    "Test data is masked, anonymized, or synthetic when derived from production",
+    "Test environments are isolated and not accessible from production networks",
+    "Access to test information is restricted to authorized personnel only",
+    "Test data lifecycle includes secure disposal or sanitization after use"
+   ],
+   "evidence": [
+    "Data masking scripts or tools used to generate test datasets",
+    "Access logs showing restricted access to test servers or databases",
+    "Test data retention and disposal procedures",
+    "Network diagrams confirming test environment isolation from production"
+   ],
+   "pitfalls": [
+    "Using real customer data in test environments without obfuscation",
+    "Storing test data on unsecured shared drives or laptops",
+    "Testers having unnecessary access to production systems for convenience",
+    "No process to delete or sanitize test data after testing concludes"
+   ]
+  },
+  "A.8.34": {
+   "objective": "Protect information systems from potential harm during audit testing by ensuring audit activities are planned, authorized, and conducted in a way that does not disrupt operations or introduce vulnerabilities.",
+   "auditor_expects": [
+    "Audit testing scope and methods are agreed upon in advance with management",
+    "Audit activities are performed in a controlled manner, avoiding production impact",
+    "Auditors are granted only the necessary access rights for the test duration",
+    "Results of audit testing are reported and any findings are addressed promptly"
+   ],
+   "evidence": [
+    "Signed audit engagement letter or authorization form outlining scope and rules",
+    "Audit test plans specifying non-invasive techniques or timing windows",
+    "Temporary user accounts created for auditors with limited privileges",
+    "Post-audit report detailing findings, recommendations, and management responses"
+   ],
+   "pitfalls": [
+    "Conducting invasive audit tests on production systems without prior approval",
+    "Granting auditors permanent or excessive privileges beyond test needs",
+    "Failing to isolate audit testing from live business processes",
+    "Not documenting or following up on audit test findings"
+   ]
+  }
+ }
+}

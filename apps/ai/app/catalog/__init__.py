@@ -15,6 +15,12 @@ CLAUSES: dict[str, str] = {c["ref"]: c["title"] for c in _DATA["clauses"]}
 CONTROLS: dict[str, str] = {c["ref"]: c["title"] for c in _DATA["controls"]}
 # What an auditor checks for each clause (the internal audit checklist questions).
 CLAUSE_QUESTIONS: dict[str, str] = {c["ref"]: c["question"] for c in _DATA["clauses"]}
+# APTISO's own implementation guides (objective, auditor expectations, evidence, pitfalls), written in its own words.
+_GUIDES_FILE = Path(__file__).parent / "guides.json"
+_GUIDES = json.loads(_GUIDES_FILE.read_text(encoding="utf-8")) if _GUIDES_FILE.exists() else {"version": "none", "items": {}}
+GUIDES: dict[str, dict] = _GUIDES["items"]
+# Version of the shared ISO knowledge (catalog + guides): a change re-indexes it.
+KNOWLEDGE_VERSION = f"{VERSION}+{_GUIDES['version'].replace('guides@', 'g')}"[:20]
 _BY_TITLE = {t.lower(): r for r, t in {**CLAUSES, **CONTROLS}.items()}
 _REF = re.compile(r"^(?:clause|control)?\s*(a)?[\s.]*(\d+(?:\.\d+)*)", re.IGNORECASE)
 
